@@ -222,7 +222,7 @@ namespace DiscordCoreLoader {
 		}
 
 		SSL_CTX_set_verify(this->context, SSL_VERIFY_PEER, NULL);
-		if (!SSL_CTX_load_verify_locations(this->context, "cert.pem", NULL)) {
+		if (!SSL_CTX_load_verify_locations(this->context, "Cert.pem", NULL)) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_load_verify_locations() Error: ");
 			}
