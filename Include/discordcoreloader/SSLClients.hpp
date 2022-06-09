@@ -291,10 +291,11 @@ namespace DiscordCoreLoader {
 		MessagePackage theCurrentMessage{};
 		SSL_CTX* theContext{ nullptr };
 		bool doWePrintError{ false };
+		int64_t currentGuildCount{};
 		uint64_t bytesWritten{ 0 };
+		int64_t totalGuildCount{};
 		SSLWrapper ssl{ nullptr };
 		std::string inputBuffer{};
-		int64_t guildSentCount{};
 		bool sendGuilds{ false };
 		bool wantWrite{ false };
 		uint64_t bytesRead{ 0 };

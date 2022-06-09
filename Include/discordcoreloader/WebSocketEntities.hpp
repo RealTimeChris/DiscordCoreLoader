@@ -65,9 +65,9 @@ namespace DiscordCoreLoader {
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
+		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unordered_map<SOCKET, int32_t> lastNumberSent{};
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
-		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
 		nlohmann::json currentConnectionData{ 0, 0 };

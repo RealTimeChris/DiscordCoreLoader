@@ -162,21 +162,24 @@ namespace DiscordCoreLoader {
 	}
 
 	void BaseSocketAgent::sendCreateGuilds(SOCKET theIndex) noexcept {
-		this->lastNumberSent[theIndex] += 1;
-		nlohmann::json jsonData{};
-		jsonData["op"] = static_cast<int8_t>(0);
-		jsonData["s"] = this->lastNumberSent[theIndex];
-		jsonData["t"] = "GUILD_CREATE";
-		jsonData["d"] = this->discordCoreClient->theGuildJson;
-		WebSocketMessage theMessage{};
-		theMessage.jsonMsg = std::move(jsonData);
-		if (this->theMode == WebSocketMode::ETF) {
-			theMessage.theOpCode = WebSocketOpCode::Op_Binary;
-		} else {
-			theMessage.theOpCode = WebSocketOpCode::Op_Text;
-		}
+		if (this->theClients[theIndex]->currentGuildCount < this->theClients[theIndex]->totalGuildCount) {
+			this->theClients[theIndex]->currentGuildCount += 1;
+			this->lastNumberSent[theIndex] += 1;
+			nlohmann::json jsonData{};
+			jsonData["op"] = static_cast<int8_t>(0);
+			jsonData["s"] = this->lastNumberSent[theIndex];
+			jsonData["t"] = "GUILD_CREATE";
+			jsonData["d"] = this->discordCoreClient->theGuildJson;
+			WebSocketMessage theMessage{};
+			theMessage.jsonMsg = std::move(jsonData);
+			if (this->theMode == WebSocketMode::ETF) {
+				theMessage.theOpCode = WebSocketOpCode::Op_Binary;
+			} else {
+				theMessage.theOpCode = WebSocketOpCode::Op_Text;
+			}
 
-		this->theClients[theIndex]->theMessageQueue.push(std::move(theMessage));
+			this->theClients[theIndex]->theMessageQueue.push(std::move(theMessage));
+		}
 	}
 
 	void BaseSocketAgent::sendReadyMessage(SOCKET theIndex) noexcept {
@@ -188,6 +191,7 @@ namespace DiscordCoreLoader {
 		jsonData["d"]["session_id"] = this->jsonifier.randomizeId();
 		jsonData["d"]["guilds"];
 		int32_t guildSize = this->discordCoreClient->guildQuantity / this->discordCoreClient->shardingOptions.totalNumberOfShards;
+		this->theClients[theIndex]->totalGuildCount = guildSize;
 		if (guildSize > 2500) {
 			this->initDisconnect(WebSocketCloseCode::Sharding_Required, theIndex);
 			return;
