@@ -61,6 +61,72 @@ namespace DiscordCoreLoader {
 		for (auto& value: guildOld.roles) {
 			jsonData["roles"].push_back(this->JSONIFYRole(std::move(value)));
 		}
+		jsonData["afk_channel_id"] = guildOld.afkChannelId;
+		jsonData["afk_time_out"] = guildOld.afkTimeOut;
+		jsonData["application_id"] = guildOld.applicationId;
+		jsonData["approximate_member_count"] = guildOld.approximateMemberCount;
+		jsonData["approximate_presence_count"] = guildOld.approximatePresenceCount;
+		jsonData["banner"] = guildOld.banner;
+		jsonData["default_message_notifications"] = guildOld.defaultMessageNotifications;
+		jsonData["description"] = guildOld.description;
+		jsonData["discovery_splash"] = guildOld.discoverySplash;
+		jsonData["explicit_content_filter"] = guildOld.explicitContentFilter;
+		for (auto& value: guildOld.features) {
+			jsonData["features"].push_back(value);
+		}
+		jsonData["flags"] = guildOld.flags;
+		jsonData["icon"] = guildOld.icon;
+		jsonData["icon_hash"] = guildOld.iconHash;
+		jsonData["joined_at"] = guildOld.joinedAt;
+		jsonData["max_members"] = guildOld.maxMembers;
+		jsonData["max_presences"] = guildOld.maxPresences;
+		jsonData["max_video_channel_users"] = guildOld.maxVideoChannelUsers;
+		jsonData["member_count"] = guildOld.memberCount;
+		jsonData["mfa_level"] = guildOld.mfaLevel;
+		jsonData["name"] = guildOld.name;
+		jsonData["nsfw_level"] = guildOld.nsfwLevel;
+		jsonData["owner_id"] = guildOld.ownerId;
+		jsonData["permissions"] = guildOld.permissions;
+		jsonData["preferred_locale"] = guildOld.preferredLocale;
+		jsonData["premium_subscription_count"] = guildOld.premiumSubscriptionCount;
+		jsonData["premium_tier"] = guildOld.premiumTier;
+		for (auto&[key,value]:guildOld.presences) {
+			nlohmann::json theDataNew{};
+			theDataNew["guild_id"] = value.guildId;
+			theDataNew["status"] = value.status;
+			theDataNew["user"] = this->JSONIFYUser(std::move(value.user));
+			theDataNew["client_status"]["desktop"] = value.clientStatus.desktop;
+			theDataNew["client_status"]["mobile"] = value.clientStatus.mobile;
+			theDataNew["client_status"]["web"] = value.clientStatus.web;
+			jsonData["presences"].push_back(theDataNew);
+		}
+		jsonData["public_updates_channel_id"] = guildOld.publicUpdatesChannelId;
+		jsonData["region"] = guildOld.region;
+		jsonData["rules_channel_id"] = guildOld.rulesChannelId;
+		jsonData["splash"] = guildOld.splash;
+		jsonData["system_channel_flags"] = guildOld.systemChannelFlags;
+		jsonData["system_channel_id"] = guildOld.systemChannelId;
+		jsonData["vanity_url_code"] = guildOld.vanityUrlCode;
+		jsonData["verification_level"] = guildOld.verificationLevel;
+		jsonData["welcome_screen"]["description"] = guildOld.welcomeScreen.description;
+		for (auto& [key, value]: guildOld.voiceStates) {
+			nlohmann::json theDataNew{};
+			theDataNew["channel_id"] = value.channelId;
+			theDataNew["deaf"] = value.deaf;
+			theDataNew["guild_id"] = value.guildId;
+			theDataNew["member"] = this->JSONIFYGuildMember(std::move(value.member));
+			theDataNew["mute"] = value.mute;
+			theDataNew["request_to_speak_timestamp"] = value.requestToSpeakTimestamp;
+			theDataNew["self_deaf"] = value.selfDeaf;
+			theDataNew["self_mute"] = value.selfMute;
+			theDataNew["self_stream"] = value.selfStream;
+			theDataNew["self_video"] = value.selfVideo;
+			theDataNew["session_id"] = value.sessionId;
+			theDataNew["suppress"] = value.suppress;
+			theDataNew["user_id"] = value.userId;
+			jsonData["voice_states"].push_back(theDataNew);
+		}
+		jsonData["widget_channel_id"] = guildOld.widgetChannelId;
 		return jsonData;
 	}
 

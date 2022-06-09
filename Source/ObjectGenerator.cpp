@@ -124,6 +124,76 @@ namespace DiscordCoreLoader {
 		theData.banner = std::to_string(this->randomize64BitUInt());
 		theData.applicationId = this->randomizeId();
 		theData.afkChannelId = this->randomizeId();
+		theData.description =
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.discoverySplash = this->randomizeId();
+		theData.explicitContentFilter = static_cast<ExplicitContentFilterLevel>(this->randomize8BitUInt());
+		for (uint32_t x = 0; x < this->randomize8BitUInt() % 25; x += 1) {
+			theData.features.push_back(
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount))));
+		}
+		theData.flags = this->randomize8BitUInt();
+		theData.icon = this->randomizeId();
+		theData.iconHash = this->randomizeId();
+		theData.id = guildId;
+		theData.joinedAt = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
+		theData.maxMembers = this->randomize32BitUInt();
+		theData.maxPresences = this->randomize32BitUInt();
+		theData.maxVideoChannelUsers = this->randomize32BitUInt();
+		theData.mfaLevel = static_cast<MFALevel>(this->randomize8BitUInt());
+		theData.name=this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount))));
+		theData.nsfwLevel = GuildNSFWLevel{ this->randomize8BitUInt() };
+		theData.ownerId = this->randomizeId();
+		theData.permissions = std::to_string(this->randomize64BitUInt());
+		theData.preferredLocale = this->randomizeString(4);
+		theData.premiumSubscriptionCount = this->randomize32BitUInt();
+		theData.premiumTier = PremiumTier{ this->randomize8BitUInt() };
+		for (uint32_t x = 0; x < theData.memberCount; x += 1) {
+			PresenceUpdateData theDataNew{};
+			ClientStatusData theDataNewer{};
+			theDataNewer.desktop =
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			theDataNewer.mobile =
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			theDataNewer.web =
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			theDataNew.clientStatus = theDataNewer;
+			theDataNew.guildId = guildId;
+			theDataNew.status =
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			theDataNew.user = this->generateUser();
+			theData.presences.insert_or_assign(theDataNew.user.id, theDataNew);
+		}
+		theData.publicUpdatesChannelId =
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.region = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.rulesChannelId = this->randomizeId();
+		theData.splash = this->randomizeId();
+		theData.systemChannelFlags = SystemChannelFlags{ this->randomize8BitUInt() };
+		theData.systemChannelId = this->randomizeId();
+		theData.vanityUrlCode = this->randomizeString(5);
+		theData.verificationLevel = VerificationLevel{ this->randomize8BitUInt() };
+		for (uint32_t x = 0; x < theData.memberCount; x += 1) {
+			VoiceStateData theDataNew{};
+			theDataNew.channelId = this->randomizeId();
+			theDataNew.deaf = true;
+			theDataNew.guildId = guildId;
+			theDataNew.member = theData.members[this->randomize8BitUInt(0, theData.members.size() - 1)];
+			theDataNew.mute = true;
+			theDataNew.requestToSpeakTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
+			theDataNew.selfDeaf = true;
+			theDataNew.selfMute = true;
+			theDataNew.selfStream = false;
+			theDataNew.selfVideo = false;
+			theDataNew.sessionId = this->randomizeId();
+			theDataNew.userId = this->randomizeId();
+			theData.voiceStates.insert_or_assign(theDataNew.userId, theDataNew);
+		}
+		WelcomeScreenData theDataNew{};
+		theDataNew.description =
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.welcomeScreen = theDataNew;
+		theData.widgetChannelId = this->randomizeId();
 		return theData;
 	}
 

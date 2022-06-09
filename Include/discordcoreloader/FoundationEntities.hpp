@@ -1251,7 +1251,7 @@ namespace DiscordCoreLoader {
 		bool deaf{ false };///< Whether this User is deafened by the server.
 		bool mute{ false };///< Whether this User is muted by the server.
 		std::string guildId{};///< The Guild id this voice state is for.
-		uint64_t userId{};///< The User id this voice state is for.
+		std::string userId{};///< The User id this voice state is for.
 	};
 
 	/// Data representing an active Thread. \brief Data representing an active Thread.
@@ -1849,8 +1849,8 @@ namespace DiscordCoreLoader {
 	class GuildData : public DiscordEntity {
 	  public:
 		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
-		std::unordered_map<uint64_t, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
-		std::unordered_map<uint64_t, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
+		std::unordered_map<std::string, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
+		std::unordered_map<std::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
 		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
 		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, by default.
 		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
