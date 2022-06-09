@@ -116,9 +116,7 @@ namespace DiscordCoreLoader {
 			}
 			leftOverShards -= newShardAmount;
 		}
-		for (auto& value: shardsPerWorkerVect) {
-			std::cout << "WORKER COUNT: " << value << std::endl;
-		}
+
 		int32_t totalShards{ 1 };
 		for (int32_t y = 1; y < shardsPerWorkerVect[0]; y += 1) {
 			totalShards += 1;

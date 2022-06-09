@@ -5,7 +5,7 @@
   "DoWePrintGeneralErrorMessages": true,
   "DoWePrintWebSocketSuccessMessages": false,
   "DoWePrintWebSocketErrorMessages": true,
-  "GuildQuantity": 8000,
+  "GuildQuantity": 30000,
   "StdDeviationForStringLength": 10,
   "MeanForStringLength": 50,
   "StdDeviationForMemberCount": 40,

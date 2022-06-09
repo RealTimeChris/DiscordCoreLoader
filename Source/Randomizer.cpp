@@ -56,8 +56,8 @@ namespace DiscordCoreLoader {
 	}
 
 	uint64_t Randomizer::randomize64BitUInt(double mean, double stdDeviation) {
-		std::normal_distribution<> normalDistribution{ mean, stdDeviation };
-		auto theResult = normalDistribution(this->randomEngine);
+		std::normal_distribution<> normalDistributionTwo{ mean, stdDeviation };
+		auto theResult = normalDistributionTwo(this->randomEngine);
 		if (theResult < 0) {
 			theResult = -theResult;
 		}
