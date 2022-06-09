@@ -30,18 +30,6 @@ namespace DiscordCoreLoader {
 
 	void atexitHandler();
 
-	struct GuildHolder {
-		GuildHolder& operator=(nlohmann::json guildNew);
-
-		GuildHolder(nlohmann::json guildNew);
-
-		GuildHolder(nlohmann::json theGuildNew);
-
-		GuildHolder() = default;
-
-		const nlohmann::json theGuild{};
-	};
-
 	/**
 	 * \addtogroup main_endpoints
 	 * @{
