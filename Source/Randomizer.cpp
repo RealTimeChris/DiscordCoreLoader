@@ -90,7 +90,7 @@ namespace DiscordCoreLoader {
 
 	int8_t Randomizer::randomize8BitInt(uint8_t minValue, uint8_t maxValue) {
 		double difference = maxValue - minValue;
-		uint8_t theValue = static_cast<uint8_t>(static_cast<double>(this->randomEngine()) / static_cast<double>(this->randomEngine.max()) * difference) + minValue;
+		int8_t theValue = static_cast<int8_t>(static_cast<double>(this->randomEngine()) / static_cast<double>(this->randomEngine.max()) * difference) + minValue;
 		return theValue;
 	}
 

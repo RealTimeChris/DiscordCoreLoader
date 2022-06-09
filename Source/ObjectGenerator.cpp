@@ -178,7 +178,7 @@ namespace DiscordCoreLoader {
 			theDataNew.channelId = this->randomizeId();
 			theDataNew.deaf = true;
 			theDataNew.guildId = guildId;
-			theDataNew.member = theData.members[this->randomize8BitInt(0, static_cast<int8_t>(theData.members.size() - 1))];
+			theDataNew.member = theData.members[this->randomize8BitUInt(0, static_cast<uint8_t>(theData.members.size() - 2))];
 			theDataNew.mute = true;
 			theDataNew.requestToSpeakTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 			theDataNew.selfDeaf = true;
