@@ -31,7 +31,7 @@ namespace DiscordCoreLoader {
 		theData.premiumSince = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.joinedAt = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		int8_t theAmount = this->randomize8BitInt(0, static_cast<uint8_t>(roles.size()));
-		theData.permissions = this->randomize64BitUInt();
+		theData.permissions = std::to_string(this->randomize64BitUInt());
 		theData.pending = this->randomize8BitInt(0, 1);
 		theData.deaf = this->randomize8BitInt(0, 1);
 		theData.mute = this->randomize8BitInt(0, 1);
@@ -57,8 +57,7 @@ namespace DiscordCoreLoader {
 		theData.rtcRegion = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.topic = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		theData.permissions =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.permissions = std::to_string(this->randomize64BitUInt());
 		theData.threadMetadata.archiveTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.member.joinTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.lastPinTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
@@ -115,7 +114,7 @@ namespace DiscordCoreLoader {
 		}
 		theData.memberCount = this->randomize64BitUInt(static_cast<double>(this->meanForMemberCount), static_cast<double>(this->stdDeviationForMemberCount));
 		for (uint64_t x = 0; x < theData.memberCount; x += 1) {
-			theData.members.push_back(this->generateGuildMember(theData.id, theData.roles));
+			theData.members.push_back(this->generateGuildMember(guildId, theData.roles));
 		}
 		theData.defaultMessageNotifications = static_cast<DefaultMessageNotificationLevel>(this->randomize8BitInt());
 		theData.afkTimeOut = static_cast<AfkTimeOutDurations>(this->randomize16BitUInt());
@@ -164,8 +163,7 @@ namespace DiscordCoreLoader {
 			theDataNew.user = this->generateUser();
 			theData.presences.insert_or_assign(theDataNew.user.id, theDataNew);
 		}
-		theData.publicUpdatesChannelId =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.publicUpdatesChannelId = this->randomizeId();
 		theData.region = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.rulesChannelId = this->randomizeId();
 		theData.splash = this->randomizeId();
@@ -202,7 +200,7 @@ namespace DiscordCoreLoader {
 		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.unicodeEmoji =
 			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		theData.permissions = this->randomize64BitUInt(0, static_cast<uint64_t>(Permission::Moderate_Members));
+		theData.permissions = std::to_string(this->randomize64BitUInt(0, static_cast<uint64_t>(Permission::Moderate_Members)));
 		theData.tags.premiumSubscriber = static_cast<bool>(this->randomize8BitInt(0, 1));
 		theData.mentionable = static_cast<bool>(this->randomize8BitInt(0, 1));
 		theData.managed = static_cast<bool>(this->randomize8BitInt(0, 1));

@@ -256,7 +256,7 @@ namespace DiscordCoreLoader {
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
-		timeval checkTime{ .tv_usec = 100 };
+		timeval checkTime{ .tv_usec = 0 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
@@ -313,7 +313,8 @@ namespace DiscordCoreLoader {
 						return returnValue02;
 					}
 				}
-			} else if (FD_ISSET(value->clientSocket, &writeSet)) {
+			}
+			if (FD_ISSET(value->clientSocket, &writeSet)) {
 				value->wantRead = false;
 				value->wantWrite = false;
 				size_t writtenBytes{ 0 };

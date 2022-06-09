@@ -72,11 +72,10 @@ namespace DiscordCoreLoader {
 						  << reset() << std::endl
 						  << std::endl;
 			}
-
 			uint64_t theHeaderLength{};
 			std::string theVector{};
 			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
-				theVector = this->erlPacker.parseJsonToEtf(dataToSend);
+				theVector = this->erlPacker.parseJsonToEtf(std::move(dataToSend));
 			} else {
 				theVector = dataToSend.dump();
 			}
