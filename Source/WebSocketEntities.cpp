@@ -39,7 +39,6 @@ namespace DiscordCoreLoader {
 		this->theTask = std::make_unique<std::jthread>([this](std::stop_token theToken) {
 			this->run(theToken);
 		});
-		this->theCurrentGuild["d"] = this->discordCoreClient->theGuildJson;
 	}
 
 	void BaseSocketAgent::sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept {
@@ -166,17 +165,15 @@ namespace DiscordCoreLoader {
 		if (this->theClients[theIndex]->currentGuildCount < this->theClients[theIndex]->totalGuildCount) {
 			this->theClients[theIndex]->currentGuildCount += 1;
 			this->theClients[theIndex]->lastNumberSent += 1;
-			this->theCurrentGuild["op"] = static_cast<int8_t>(0);
-			this->theCurrentGuild["s"] = this->theClients[theIndex]->lastNumberSent;
-			this->theCurrentGuild["t"] = "GUILD_CREATE";
+			auto theGuildNew = this->discordCoreClient->theGuildHolder;
+			theGuildNew["s"] = this->theClients[theIndex]->lastNumberSent;
 			WebSocketMessage theMessage{};
-			theMessage.jsonMsg = this->theCurrentGuild;
+			theMessage.jsonMsg = std::move(theGuildNew);
 			if (this->theMode == WebSocketMode::ETF) {
 				theMessage.theOpCode = WebSocketOpCode::Op_Binary;
 			} else {
 				theMessage.theOpCode = WebSocketOpCode::Op_Text;
 			}
-
 			this->theClients[theIndex]->theMessageQueue.push(std::move(theMessage));
 		}
 	}

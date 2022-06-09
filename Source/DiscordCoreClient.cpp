@@ -68,7 +68,9 @@ namespace DiscordCoreLoader {
 	}
 
 	void DiscordCoreClient::generateGuildData() {
-		this->theGuildJson = this->jsonifier.JSONIFYGuild(this->jsonifier.generateGuild(this->jsonifier.randomizeId()));
+		this->theGuildHolder["d"] = this->jsonifier.JSONIFYGuild(this->jsonifier.generateGuild(this->jsonifier.randomizeId()));
+		this->theGuildHolder["op"] = static_cast<int8_t>(0);
+		this->theGuildHolder["t"] = "GUILD_CREATE";
 	}
 
 	void DiscordCoreClient::instantiateWebSockets() {

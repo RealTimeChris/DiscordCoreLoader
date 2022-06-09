@@ -30,6 +30,18 @@ namespace DiscordCoreLoader {
 
 	void atexitHandler();
 
+	struct GuildHolder {
+		GuildHolder& operator=(nlohmann::json guildNew);
+
+		GuildHolder(nlohmann::json guildNew);
+
+		GuildHolder(nlohmann::json theGuildNew);
+
+		GuildHolder() = default;
+
+		const nlohmann::json theGuild{};
+	};
+
 	/**
 	 * \addtogroup main_endpoints
 	 * @{
@@ -53,7 +65,7 @@ namespace DiscordCoreLoader {
 		std::unique_ptr<WebSocketSSLServerMain> webSocketSSLServerMain{ nullptr };
 		bool haveWeCollectedShardingInfo{ false };
 		ShardingOptions shardingOptions{};
-		nlohmann::json theGuildJson{};
+		nlohmann::json theGuildHolder{};
 		ConfigParser configParser{};
 #ifdef _WIN32
 		WSADataWrapper theWSAData{};

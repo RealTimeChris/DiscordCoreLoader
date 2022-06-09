@@ -77,7 +77,6 @@ namespace DiscordCoreLoader {
 		bool doWeAllowReconnection{ false };
 		int32_t heartbeatInterval{ 45000 };
 		int8_t currentReconnectTries{ 0 };
-		nlohmann::json theCurrentGuild{};
 		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
 		std::string sessionId{};
