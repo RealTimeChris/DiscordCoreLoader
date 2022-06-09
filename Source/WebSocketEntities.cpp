@@ -442,7 +442,6 @@ namespace DiscordCoreLoader {
 						this->handleBuffer(key);
 					}
 				}
-				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 			}
 			if (this->opCode != WebSocketOpCode::Op_Close) {
 				this->initDisconnect(static_cast<WebSocketCloseCode>(1000), this->currentIndex);

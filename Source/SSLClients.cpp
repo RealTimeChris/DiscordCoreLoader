@@ -256,7 +256,7 @@ namespace DiscordCoreLoader {
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
-		timeval checkTime{ .tv_usec = 0 };
+		timeval checkTime{ .tv_usec = 10000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
