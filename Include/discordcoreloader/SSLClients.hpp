@@ -23,6 +23,10 @@
 	#define OPENSSL_NO_DEPRECATED
 #endif
 
+#ifndef FD_SETSIZE
+#define FD_SETSIZE  400
+#endif
+
 #ifdef _WIN32
 	#pragma comment(lib, "Ws2_32.lib")
 	#include <WS2tcpip.h>

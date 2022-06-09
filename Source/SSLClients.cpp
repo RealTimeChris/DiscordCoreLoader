@@ -327,8 +327,10 @@ namespace DiscordCoreLoader {
 				auto errorValue{ SSL_get_error(value->ssl, returnValue) };
 				switch (errorValue) {
 					case SSL_ERROR_NONE: {
-						if (value->outputBuffer.size() > 0) {
+						if (value->outputBuffer.size() > 0 && writtenBytes > 0) {
 							value->outputBuffer.erase(value->outputBuffer.begin());
+						} else {
+							value->outputBuffer[0] = std::move(theString);
 						}
 						value->bytesWritten += writtenBytes;
 						returnValue02.returnIndex = key;
