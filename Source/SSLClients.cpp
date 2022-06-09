@@ -384,22 +384,6 @@ namespace DiscordCoreLoader {
 			newSocket = accept(this->theServerSocket, this->addrInfo->ai_addr, &theSize);
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
-#ifdef _WIN32
-		u_long value{ 1 };
-		if (auto returnValue = ioctlsocket(newSocket, FIONBIO, &value); returnValue == SOCKET_ERROR) {
-			if (this->doWePrintError) {
-				reportError("ioctlsocket() Error: ", returnValue);
-			}
-			return SOCKET{ SOCKET_ERROR };
-		}
-#else
-		if (auto returnValue = fcntl(newSocket, F_SETFL, fcntl(newSocket, F_GETFL, 0) | O_NONBLOCK); returnValue == SOCKET_ERROR) {
-			if (this->doWePrintError) {
-				reportError("fcntl() Error: ", returnValue);
-			}
-			return SOCKET{ SOCKET_ERROR };
-		}
-#endif
 
 		return newSocket;
 	}
