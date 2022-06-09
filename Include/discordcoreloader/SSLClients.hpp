@@ -288,6 +288,7 @@ namespace DiscordCoreLoader {
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::vector<std::string> outputBuffer{};
 		SOCKETWrapper clientSocket{ nullptr };
+		MessagePackage theCurrentMessage{};
 		SSL_CTX* theContext{ nullptr };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
@@ -295,7 +296,6 @@ namespace DiscordCoreLoader {
 		int64_t totalGuildCount{};
 		SSLWrapper ssl{ nullptr };
 		std::string inputBuffer{};
-		int64_t lastNumberSent{};
 		bool sendGuilds{ false };
 		bool wantWrite{ false };
 		uint64_t bytesRead{ 0 };

@@ -86,7 +86,6 @@ namespace DiscordCoreLoader {
 		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap.insert_or_assign(std::to_string(0), std::move(thePtr));
 		this->baseSocketAgentMap[std::to_string(0)]->connect(0, 0);
-		this->baseSocketAgentMap[std::to_string(0)]->storeMessage(this->theGuildJson, this->baseSocketAgentMap[std::to_string(0)]->opCode);
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -123,18 +122,14 @@ namespace DiscordCoreLoader {
 		int32_t totalShards{ 1 };
 		for (int32_t y = 1; y < shardsPerWorkerVect[0]; y += 1) {
 			totalShards += 1;
-			//this->baseSocketAgentMap[std::to_string(0)]->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
+			this->baseSocketAgentMap[std::to_string(0)]->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
 		}
-		std::cout << "WORKER COUNT: 0202" << std::endl;
+
 		for (int32_t x = 1; x < workerCount; x += 1) {
 			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
-				std::cout << "WORKER COUNT: 060606" << std::endl;
 				totalShards += 1;
 				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
-				std::cout << "WORKER COUNT: 0303" << std::endl;
-				thePtr02->storeMessage(this->theGuildJson, thePtr02->opCode);
-				std::cout << "WORKER COUNT: 0404" << std::endl;
 			}
 			this->baseSocketAgentMap.insert_or_assign(std::to_string(x), std::move(thePtr02));
 		}
