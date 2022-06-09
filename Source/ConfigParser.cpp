@@ -53,8 +53,11 @@ namespace DiscordCoreLoader {
 		if (this->configFile.contains("DoWePrintGeneralErrorMessages") && !this->configFile["DoWePrintGeneralErrorMessages"].is_null()) {
 			this->theData.doWePrintGeneralErrorMessages = this->configFile["DoWePrintGeneralErrorMessages"].get<bool>();
 		}
-		if (this->configFile.contains("DoWePrintWebSocketSuccessMessages") && !this->configFile["DoWePrintWebSocketSuccessMessages"].is_null()) {
-			this->theData.doWePrintWebSocketSuccessMessages = this->configFile["DoWePrintWebSocketSuccessMessages"].get<bool>();
+		if (this->configFile.contains("DoWePrintWebSocketSuccessSentMessages") && !this->configFile["DoWePrintWebSocketSuccessSentMessages"].is_null()) {
+			this->theData.doWePrintWebSocketSuccessSentMessages = this->configFile["DoWePrintWebSocketSuccessSentMessages"].get<bool>();
+		}
+		if (this->configFile.contains("DoWePrintWebSocketSuccessReceiveMessages") && !this->configFile["DoWePrintWebSocketSuccessReceiveMessages"].is_null()) {
+			this->theData.doWePrintWebSocketSuccessReceiveMessages = this->configFile["DoWePrintWebSocketSuccessReceiveMessages"].get<bool>();
 		}
 		if (this->configFile.contains("DoWePrintWebSocketErrorMessages") && !this->configFile["DoWePrintWebSocketErrorMessages"].is_null()) {
 			this->theData.doWePrintWebSocketErrorMessages = this->configFile["DoWePrintWebSocketErrorMessages"].get<bool>();

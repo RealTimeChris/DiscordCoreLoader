@@ -31,7 +31,8 @@ namespace DiscordCoreLoader {
 	struct ConfigData {
 		std::string connectionIp{};
 		std::string connectionPort{};
-		bool doWePrintWebSocketSuccessMessages{ false };
+		bool doWePrintWebSocketSuccessReceiveMessages{ false };
+		bool doWePrintWebSocketSuccessSentMessages{ false };
 		bool doWePrintWebSocketErrorMessages{ false };
 		bool doWePrintGeneralSuccessMessages{ false };
 		bool doWePrintGeneralErrorMessages{ false };

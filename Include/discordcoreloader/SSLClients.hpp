@@ -296,6 +296,7 @@ namespace DiscordCoreLoader {
 		int64_t totalGuildCount{};
 		SSLWrapper ssl{ nullptr };
 		std::string inputBuffer{};
+		int64_t lastNumberSent{};
 		bool sendGuilds{ false };
 		bool wantWrite{ false };
 		uint64_t bytesRead{ 0 };

@@ -66,7 +66,6 @@ namespace DiscordCoreLoader {
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
-		std::unordered_map<SOCKET, int32_t> lastNumberSent{};
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
@@ -78,6 +77,7 @@ namespace DiscordCoreLoader {
 		bool doWeAllowReconnection{ false };
 		int32_t heartbeatInterval{ 45000 };
 		int8_t currentReconnectTries{ 0 };
+		nlohmann::json theCurrentGuild{};
 		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
 		std::string sessionId{};

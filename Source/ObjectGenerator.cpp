@@ -30,7 +30,7 @@ namespace DiscordCoreLoader {
 		theData.communicationDisabledUntil = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.premiumSince = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.joinedAt = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
-		int8_t theAmount = this->randomize8BitInt(0, roles.size());
+		int8_t theAmount = this->randomize8BitInt(0, static_cast<uint8_t>(roles.size()));
 		theData.permissions = this->randomize64BitUInt();
 		theData.pending = this->randomize8BitInt(0, 1);
 		theData.deaf = this->randomize8BitInt(0, 1);

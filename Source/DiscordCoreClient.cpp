@@ -31,33 +31,9 @@ namespace DiscordCoreLoader {
 		Globals::doWeQuit.store(true);
 	}
 
-	void signalHandler(int32_t theEvent) {
-		switch (theEvent) {
-			case SIGABRT: {
-				std::cout << "SIGABRT" << std::endl;
-				break;
-			}
-			case SIGINT: {
-				std::cout << "SIGINT" << std::endl;
-				break;
-			}
-			case SIGILL: {
-				std::cout << "SIGILL" << std::endl;
-				break;
-			}
-			case SIGFPE: {
-				std::cout << "SIGFPE" << std::endl;
-				break;
-			}
-			case SIGSEGV: {
-				std::cout << "SIGSEGV" << std::endl;
-				break;
-			}
-			case SIGTERM: {
-				std::cout << "SIGTERM" << std::endl;
-				break;
-			}
-		}
+	void signalHandler(int32_t) {
+		Globals::doWeQuit.store(true);
+		exit(EXIT_SUCCESS);
 	}
 
 	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) {
