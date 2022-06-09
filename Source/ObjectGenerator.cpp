@@ -26,7 +26,7 @@ namespace DiscordCoreLoader {
 
 	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles) {
 		GuildMemberData theData{};
-		theData.nick = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.nick = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.communicationDisabledUntil = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.premiumSince = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.joinedAt = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
@@ -54,11 +54,11 @@ namespace DiscordCoreLoader {
 
 	ChannelData ObjectGenerator::generateChannel(std::string guildId) {
 		ChannelData theData{};
-		theData.rtcRegion = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
-		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
-		theData.topic = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.rtcRegion = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.topic = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.permissions =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.threadMetadata.archiveTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.member.joinTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 		theData.lastPinTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
@@ -125,7 +125,7 @@ namespace DiscordCoreLoader {
 		theData.applicationId = this->randomizeId();
 		theData.afkChannelId = this->randomizeId();
 		theData.description =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.discoverySplash = this->randomizeId();
 		theData.explicitContentFilter = static_cast<ExplicitContentFilterLevel>(this->randomize8BitUInt());
 		for (int32_t x = 0; x < this->randomize8BitUInt() % 25; x += 1) {
@@ -141,7 +141,7 @@ namespace DiscordCoreLoader {
 		theData.maxPresences = this->randomize32BitUInt();
 		theData.maxVideoChannelUsers = this->randomize32BitUInt();
 		theData.mfaLevel = static_cast<MFALevel>(this->randomize8BitUInt());
-		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.nsfwLevel = GuildNSFWLevel{ this->randomize8BitUInt() };
 		theData.ownerId = this->randomizeId();
 		theData.permissions = std::to_string(this->randomize64BitUInt());
@@ -152,21 +152,21 @@ namespace DiscordCoreLoader {
 			PresenceUpdateData theDataNew{};
 			ClientStatusData theDataNewer{};
 			theDataNewer.desktop =
-				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 			theDataNewer.mobile =
-				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 			theDataNewer.web =
-				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 			theDataNew.clientStatus = theDataNewer;
 			theDataNew.guildId = guildId;
 			theDataNew.status =
-				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 			theDataNew.user = this->generateUser();
 			theData.presences.insert_or_assign(theDataNew.user.id, theDataNew);
 		}
 		theData.publicUpdatesChannelId =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
-		theData.region = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.region = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.rulesChannelId = this->randomizeId();
 		theData.splash = this->randomizeId();
 		theData.systemChannelFlags = SystemChannelFlags{ this->randomize8BitUInt() };
@@ -178,7 +178,7 @@ namespace DiscordCoreLoader {
 			theDataNew.channelId = this->randomizeId();
 			theDataNew.deaf = true;
 			theDataNew.guildId = guildId;
-			theDataNew.member = theData.members[this->randomize8BitInt(0, theData.members.size() - 1)];
+			theDataNew.member = theData.members[this->randomize8BitInt(0, static_cast<int8_t>(theData.members.size() - 1))];
 			theDataNew.mute = true;
 			theDataNew.requestToSpeakTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 			theDataNew.selfDeaf = true;
@@ -191,7 +191,7 @@ namespace DiscordCoreLoader {
 		}
 		WelcomeScreenData theDataNew{};
 		theDataNew.description =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.welcomeScreen = theDataNew;
 		theData.widgetChannelId = this->randomizeId();
 		return theData;
@@ -199,9 +199,9 @@ namespace DiscordCoreLoader {
 
 	RoleData ObjectGenerator::generateRole(uint64_t position) {
 		RoleData theData{};
-		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.unicodeEmoji =
-			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.permissions = this->randomize64BitUInt(0, static_cast<uint64_t>(Permission::Moderate_Members));
 		theData.tags.premiumSubscriber = static_cast<bool>(this->randomize8BitInt(0, 1));
 		theData.mentionable = static_cast<bool>(this->randomize8BitInt(0, 1));
@@ -219,9 +219,9 @@ namespace DiscordCoreLoader {
 
 	UserData ObjectGenerator::generateUser() {
 		UserData theData{};
-		theData.userName = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
-		theData.email = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
-		theData.email = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
+		theData.userName = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.email = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData.email = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData.discriminator = std::string(std::to_string(this->randomize8BitInt()) + std::to_string(this->randomize8BitInt())).substr(0, 4);
 		theData.premiumType = static_cast<PremiumType>(this->randomize8BitInt());
 		theData.avatar = std::to_string(this->randomize64BitUInt());
