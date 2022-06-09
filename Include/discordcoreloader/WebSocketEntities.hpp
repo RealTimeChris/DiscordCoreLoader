@@ -55,6 +55,8 @@ namespace DiscordCoreLoader {
 
 		void sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept;
 
+		void storeMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode) noexcept;
+
 		void sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept;
 
 		std::jthread* getTheTask() noexcept;
@@ -66,7 +68,6 @@ namespace DiscordCoreLoader {
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
-		std::unordered_map<SOCKET, int32_t> lastNumberSent{};
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
@@ -76,6 +77,7 @@ namespace DiscordCoreLoader {
 		std::atomic_bool doWeConnect{ false };
 		const int8_t maxReconnectTries{ 10 };
 		bool doWeAllowReconnection{ false };
+		nlohmann::json theCurrentMessage{};
 		int32_t heartbeatInterval{ 45000 };
 		int8_t currentReconnectTries{ 0 };
 		SOCKET currentIndex{ 0 };
@@ -87,7 +89,7 @@ namespace DiscordCoreLoader {
 		ErlPacker erlPacker{};
 		JSONIFier jsonifier{};
 
-		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept;
+		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept;
 
 		std::vector<std::string> tokenize(const std::string&, const std::string& = "\r\n", SOCKET theIndex = 0) noexcept;
 
