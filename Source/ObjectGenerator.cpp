@@ -128,7 +128,7 @@ namespace DiscordCoreLoader {
 			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
 		theData.discoverySplash = this->randomizeId();
 		theData.explicitContentFilter = static_cast<ExplicitContentFilterLevel>(this->randomize8BitUInt());
-		for (uint32_t x = 0; x < this->randomize8BitUInt() % 25; x += 1) {
+		for (int32_t x = 0; x < this->randomize8BitUInt() % 25; x += 1) {
 			theData.features.push_back(
 				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount))));
 		}
@@ -141,14 +141,14 @@ namespace DiscordCoreLoader {
 		theData.maxPresences = this->randomize32BitUInt();
 		theData.maxVideoChannelUsers = this->randomize32BitUInt();
 		theData.mfaLevel = static_cast<MFALevel>(this->randomize8BitUInt());
-		theData.name=this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount))));
+		theData.name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount)));
 		theData.nsfwLevel = GuildNSFWLevel{ this->randomize8BitUInt() };
 		theData.ownerId = this->randomizeId();
 		theData.permissions = std::to_string(this->randomize64BitUInt());
 		theData.preferredLocale = this->randomizeString(4);
 		theData.premiumSubscriptionCount = this->randomize32BitUInt();
 		theData.premiumTier = PremiumTier{ this->randomize8BitUInt() };
-		for (uint32_t x = 0; x < theData.memberCount; x += 1) {
+		for (int32_t x = 0; x < theData.memberCount; x += 1) {
 			PresenceUpdateData theDataNew{};
 			ClientStatusData theDataNewer{};
 			theDataNewer.desktop =
@@ -173,12 +173,12 @@ namespace DiscordCoreLoader {
 		theData.systemChannelId = this->randomizeId();
 		theData.vanityUrlCode = this->randomizeString(5);
 		theData.verificationLevel = VerificationLevel{ this->randomize8BitUInt() };
-		for (uint32_t x = 0; x < theData.memberCount; x += 1) {
+		for (int32_t x = 0; x < theData.memberCount; x += 1) {
 			VoiceStateData theDataNew{};
 			theDataNew.channelId = this->randomizeId();
 			theDataNew.deaf = true;
 			theDataNew.guildId = guildId;
-			theDataNew.member = theData.members[this->randomize8BitUInt(0, theData.members.size() - 1)];
+			theDataNew.member = theData.members[this->randomize8BitInt(0, theData.members.size() - 1)];
 			theDataNew.mute = true;
 			theDataNew.requestToSpeakTimestamp = convertTimeInMsToDateTimeString(time(nullptr), TimeFormat::LongDateTime);
 			theDataNew.selfDeaf = true;

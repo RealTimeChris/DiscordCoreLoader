@@ -77,7 +77,7 @@ namespace DiscordCoreLoader {
 		jsonData["flags"] = guildOld.flags;
 		jsonData["icon"] = guildOld.icon;
 		jsonData["icon_hash"] = guildOld.iconHash;
-		jsonData["joined_at"] = guildOld.joinedAt;
+		jsonData["joined_at"] = guildOld.joinedAt.getOriginalTimeStamp();
 		jsonData["max_members"] = guildOld.maxMembers;
 		jsonData["max_presences"] = guildOld.maxPresences;
 		jsonData["max_video_channel_users"] = guildOld.maxVideoChannelUsers;
@@ -116,7 +116,7 @@ namespace DiscordCoreLoader {
 			theDataNew["guild_id"] = value.guildId;
 			theDataNew["member"] = this->JSONIFYGuildMember(std::move(value.member));
 			theDataNew["mute"] = value.mute;
-			theDataNew["request_to_speak_timestamp"] = value.requestToSpeakTimestamp;
+			theDataNew["request_to_speak_timestamp"] = value.requestToSpeakTimestamp.getOriginalTimeStamp();
 			theDataNew["self_deaf"] = value.selfDeaf;
 			theDataNew["self_mute"] = value.selfMute;
 			theDataNew["self_stream"] = value.selfStream;
