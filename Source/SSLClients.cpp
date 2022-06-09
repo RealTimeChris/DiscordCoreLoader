@@ -119,11 +119,11 @@ namespace DiscordCoreLoader {
 		this->port = portNew;
 
 #ifdef WIN32
-		std::string certPath{ getCurrentPath() + "\\cert.pem" };
-		std::string keyPath{ getCurrentPath() + "\\key.pem" };
+		std::string certPath{ getCurrentPath() + "\\Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "\\Key.pem" };
 #else
-		std::string certPath{ getCurrentPath() + "/cert.pem" };
-		std::string keyPath{ getCurrentPath() + "/key.pem" };
+		std::string certPath{ getCurrentPath() + "/Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "/Key.pem" };
 #endif
 
 		addrinfoWrapper hints{ nullptr };
@@ -256,7 +256,7 @@ namespace DiscordCoreLoader {
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
-		timeval checkTime{ .tv_usec = 100000 };
+		timeval checkTime{ .tv_usec = 100 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
