@@ -220,8 +220,8 @@ namespace DiscordCoreLoader {
 			this->theClients[theIndex]->currentGuildCount += 1;
 			this->theClients[theIndex]->lastNumberSent += 1;
 			for (auto& value: this->theGuildMessage) {
-				this->theClients[theIndex]->writeData(value);
-				std::cout << "WERE HERE WERE HERE LAST ONE SENT: " << this->theClients[theIndex]->lastNumberSent << std::endl;
+				std::string newString = value;
+				this->theClients[theIndex]->writeData(newString);
 			}
 		}
 	}
@@ -250,17 +250,16 @@ namespace DiscordCoreLoader {
 		}
 		jsonData["d"]["v"] = 10;
 		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(this->jsonifier.generateUser());
-		std::cout << "THIS IS IT!: " << jsonData.dump() << std::endl;
+		
 		if (this->theReadyMessage.size() == 0) {
 			this->storeMessage(jsonData, this->opCode);
 			this->theReadyMessage = this->theGuildMessage;
+			
 			this->theGuildMessage.clear();
 		}
-		if (this->theGuildMessage.size() == 0) {
-			this->storeMessage(this->discordCoreClient->theGuildHolder, this->opCode);
-		}
 		for (auto& value: this->theReadyMessage) {
-			this->theClients[theIndex]->writeData(value);
+			std::string newString = value;
+			this->theClients[theIndex]->writeData(newString);
 		}
 	}
 
@@ -470,13 +469,14 @@ namespace DiscordCoreLoader {
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
-					std::cout << "WERE HERE WERE HERE" << std::endl;
 				}
 				if (this->theClients.size() > 0) {
 					for (auto& [key, value]: this->theClients) {
 						if (value->outputBuffer.size() == 0 && value->areWeConnected) {
 							if (value->sendGuilds) {
-								std::cout << "WERE HERE WERE HERE" << std::endl;
+								if (this->theGuildMessage.size() == 0) {
+									this->storeMessage(this->discordCoreClient->theGuildHolder, this->opCode);
+								}
 								this->sendCreateGuilds(key);
 							}
 						}
