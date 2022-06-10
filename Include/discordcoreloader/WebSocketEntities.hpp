@@ -55,6 +55,8 @@ namespace DiscordCoreLoader {
 
 		void sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept;
 
+		void storeMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode) noexcept;
+
 		void sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept;
 
 		std::jthread* getTheTask() noexcept;
@@ -70,6 +72,8 @@ namespace DiscordCoreLoader {
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
 		nlohmann::json currentConnectionData{ 0, 0 };
+		std::vector<std::string> theGuildMessage{};
+		std::vector<std::string> theReadyMessage{};
 		SOCKETWrapper currentNewSocket{ nullptr };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_bool doWeConnect{ false };
@@ -86,7 +90,7 @@ namespace DiscordCoreLoader {
 		ErlPacker erlPacker{};
 		JSONIFier jsonifier{};
 
-		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept;
+		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept;
 
 		std::vector<std::string> tokenize(const std::string&, const std::string& = "\r\n", SOCKET theIndex = 0) noexcept;
 

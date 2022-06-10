@@ -294,6 +294,7 @@ namespace DiscordCoreLoader {
 		SOCKETWrapper clientSocket{ nullptr };
 		MessagePackage theCurrentMessage{};
 		SSL_CTX* theContext{ nullptr };
+		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
 		uint64_t bytesWritten{ 0 };
