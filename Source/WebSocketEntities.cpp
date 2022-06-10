@@ -30,26 +30,6 @@ namespace DiscordCoreLoader {
 	constexpr uint8_t webSocketFinishBit{ (1u << 7u) };
 	constexpr uint8_t webSocketMaskBit{ (1u << 7u) };
 
-	template<typename ReturnType> void etfByteOrder(ReturnType x, ReturnType& theValue) {
-		const uint8_t byteSize{ 8 };
-		for (uint32_t y = 0; y < sizeof(ReturnType); y += 1) {
-			theValue |= static_cast<ReturnType>(static_cast<uint8_t>(x >> (byteSize * y))) << byteSize * (sizeof(ReturnType) - y - 1);
-		}
-	}
-
-	template<typename ReturnType> void readBits(const ErlPackBuffer& buffer, ReturnType& theValue) {
-		const uint8_t byteSize{ 8 };
-		if (buffer.offSet + sizeof(ReturnType) > buffer.buffer.size()) {
-			throw ErlPackError("ETF Parse Error: readBits() past end of buffer");
-		}
-		ReturnType newValue{ 0 };
-		for (uint64_t x = 0; x < sizeof(ReturnType); x += 1) {
-			newValue |= static_cast<ReturnType>(static_cast<uint64_t>(buffer.buffer.data()[buffer.offSet + x]) << (x * static_cast<uint64_t>(byteSize)));
-		}
-		buffer.offSet += sizeof(ReturnType);
-		etfByteOrder(newValue, theValue);
-	}
-
 	BaseSocketAgent::BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew) noexcept {
 		this->jsonifier = discordCoreClient->configParser.getTheData();
 		this->webSocketSSLServerMain = webSocketSSLServerMainNew;
@@ -82,61 +62,6 @@ namespace DiscordCoreLoader {
 
 	std::jthread* BaseSocketAgent::getTheTask() noexcept {
 		return this->theTask.get();
-	}
-
-	void BaseSocketAgent::storeMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode) noexcept {
-		try {
-			uint64_t theHeaderLength{};
-			std::string theVector{};
-			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
-				theVector = this->erlPacker.parseJsonToEtf(dataToSend);
-			} else {
-				theVector = dataToSend.dump();
-			}
-			if (theVector.size() <= webSocketMaxPayloadLengthSmall) {
-				theHeaderLength = 2;
-			} else if (theVector.size() <= webSocketMaxPayloadLengthLarge) {
-				theHeaderLength = 4;
-			} else {
-				theHeaderLength = 10;
-			}
-			uint64_t totalLength{ theVector.size() };
-			std::vector<std::string> theStrings{};
-			if (theVector.size() > (static_cast<uint64_t>(16) * 1024) - theHeaderLength) {
-				uint64_t incrementAmount{ (static_cast<uint64_t>(16) * 1024) - theHeaderLength };
-				uint64_t remainingBytes{ theVector.size() };
-				while (remainingBytes > 0) {
-					std::string theString{};
-					theString.insert(theString.begin(), theVector.end() - remainingBytes, theVector.end() - remainingBytes + incrementAmount);
-					remainingBytes -= incrementAmount;
-					theStrings.push_back(std::move(theString));
-					if (remainingBytes < (static_cast<uint64_t>(16) * 1024) - theHeaderLength) {
-						incrementAmount = remainingBytes;
-					}
-				}
-
-			} else {
-				std::string theString{};
-				theString.insert(theString.begin(), theVector.begin(), theVector.end());
-				totalLength = theString.size();
-				theStrings.push_back(std::move(theString));
-			}
-			for (uint64_t x = 0; x < static_cast<uint64_t>(theStrings.size()); x += 1) {
-				std::string header{};
-				if (x == 0) {
-					this->createHeader(header, totalLength, theOpCode, true);
-				}
-				std::string theVectorNew{};
-				theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
-				theVectorNew.insert(theVectorNew.begin() + header.size(), theStrings[x].begin(), theStrings[x].end());
-				this->theGuildMessage.push_back(theVectorNew);
-			}
-
-		} catch (...) {
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
-				reportException("BaseSocketAgent::sendMessage()");
-			}
-		}
 	}
 
 	void BaseSocketAgent::sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept {
@@ -185,21 +110,11 @@ namespace DiscordCoreLoader {
 			for (uint64_t x = 0; x < static_cast<uint64_t>(theStrings.size()); x += 1) {
 				std::string header{};
 				if (x == 0) {
-					this->createHeader(header, totalLength, theOpCode, true);
+					this->createHeader(header, totalLength, theOpCode, true, theIndex);
 				}
 				std::string theVectorNew{};
 				theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
 				theVectorNew.insert(theVectorNew.begin() + header.size(), theStrings[x].begin(), theStrings[x].end());
-				if (dataToSend["op"] == 2311123230) {
-					ErlPackBuffer theBuffer{};
-					theBuffer.buffer = theVectorNew;
-					for (auto& value: theVectorNew) {
-						int8_t theValue{};
-						readBits(theBuffer, theValue);
-						std::cout << theValue;
-					}
-					//std::cout << theVectorNew << std::endl;
-				}
 				this->theClients[theIndex]->writeData(theVectorNew);
 			}
 
@@ -211,7 +126,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept {
+	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept {
 		try {
 			if (isItFinal) {
 				outBuffer.push_back(static_cast<uint8_t>(opCodeNew) | webSocketFinishBit);
@@ -240,24 +155,25 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::createHeader()");
 			}
+			this->handleDroppedConnection(theIndex);
 			return uint64_t{};
 		}
 	}
 
 	void BaseSocketAgent::sendCreateGuilds(SOCKET theIndex) noexcept {
-		if (this->theClients[theIndex]->currentGuildCount<this->theClients[theIndex]->totalGuildCount&& this->theClients[theIndex]->lastNumberSent> 0) {
+		if (this->theClients[theIndex]->currentGuildCount < this->theClients[theIndex]->totalGuildCount) {
 			this->theClients[theIndex]->currentGuildCount += 1;
 			this->theClients[theIndex]->lastNumberSent += 1;
-			for (auto& value: this->theGuildMessage) {
-				std::string newString = value;
-				this->theClients[theIndex]->writeData(newString);
+			auto theGuildNew = this->discordCoreClient->theGuildHolder;
+			theGuildNew["s"] = this->theClients[theIndex]->lastNumberSent;
+			WebSocketMessage theMessage{};
+			theMessage.jsonMsg = std::move(theGuildNew);
+			if (this->theMode == WebSocketMode::ETF) {
+				theMessage.theOpCode = WebSocketOpCode::Op_Binary;
+			} else {
+				theMessage.theOpCode = WebSocketOpCode::Op_Text;
 			}
-			nlohmann::json theData{};
-			theData["d"];
-			theData["op"] = 2311123230;
-			theData["t"] = "GUILD_CREATE";
-			theData["s"] = 1110;
-			this->sendMessage(theData, this->opCode, theIndex);
+			this->theClients[theIndex]->theMessageQueue.push(std::move(theMessage));
 		}
 	}
 
@@ -285,17 +201,21 @@ namespace DiscordCoreLoader {
 		}
 		jsonData["d"]["v"] = 10;
 		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(this->jsonifier.generateUser());
-		
-		if (this->theReadyMessage.size() == 0) {
-			this->storeMessage(jsonData, this->opCode);
-			this->theReadyMessage = this->theGuildMessage;
-			
-			this->theGuildMessage.clear();
+		WebSocketMessage theMessage{};
+		theMessage.jsonMsg = std::move(jsonData);
+		if (this->theMode == WebSocketMode::ETF) {
+			theMessage.theOpCode = WebSocketOpCode::Op_Binary;
+		} else {
+			theMessage.theOpCode = WebSocketOpCode::Op_Text;
 		}
-		for (auto& value: this->theReadyMessage) {
-			std::string newString = value;
-			this->theClients[theIndex]->writeData(newString);
+
+		std::queue<WebSocketMessage> theMessageQueue{};
+		theMessageQueue.push(std::move(theMessage));
+		for (uint32_t x = 0; x < this->theClients[theIndex]->theMessageQueue.size(); x += 1) {
+			theMessageQueue.push(std::move(this->theClients[theIndex]->theMessageQueue.front()));
+			this->theClients[theIndex]->theMessageQueue.pop();
 		}
+		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
 	}
 
 	void BaseSocketAgent::sendHelloMessage(SOCKET theIndex) noexcept {
@@ -477,7 +397,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::sendFinalMessage(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::sendFinalMessage(SOCKET theIndex)noexcept {
 		if (this->theClients[theIndex]->outputBuffer.size() == 0) {
 			if (this->theClients[theIndex]->theMessageQueue.size() > 0) {
 				WebSocketMessage newMessage = std::move(this->theClients[theIndex]->theMessageQueue.front());
@@ -507,13 +427,11 @@ namespace DiscordCoreLoader {
 				}
 				if (this->theClients.size() > 0) {
 					for (auto& [key, value]: this->theClients) {
-						if (value->outputBuffer.size() == 0 && value->sendGuilds) {
-							if (this->theGuildMessage.size() == 0) {
-								this->storeMessage(this->discordCoreClient->theGuildHolder, this->opCode);
+						if (value->outputBuffer.size() == 0) {
+							if (value->sendGuilds) {
+								this->sendCreateGuilds(key);
 							}
-							this->sendCreateGuilds(key);
 						}
-						
 						this->sendFinalMessage(key);
 						auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
 						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
@@ -560,6 +478,8 @@ namespace DiscordCoreLoader {
 				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
 						  << std::endl;
 			}
+			
+
 
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
@@ -733,7 +653,7 @@ namespace DiscordCoreLoader {
 					this->handleBuffer(theSocket);
 				}
 			}
-
+			
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKey + "\r\n\r\n";
 			this->sendMessage(&sendString, theSocket);
