@@ -90,7 +90,7 @@ namespace DiscordCoreLoader {
 		jsonData["preferred_locale"] = guildOld.preferredLocale;
 		jsonData["premium_subscription_count"] = guildOld.premiumSubscriptionCount;
 		jsonData["premium_tier"] = guildOld.premiumTier;
-		for (auto&[key,value]:guildOld.presences) {
+		for (auto& [key, value]: guildOld.presences) {
 			nlohmann::json theDataNew{};
 			theDataNew["guild_id"] = value.guildId;
 			theDataNew["status"] = value.status;
@@ -153,7 +153,7 @@ namespace DiscordCoreLoader {
 	nlohmann::json JSONIFier::JSONIFYChannel(ChannelData&& theData) {
 		nlohmann::json jsonData{};
 		jsonData["thread_metadata"]["auto_archive_duration"] = theData.threadMetadata.autoArchiveDuration;
-		for (auto& [key, value]: theData.permissionOverwrites){
+		for (auto& [key, value]: theData.permissionOverwrites) {
 			nlohmann::json dataNew{};
 			dataNew["id"] = value.id;
 			dataNew["channel_id"] = value.channelId;

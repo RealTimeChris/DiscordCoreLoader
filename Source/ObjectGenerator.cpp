@@ -22,7 +22,8 @@
 
 namespace DiscordCoreLoader {
 
-	ObjectGenerator::ObjectGenerator(double mean, double stddev) : Randomizer(mean, stddev) {}
+	ObjectGenerator::ObjectGenerator(double mean, double stddev) : Randomizer(mean, stddev) {
+	}
 
 	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles) {
 		GuildMemberData theData{};
@@ -230,7 +231,7 @@ namespace DiscordCoreLoader {
 		theData.publicFlags = randomize8BitInt(0, 255);
 		theData.system = this->randomize8BitInt(0, 1);
 		theData.bot = this->randomize8BitInt(0, 1);
-		theData.flags = randomize8BitInt(0, 255);		
+		theData.flags = randomize8BitInt(0, 255);
 		theData.locale = this->randomizeString(4);
 		theData.id = this->randomizeId();
 		return theData;

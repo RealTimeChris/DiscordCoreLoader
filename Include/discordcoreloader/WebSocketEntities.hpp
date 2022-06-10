@@ -104,7 +104,7 @@ namespace DiscordCoreLoader {
 		void sendCreateGuilds(SOCKET) noexcept;
 
 		void sendReadyMessage(SOCKET) noexcept;
-		
+
 		void sendFinalMessage(SOCKET) noexcept;
 
 		void sendHelloMessage(SOCKET) noexcept;
@@ -117,7 +117,7 @@ namespace DiscordCoreLoader {
 
 		bool parseHeader(SOCKET) noexcept;
 
-		void sendFinalMessage() noexcept; 
+		void sendFinalMessage() noexcept;
 
 		void connectInternal() noexcept;
 	};

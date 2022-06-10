@@ -363,7 +363,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::sendFinalMessage(SOCKET theIndex)noexcept {
+	void BaseSocketAgent::sendFinalMessage(SOCKET theIndex) noexcept {
 		if (this->theClients[theIndex]->outputBuffer.size() == 0) {
 			if (this->theClients[theIndex]->theMessageQueue.size() > 0) {
 				WebSocketMessage newMessage = std::move(this->theClients[theIndex]->theMessageQueue.front());
@@ -615,7 +615,7 @@ namespace DiscordCoreLoader {
 					this->handleBuffer(theSocket);
 				}
 			}
-			
+
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKey + "\r\n\r\n";
 			this->sendMessage(&sendString, theSocket);

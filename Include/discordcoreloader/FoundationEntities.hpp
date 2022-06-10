@@ -1233,7 +1233,7 @@ namespace DiscordCoreLoader {
 		bool pending{};
 		bool mute{};
 		bool deaf{};
-		
+
 		virtual ~GuildMemberData() = default;
 	};
 

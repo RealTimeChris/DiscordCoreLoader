@@ -49,8 +49,7 @@ namespace DiscordCoreLoader {
 #endif
 	}
 
-	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew, int32_t currentShard,
-		int32_t totalNumberOfShards)
+	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew, int32_t currentShard, int32_t totalNumberOfShards)
 		: maxBufferSize(1024 * 16) {
 		this->doWePrintError = doWePrintErrorsNew;
 		this->theContext = theContextNew;
@@ -205,7 +204,6 @@ namespace DiscordCoreLoader {
 				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
 			}
 			return;
-
 		}
 		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
 			if (this->doWePrintError) {

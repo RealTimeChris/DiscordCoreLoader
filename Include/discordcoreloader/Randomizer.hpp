@@ -26,7 +26,6 @@ namespace DiscordCoreLoader {
 
 	class Randomizer {
 	  public:
-
 		Randomizer(double, double);
 
 		std::string randomizeId(uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
@@ -73,6 +72,5 @@ namespace DiscordCoreLoader {
 		std::random_device randomDevice{};
 		std::mt19937_64 randomEngine{ this->randomDevice() };
 		std::normal_distribution<> normalDistribution{};
-		
 	};
 }

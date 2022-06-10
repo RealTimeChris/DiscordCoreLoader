@@ -110,7 +110,7 @@ namespace DiscordCoreLoader {
 			totalShards += 1;
 			this->baseSocketAgentMap[std::to_string(0)]->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
-			
+
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / workerCount;
 				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
