@@ -322,7 +322,7 @@ namespace DiscordCoreLoader {
 		}
 
 		this->closeCode = 0;
-		if ((this->maxReconnectTries > this->currentReconnectTries) && this->doWeAllowReconnection) {
+		if ((this->maxReconnectTries > this->currentReconnectTries)) {
 			this->currentReconnectTries += 1;
 
 			while (this->theClients[theIndex]->theMessageQueue.size() > 0) {
@@ -332,44 +332,10 @@ namespace DiscordCoreLoader {
 		} else {
 			this->doWeQuit->store(true);
 			this->theTask->request_stop();
-
-			this->theClients[theIndex].reset(nullptr);
 		}
 	}
 
 	void BaseSocketAgent::initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept {
-		switch (reason) {
-			case WebSocketCloseCode::Unknown_Error:
-				[[fallthrough]];
-			case WebSocketCloseCode::Unknown_Opcode:
-				[[fallthrough]];
-			case WebSocketCloseCode::Decode_Error:
-				[[fallthrough]];
-			case WebSocketCloseCode::Not_Authenticated:
-				[[fallthrough]];
-			case WebSocketCloseCode::Already_Authenticated:
-				[[fallthrough]];
-			case WebSocketCloseCode::Invalid_Seq:
-				[[fallthrough]];
-			case WebSocketCloseCode::Rate_Limited:
-				[[fallthrough]];
-			case WebSocketCloseCode::Session_Timed_Out: {
-				this->doWeAllowReconnection = true;
-			}
-			case WebSocketCloseCode::Authentication_Failed:
-				[[fallthrough]];
-			case WebSocketCloseCode::Invalid_Shard:
-				[[fallthrough]];
-			case WebSocketCloseCode::Sharding_Required:
-				[[fallthrough]];
-			case WebSocketCloseCode::Invalid_API_Version:
-				[[fallthrough]];
-			case WebSocketCloseCode::Invalid_Intent:
-				[[fallthrough]];
-			case WebSocketCloseCode::Disallowed_Intent: {
-				this->doWeAllowReconnection = false;
-			}
-		}
 		std::string theString{};
 		theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
 		theString.push_back(0);
@@ -435,7 +401,6 @@ namespace DiscordCoreLoader {
 						this->sendFinalMessage(key);
 						auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
 						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-							this->doWeAllowReconnection = true;
 							this->respondToDisconnect(returnValue.returnIndex);
 						}
 						this->handleBuffer(key);
@@ -478,8 +443,6 @@ namespace DiscordCoreLoader {
 				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
 						  << std::endl;
 			}
-			
-
 
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
@@ -604,7 +567,6 @@ namespace DiscordCoreLoader {
 						close |= this->theClients[theIndex]->getInputBuffer()[3] & 0xff;
 						this->closeCode = close;
 						this->theClients[theIndex]->getInputBuffer().clear();
-						this->doWeAllowReconnection = true;
 						this->respondToDisconnect(theIndex);
 						return false;
 					}

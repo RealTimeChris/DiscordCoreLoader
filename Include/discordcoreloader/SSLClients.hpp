@@ -329,7 +329,7 @@ namespace DiscordCoreLoader {
 
 		void submitReconnectionShard(ReconnectionPackage);
 
-		void reconnectShard();
+		ReconnectionPackage reconnectShard();
 
 		SOCKET getNewSocket();
 

@@ -61,6 +61,7 @@ namespace DiscordCoreLoader {
 		int32_t guildQuantity{};
 		std::mutex coutMutex{};
 		JSONIFier jsonifier{};
+		int32_t workerCount{};
 		
 
 		void instantiateWebSockets();

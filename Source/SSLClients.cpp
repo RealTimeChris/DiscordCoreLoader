@@ -373,7 +373,13 @@ namespace DiscordCoreLoader {
 		this->theReconnections.push(theData);
 	}
 
-	void WebSocketSSLServerMain::reconnectShard() {
+	ReconnectionPackage WebSocketSSLServerMain::reconnectShard() {
+		if (this->theReconnections.size() > 0) {
+			auto theReconnect = this->theReconnections.front();
+			this->theReconnections.pop();
+			return theReconnect;
+		}
+		return ReconnectionPackage{};
 	}
 
 	SOCKET WebSocketSSLServerMain::getNewSocket() {

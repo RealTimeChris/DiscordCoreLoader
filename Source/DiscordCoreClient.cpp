@@ -53,6 +53,16 @@ namespace DiscordCoreLoader {
 		this->generateGuildData();
 		this->collectShardInfo();
 		this->instantiateWebSockets();
+		while (!Globals::doWeQuit.load()) {
+			this->webSocketSSLServerMain->reconnectShard();
+			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
+
+			if (returnShard.theMap != nullptr) {
+				int32_t currentAgent = returnShard.currentShard / this->workerCount;
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+		}
 		this->baseSocketAgentMap[std::to_string(this->shardingOptions.startingShard)]->getTheTask()->join();
 	}
 
@@ -75,7 +85,7 @@ namespace DiscordCoreLoader {
 
 	void DiscordCoreClient::instantiateWebSockets() {
 		this->shardingOptions.numberOfShardsForThisProcess = this->shardingOptions.totalNumberOfShards;
-		int32_t workerCount{ static_cast<int32_t>(std::thread::hardware_concurrency()) - 1 };
+		this->workerCount = static_cast<int32_t>(std::thread::hardware_concurrency()) - 1;
 		int32_t shardsPerWorker{ static_cast<int32_t>(floor(static_cast<float>(this->shardingOptions.totalNumberOfShards) / static_cast<float>(workerCount))) };
 		int32_t leftOverShards{ this->shardingOptions.totalNumberOfShards - shardsPerWorker * workerCount };
 
@@ -99,9 +109,20 @@ namespace DiscordCoreLoader {
 		for (int32_t y = 1; y < shardsPerWorkerVect[0]; y += 1) {
 			totalShards += 1;
 			this->baseSocketAgentMap[std::to_string(0)]->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
+			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
+			
+			if (returnShard.theMap != nullptr) {
+				int32_t currentAgent = returnShard.currentShard / workerCount;
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+			}
 		}
 
 		for (int32_t x = 1; x < workerCount; x += 1) {
+			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
+			if (returnShard.theMap != nullptr) {
+				int32_t currentAgent = returnShard.currentShard / this->workerCount;
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+			}
 			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
 				totalShards += 1;
