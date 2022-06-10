@@ -21,22 +21,9 @@
 
 namespace DiscordCoreLoader {
 
-	Randomizer::Randomizer(double mean, double stddeviation) {
-		this->normalDistribution = std::normal_distribution{ mean, stddeviation };
-	}
-
 	std::string Randomizer::randomizeString(int64_t length) {
 		std::string returnString{};
 		for (uint32_t x = 0; x < length; x += 1) {
-			auto newValue = static_cast<int8_t>((static_cast<float>(this->randomEngine()) / static_cast<float>(this->randomEngine.max()) * 92.0f) + 35.0f);
-			returnString.push_back(newValue);
-		}
-		return returnString;
-	}
-
-	std::string Randomizer::randomizeString() {
-		std::string returnString{};
-		for (uint32_t x = 0; x < this->normalDistribution(this->randomEngine); x += 1) {
 			auto newValue = static_cast<int8_t>((static_cast<float>(this->randomEngine()) / static_cast<float>(this->randomEngine.max()) * 92.0f) + 35.0f);
 			returnString.push_back(newValue);
 		}

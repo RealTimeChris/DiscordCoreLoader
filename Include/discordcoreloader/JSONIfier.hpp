@@ -28,7 +28,7 @@ namespace DiscordCoreLoader {
 
 	class JSONIFier : public ObjectGenerator {
 	  public:
-		JSONIFier() : ObjectGenerator(this->meanForStringLength, this->stdDeviationForStringLength){};
+		JSONIFier() = default;
 
 		JSONIFier& operator=(ConfigData&&);
 

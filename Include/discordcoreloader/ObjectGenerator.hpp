@@ -27,7 +27,6 @@ namespace DiscordCoreLoader {
 
 	class ObjectGenerator : public Randomizer {
 	  public:
-		ObjectGenerator(double, double);
 
 		GuildMemberData generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles);
 

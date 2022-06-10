@@ -33,7 +33,7 @@ namespace DiscordCoreLoader {
 		return *this;
 	}
 
-	JSONIFier::JSONIFier(ConfigData&& configData) : ObjectGenerator(configData.meanForStringLength, configData.stdDeviationForStringLength) {
+	JSONIFier::JSONIFier(ConfigData&& configData)  {
 		*this = std::move(configData);
 	}
 

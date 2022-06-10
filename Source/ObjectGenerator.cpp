@@ -22,9 +22,6 @@
 
 namespace DiscordCoreLoader {
 
-	ObjectGenerator::ObjectGenerator(double mean, double stddev) : Randomizer(mean, stddev) {
-	}
-
 	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles) {
 		GuildMemberData theData{};
 		theData.nick = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
