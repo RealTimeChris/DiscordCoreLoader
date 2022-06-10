@@ -30,26 +30,6 @@ namespace DiscordCoreLoader {
 	constexpr uint8_t webSocketFinishBit{ (1u << 7u) };
 	constexpr uint8_t webSocketMaskBit{ (1u << 7u) };
 
-	template<typename ReturnType> void etfByteOrder(ReturnType x, ReturnType& theValue) {
-		const uint8_t byteSize{ 8 };
-		for (uint32_t y = 0; y < sizeof(ReturnType); y += 1) {
-			theValue |= static_cast<ReturnType>(static_cast<uint8_t>(x >> (byteSize * y))) << byteSize * (sizeof(ReturnType) - y - 1);
-		}
-	}
-
-	template<typename ReturnType> void readBits(const ErlPackBuffer& buffer, ReturnType& theValue) {
-		const uint8_t byteSize{ 8 };
-		if (buffer.offSet + sizeof(ReturnType) > buffer.buffer.size()) {
-			throw ErlPackError("ETF Parse Error: readBits() past end of buffer");
-		}
-		ReturnType newValue{ 0 };
-		for (uint64_t x = 0; x < sizeof(ReturnType); x += 1) {
-			newValue |= static_cast<ReturnType>(static_cast<uint64_t>(buffer.buffer.data()[buffer.offSet + x]) << (x * static_cast<uint64_t>(byteSize)));
-		}
-		buffer.offSet += sizeof(ReturnType);
-		etfByteOrder(newValue, theValue);
-	}
-
 	BaseSocketAgent::BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew) noexcept {
 		this->jsonifier = discordCoreClient->configParser.getTheData();
 		this->webSocketSSLServerMain = webSocketSSLServerMainNew;
@@ -190,16 +170,6 @@ namespace DiscordCoreLoader {
 				std::string theVectorNew{};
 				theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
 				theVectorNew.insert(theVectorNew.begin() + header.size(), theStrings[x].begin(), theStrings[x].end());
-				if (dataToSend["op"] == 2311123230) {
-					ErlPackBuffer theBuffer{};
-					theBuffer.buffer = theVectorNew;
-					for (auto& value: theVectorNew) {
-						int8_t theValue{};
-						readBits(theBuffer, theValue);
-						std::cout << theValue;
-					}
-					//std::cout << theVectorNew << std::endl;
-				}
 				this->theClients[theIndex]->writeData(theVectorNew);
 			}
 
@@ -245,19 +215,14 @@ namespace DiscordCoreLoader {
 	}
 
 	void BaseSocketAgent::sendCreateGuilds(SOCKET theIndex) noexcept {
-		if (this->theClients[theIndex]->currentGuildCount<this->theClients[theIndex]->totalGuildCount&& this->theClients[theIndex]->lastNumberSent> 0) {
+		if (this->theClients[theIndex]
+				->currentGuildCount<this->theClients[theIndex]->totalGuildCount&& this->theClients[theIndex]->areWeConnected&& this->theClients[theIndex]->lastNumberSent> 0) {
 			this->theClients[theIndex]->currentGuildCount += 1;
 			this->theClients[theIndex]->lastNumberSent += 1;
 			for (auto& value: this->theGuildMessage) {
 				std::string newString = value;
 				this->theClients[theIndex]->writeData(newString);
 			}
-			nlohmann::json theData{};
-			theData["d"];
-			theData["op"] = 2311123230;
-			theData["t"] = "GUILD_CREATE";
-			theData["s"] = 1110;
-			this->sendMessage(theData, this->opCode, theIndex);
 		}
 	}
 
@@ -507,13 +472,14 @@ namespace DiscordCoreLoader {
 				}
 				if (this->theClients.size() > 0) {
 					for (auto& [key, value]: this->theClients) {
-						if (value->outputBuffer.size() == 0 && value->sendGuilds) {
-							if (this->theGuildMessage.size() == 0) {
-								this->storeMessage(this->discordCoreClient->theGuildHolder, this->opCode);
+						if (value->outputBuffer.size() == 0 && value->areWeConnected) {
+							if (value->sendGuilds) {
+								if (this->theGuildMessage.size() == 0) {
+									this->storeMessage(this->discordCoreClient->theGuildHolder, this->opCode);
+								}
+								this->sendCreateGuilds(key);
 							}
-							this->sendCreateGuilds(key);
 						}
-						
 						this->sendFinalMessage(key);
 						auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
 						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
@@ -583,6 +549,7 @@ namespace DiscordCoreLoader {
 				this->sendReadyMessage(theIndex);
 				this->theClients[theIndex]->getInputBuffer().clear();
 				this->theClients[theIndex]->sendGuilds = true;
+				this->theClients[theIndex]->areWeConnected = true;
 			}
 			return;
 		} catch (...) {
