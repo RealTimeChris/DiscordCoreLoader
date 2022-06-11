@@ -288,6 +288,8 @@ namespace DiscordCoreLoader {
 
 		uint64_t getBytesRead() noexcept;
 
+		~WebSocketSSLShard();
+
 	  protected:
 		std::queue<WebSocketMessage> theMessageQueue{};
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
@@ -295,6 +297,7 @@ namespace DiscordCoreLoader {
 		SOCKETWrapper clientSocket{ nullptr };
 		MessagePackage theCurrentMessage{};
 		SSL_CTX* theContext{ nullptr };
+		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
 		uint64_t bytesWritten{ 0 };

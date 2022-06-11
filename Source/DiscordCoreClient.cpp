@@ -54,7 +54,6 @@ namespace DiscordCoreLoader {
 		this->collectShardInfo();
 		this->instantiateWebSockets();
 		while (!Globals::doWeQuit.load()) {
-			this->webSocketSSLServerMain->reconnectShard();
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
 
 			if (returnShard.theMap != nullptr) {
@@ -70,7 +69,7 @@ namespace DiscordCoreLoader {
 		this->webSocketSSLServerMain =
 			std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true, &Globals::doWeQuit);
 		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
-		this->baseSocketAgentMap.insert_or_assign(std::to_string(0), std::move(thePtr));
+		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
 		this->baseSocketAgentMap[std::to_string(0)]->connect(0, 0);
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
@@ -128,7 +127,7 @@ namespace DiscordCoreLoader {
 				totalShards += 1;
 				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
 			}
-			this->baseSocketAgentMap.insert_or_assign(std::to_string(x), std::move(thePtr02));
+			this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 		}
 		if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 			std::cout << shiftToBrightGreen() << "All of the shards are connected for the current process!" << reset() << std::endl << std::endl;

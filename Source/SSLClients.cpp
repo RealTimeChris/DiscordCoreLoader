@@ -75,6 +75,8 @@ namespace DiscordCoreLoader {
 
 			while (SSL_accept(this->ssl) != 1) {
 			}
+
+			this->areWeConnected = true;
 		}
 	};
 
@@ -108,6 +110,10 @@ namespace DiscordCoreLoader {
 
 	uint64_t WebSocketSSLShard::getBytesRead() noexcept {
 		return this->bytesRead;
+	}
+
+	WebSocketSSLShard::~WebSocketSSLShard() {
+		this->areWeConnected = false;
 	}
 
 	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew) {
@@ -205,6 +211,7 @@ namespace DiscordCoreLoader {
 			}
 			return;
 		}
+
 		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
@@ -220,7 +227,7 @@ namespace DiscordCoreLoader {
 		}
 
 		SSL_CTX_set_verify(this->context, SSL_VERIFY_PEER, NULL);
-		if (!SSL_CTX_load_verify_locations(this->context, "Cert.pem", NULL)) {
+		if (!SSL_CTX_load_verify_locations(this->context, certPath.c_str(), NULL)) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_load_verify_locations() Error: ");
 			}

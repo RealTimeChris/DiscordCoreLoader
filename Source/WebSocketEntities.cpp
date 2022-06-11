@@ -309,7 +309,7 @@ namespace DiscordCoreLoader {
 	}
 
 	void BaseSocketAgent::respondToDisconnect(SOCKET theIndex) noexcept {
-		std::string theString{};
+		std::string theString{};;
 		theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
 		theString.push_back(0);
 		theString.push_back(static_cast<int8_t>(static_cast<uint16_t>(1000) >> 8));
@@ -324,10 +324,6 @@ namespace DiscordCoreLoader {
 		this->closeCode = 0;
 		if ((this->maxReconnectTries > this->currentReconnectTries)) {
 			this->currentReconnectTries += 1;
-
-			while (this->theClients[theIndex]->theMessageQueue.size() > 0) {
-				this->theClients[theIndex]->theMessageQueue.pop();
-			}
 			this->handleDroppedConnection(theIndex);
 		} else {
 			this->doWeQuit->store(true);
@@ -400,13 +396,15 @@ namespace DiscordCoreLoader {
 						}
 					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
-						this->handleBuffer(key);
-						if (value->outputBuffer.size() == 0) {
-							if (value->sendGuilds) {
-								this->sendCreateGuilds(key);
+						if (value->areWeConnected) {
+							this->handleBuffer(key);
+							if (value->outputBuffer.size() == 0) {
+								if (value->sendGuilds) {
+									this->sendCreateGuilds(key);
+								}
 							}
+							this->sendFinalMessage(key);
 						}
-						this->sendFinalMessage(key);
 					}
 				}
 				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
@@ -608,7 +606,7 @@ namespace DiscordCoreLoader {
 			SOCKET theSocket = theClient->clientSocket;
 			this->currentIndex = theSocket;
 
-			this->theClients.insert_or_assign(theSocket, std::move(theClient));
+			this->theClients[theSocket] = std::move(theClient);
 			this->state = WebSocketState::Initializing;
 
 			while (this->authKey == "") {

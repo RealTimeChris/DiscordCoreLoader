@@ -65,12 +65,12 @@ namespace DiscordCoreLoader {
 			theDataNew.channelId = this->randomizeId();
 			theDataNew.id = this->randomizeId();
 			theDataNew.type = static_cast<PermissionOverwritesType>(this->randomize8BitInt(0, 1));
-			theData->permissionOverwrites.insert_or_assign(theDataNew.id, theDataNew);
+			theData->permissionOverwrites[theDataNew.id] = theDataNew;
 		}
 		theData->threadMetadata.autoArchiveDuration = this->randomize32BitUInt();
 		for (int32_t x = 0; x < this->randomize8BitInt(0, 10); x += 1) {
 			UserData theDataNew = *this->generateUser();
-			theData->recipients.insert_or_assign(theDataNew.id, theDataNew);
+			theData->recipients[theDataNew.id] = theDataNew;
 		}
 		theData->type = static_cast<ChannelType>(this->randomize8BitInt(0, 24));
 		theData->threadMetadata.archived = this->randomize8BitInt(0, 1);
@@ -159,7 +159,7 @@ namespace DiscordCoreLoader {
 			theDataNew.status =
 				this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 			theDataNew.user = *this->generateUser();
-			theData->presences.insert_or_assign(theDataNew.user.id, theDataNew);
+			theData->presences[theDataNew.user.id] = theDataNew;
 		}
 		theData->publicUpdatesChannelId = this->randomizeId();
 		theData->region = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
