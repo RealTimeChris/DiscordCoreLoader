@@ -276,53 +276,65 @@ namespace DiscordCoreLoader {
 	}
 
 	void BaseSocketAgent::respondToDisconnect(SOCKET theIndex) noexcept {
-		std::string theString{};;
-		theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
-		theString.push_back(0);
-		theString.push_back(static_cast<int8_t>(static_cast<uint16_t>(1000) >> 8));
-		theString.push_back(static_cast<int8_t>(1000 & 0xff));
-		if (this->webSocketSSLServerMain != nullptr) {
-			this->theClients[theIndex]->writeData(theString);
-		}
-		if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
-			std::cout << shiftToBrightRed() << "WebSocket " + this->theClients[theIndex]->shard.dump() + " Closed; Code: " << this->closeCode << reset() << std::endl;
-		}
+		if (theIndex != 0) {
+			std::string theString{};
+			;
+			theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
+			theString.push_back(0);
+			theString.push_back(static_cast<int8_t>(static_cast<uint16_t>(1000) >> 8));
+			theString.push_back(static_cast<int8_t>(1000 & 0xff));
+			if (this->webSocketSSLServerMain != nullptr) {
+				if (this->theClients.contains(theIndex)) {
+					this->theClients[theIndex]->writeData(theString);
+					if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
+						std::cout << shiftToBrightRed() << "WebSocket " + this->theClients[theIndex]->shard.dump() + " Closed; Code: " << this->closeCode << reset() << std::endl;
+					}
+				}
+			}
 
-		this->closeCode = 0;
-		if ((this->maxReconnectTries > this->currentReconnectTries)) {
-			this->currentReconnectTries += 1;
-			this->handleDroppedConnection(theIndex);
-		} else {
-			this->doWeQuit->store(true);
-			this->theTask->request_stop();
+			if ((this->maxReconnectTries > this->currentReconnectTries)) {
+				this->currentReconnectTries += 1;
+				this->handleDroppedConnection(theIndex);
+			} else {
+				this->doWeQuit->store(true);
+				this->theTask->request_stop();
+			}
 		}
 	}
 
 	void BaseSocketAgent::initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept {
-		std::string theString{};
-		theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
-		theString.push_back(0);
-		theString.push_back(static_cast<uint16_t>(reason) >> 8);
-		theString.push_back(static_cast<int8_t>(reason) & 0xff);
-
-		while (this->theClients[theIndex]->theMessageQueue.size() > 0) {
-			this->theClients[theIndex]->theMessageQueue.pop();
+		if (theIndex != 0) {
+			std::string theString{};
+			theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
+			theString.push_back(0);
+			theString.push_back(static_cast<uint16_t>(reason) >> 8);
+			theString.push_back(static_cast<int8_t>(reason) & 0xff);
+			if (this->theClients.contains(theIndex)) {
+				while (this->theClients[theIndex]->theMessageQueue.size() > 0) {
+					this->theClients[theIndex]->theMessageQueue.pop();
+				}
+				WebSocketMessage theMessage{};
+				theMessage.stringMsg = theString;
+				theMessage.theOpCode = WebSocketOpCode::Op_Close;
+				this->theClients[theIndex]->theMessageQueue.push(theMessage);
+			}
 		}
-		WebSocketMessage theMessage{};
-		theMessage.stringMsg = theString;
-		theMessage.theOpCode = WebSocketOpCode::Op_Close;
-		this->theClients[theIndex]->theMessageQueue.push(theMessage);
 	}
 
 	void BaseSocketAgent::handleDroppedConnection(SOCKET theIndex) noexcept {
-		if (this->currentReconnectTries <= this->maxReconnectTries) {
-			this->currentReconnectTries += 1;
-			ReconnectionPackage theData{};
-			theData.currentShard = this->theClients[theIndex]->shard[0];
-			theData.totalShardCount = this->theClients[theIndex]->shard[1];
-			theData.theMap = &this->theClients;
-			theData.theSocket = this->theClients[theIndex]->clientSocket;
-			this->webSocketSSLServerMain->submitReconnectionShard(theData);
+		if (theIndex != 0) {
+			if (this->currentReconnectTries <= this->maxReconnectTries) {
+				this->currentReconnectTries += 1;
+				ReconnectionPackage theData{};
+				if (this->theClients.contains(theIndex)) {
+					theData.currentShard = this->theClients[theIndex]->shard[0];
+					theData.totalShardCount = this->theClients[theIndex]->shard[1];
+					theData.theMap = &this->theClients;
+					theData.theSocket = this->theClients[theIndex]->clientSocket;
+					this->theClients.erase(theIndex);
+				}
+				this->webSocketSSLServerMain->submitReconnectionShard(theData);
+			}
 		}
 	}
 
@@ -363,14 +375,23 @@ namespace DiscordCoreLoader {
 						}
 					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
-						if (value->areWeConnected) {
-							this->handleBuffer(key);
-							if (value->outputBuffer.size() == 0) {
-								if (value->sendGuilds) {
-									this->sendCreateGuilds(key);
+						auto theKey = key;
+						if (this->closeCode == 0) {
+							if (value->areWeConnected) {
+								this->handleBuffer(theKey);
+								if (this->closeCode == 0) {
+									if (value->outputBuffer.size() == 0) {
+										if (value->sendGuilds) {
+											this->sendCreateGuilds(theKey);
+										}
+									}
+									this->sendFinalMessage(theKey);
+								} else {
+									break;
 								}
 							}
-							this->sendFinalMessage(key);
+						} else {
+							break;
 						}
 					}
 				}
@@ -556,7 +577,7 @@ namespace DiscordCoreLoader {
 						return false;
 					}
 					default: {
-						this->closeCode = 0;
+						this->closeCode = 1000;
 						return false;
 					}
 				}

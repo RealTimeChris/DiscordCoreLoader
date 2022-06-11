@@ -264,33 +264,47 @@ namespace DiscordCoreLoader {
 	}
 
 	ProcessIOReturnData WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept {
-		fd_set readSet{}, writeSet{};
+		fd_set readSet{}, writeSet{}, exceptSet{};
 		int32_t readNfds{ 0 }, writeNfds{ 0 }, finalNfds{ 0 };
 		FD_ZERO(&readSet);
 		FD_ZERO(&writeSet);
 		for (auto& [key, value]: theMap) {
+			if (value == nullptr) {
+				continue;
+			}
 			if ((value->outputBuffer.size() > 0 || value->wantWrite) && !value->wantRead) {
 				FD_SET(key, &writeSet);
+				FD_SET(key, &exceptSet);
 				writeNfds = key > writeNfds ? key : writeNfds;
 			}
 			FD_SET(key, &readSet);
+			FD_SET(key, &exceptSet);
 			readNfds = key > readNfds ? key : readNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
+		ProcessIOReturnData returnValue02{};
 		timeval checkTime{ .tv_usec = 0 };
-		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
+		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, &exceptSet, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
 			}
-			return ProcessIOReturnData{ .returnCode = ProcessIOReturnCode::Error, .returnIndex = 0 };
+			returnValue02.returnCode = ProcessIOReturnCode::Error;
+			for (auto& [key, value]: theMap) {
+				if (FD_ISSET(key, &exceptSet)) {
+					returnValue02.returnIndex = value->clientSocket;
+				}
+			}
+			return returnValue02;
 		} else if (resultValue == 0) {
 			return ProcessIOReturnData{ .returnCode = ProcessIOReturnCode::Success, .returnIndex = 0 };
 		}
 
-		ProcessIOReturnData returnValue02{};
 		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		for (auto& [key, value]: theMap) {
+			if (value == nullptr) {
+				continue;
+			}
 			if (FD_ISSET(value->clientSocket, &readSet)) {
 				value->wantRead = false;
 				value->wantWrite = false;

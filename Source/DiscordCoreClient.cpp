@@ -24,6 +24,7 @@
 namespace DiscordCoreLoader {
 
 	namespace Globals {
+		std::atomic_bool doWeDisconnect{ false };
 		std::atomic_bool doWeQuit{ false };
 	}
 
@@ -31,9 +32,9 @@ namespace DiscordCoreLoader {
 		Globals::doWeQuit.store(true);
 	}
 
-	void signalHandler(int32_t) {
+	void signalHandler(int32_t theSignal) {
 		Globals::doWeQuit.store(true);
-		exit(EXIT_SUCCESS);
+		std::exit(EXIT_SUCCESS);
 	}
 
 	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) {
@@ -58,7 +59,13 @@ namespace DiscordCoreLoader {
 
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);				
+			}
+			if (Globals::doWeDisconnect.load()) {
+				std::mt19937_64 theRandomEngine{};
+				size_t theIndex = theRandomEngine() / theRandomEngine.max() * this->baseSocketAgentMap.size();
+				this->baseSocketAgentMap[std::to_string(theIndex)]->theClients.begin().operator*().second->~WebSocketSSLShard();
+				Globals::doWeDisconnect.store(false);
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -121,6 +128,12 @@ namespace DiscordCoreLoader {
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
 				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+			}
+			if (Globals::doWeDisconnect.load()) {
+				std::mt19937_64 theRandomEngine{};
+				size_t theIndex = theRandomEngine() / theRandomEngine.max() * this->baseSocketAgentMap.size();
+				this->baseSocketAgentMap[std::to_string(theIndex)]->theClients.begin().operator*().second->~WebSocketSSLShard();
+				Globals::doWeDisconnect.store(false);
 			}
 			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
