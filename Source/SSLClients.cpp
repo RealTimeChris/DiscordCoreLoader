@@ -136,7 +136,7 @@ namespace DiscordCoreLoader {
 		hints->ai_socktype = SOCK_STREAM;
 		hints->ai_protocol = IPPROTO_TCP;
 
-		if (auto resultValue = getaddrinfo(baseUrlNew.c_str(), portNew.c_str(), hints, this->addrInfo); resultValue != 0) {
+		if (auto resultValue = getaddrinfo(this->baseUrl.c_str(), this->port.c_str(), hints, this->addrInfo); resultValue != 0) {
 			if (this->doWePrintError) {
 				reportError("getaddrinfo() Error: ", resultValue);
 			}
