@@ -389,10 +389,12 @@ namespace DiscordCoreLoader {
 									}
 									this->sendFinalMessage(theKey);
 								} else {
+									this->closeCode = 0;
 									break;
 								}
 							}
 						} else {
+							this->closeCode = 0;
 							break;
 						}
 					}
