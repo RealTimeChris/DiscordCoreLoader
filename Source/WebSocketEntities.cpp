@@ -460,10 +460,25 @@ namespace DiscordCoreLoader {
 					this->discordCoreClient->haveWeCollectedShardingInfo = true;
 					this->discordCoreClient->shardingOptions.startingShard = this->theClients[theIndex]->shard[0];
 				}
-
+				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
+					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+					std::cout << shiftToBrightBlue() << "Connecting Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
+							  << this->theClients[theIndex]->shard[1].get<int32_t>()
+							  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
+							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
+							  << reset() << std::endl;
+				}
 				this->sendReadyMessage(theIndex);
 				this->theClients[theIndex]->getInputBuffer().clear();
 				this->theClients[theIndex]->sendGuilds = true;
+				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
+					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
+							  << this->theClients[theIndex]->shard[1].get<int32_t>()
+							  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
+							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
+							  << reset() << std::endl;
+				}
 			}
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
 				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
@@ -590,18 +605,6 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::connectInternal() noexcept {
 		try {
-			if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralErrorMessages) {
-				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				if (this->currentConnectionData[0] == 0) {
-					std::cout << shiftToBrightBlue() << "Connecting Shard 1 of unknown number...." << reset() << std::endl;
-				} else {
-					std::cout << shiftToBrightBlue() << "Connecting Shard " + std::to_string(this->currentConnectionData[0].get<int32_t>() + 1) << " of "
-							  << this->currentConnectionData[1].get<int32_t>()
-							  << std::string(" Shards for this process. (") + std::to_string(this->currentConnectionData[0].get<int32_t>() + 1) + " of " +
-							std::to_string(this->currentConnectionData[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-							  << reset() << std::endl;
-				}
-			}
 			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket, this->currentConnectionData[0].get<int32_t>(),
 				this->currentConnectionData[1].get<int32_t>());
 			SOCKET theSocket = theClient->clientSocket;
@@ -636,18 +639,6 @@ namespace DiscordCoreLoader {
 			}
 			this->doWeQuit->store(false);
 			this->doWeConnect.store(false);
-			if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralErrorMessages) {
-				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				if (this->currentConnectionData[0] == 0) {
-					std::cout << shiftToBrightGreen() << "Connected Shard 1 of unknown number." << reset() << std::endl;
-				} else {
-					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(this->currentConnectionData[0].get<int32_t>() + 1) << " of "
-							  << this->currentConnectionData[1].get<int32_t>()
-							  << std::string(" Shards for this process. (") + std::to_string(this->currentConnectionData[0].get<int32_t>() + 1) + " of " +
-							std::to_string(this->currentConnectionData[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-							  << reset() << std::endl;
-				}
-			}
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::connect()");
