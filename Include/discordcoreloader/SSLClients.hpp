@@ -265,6 +265,7 @@ namespace DiscordCoreLoader {
 
 	struct ProcessIOReturnData {
 		ProcessIOReturnCode returnCode{};
+		int32_t writtenOrReadCount{ 0 };
 		SOCKET returnIndex{};
 	};
 

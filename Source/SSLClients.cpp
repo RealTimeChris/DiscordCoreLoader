@@ -281,6 +281,7 @@ namespace DiscordCoreLoader {
 							value->inputBuffer.insert(value->inputBuffer.end(), serverToClientBuffer.begin(), serverToClientBuffer.begin() + readBytes);
 							value->bytesRead += readBytes;
 						}
+						returnValue02.writtenOrReadCount += 1;
 						returnValue02.returnIndex = key;
 						returnValue02.returnCode = ProcessIOReturnCode::Success;
 						break;
@@ -331,6 +332,7 @@ namespace DiscordCoreLoader {
 							value->outputBuffer[0] = std::move(theString);
 						}
 						value->bytesWritten += writtenBytes;
+						returnValue02.writtenOrReadCount += 1;
 						returnValue02.returnIndex = key;
 						returnValue02.returnCode = ProcessIOReturnCode::Success;
 						break;

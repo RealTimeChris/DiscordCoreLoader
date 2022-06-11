@@ -392,18 +392,21 @@ namespace DiscordCoreLoader {
 					this->connectInternal();
 				}
 				if (this->theClients.size() > 0) {
+					ProcessIOReturnData returnValue{};
+					do {
+						returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
+						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
+							this->respondToDisconnect(returnValue.returnIndex);
+						}
+					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
+						this->handleBuffer(key);
 						if (value->outputBuffer.size() == 0) {
 							if (value->sendGuilds) {
 								this->sendCreateGuilds(key);
 							}
 						}
 						this->sendFinalMessage(key);
-						auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-							this->respondToDisconnect(returnValue.returnIndex);
-						}
-						this->handleBuffer(key);
 					}
 				}
 				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
@@ -422,7 +425,7 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::sendGuildMemberChunks() noexcept {
 	}
 
-	void BaseSocketAgent::onMessageReceived(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::onMessageReceived(SOCKET theIndex) noexcept { 
 		try {
 			std::string messageNew{};
 
