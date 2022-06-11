@@ -440,11 +440,6 @@ namespace DiscordCoreLoader {
 			} else {
 				payload = nlohmann::json::parse(messageNew);
 			}
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
-				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
-						  << std::endl;
-			}
 
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
@@ -467,31 +462,28 @@ namespace DiscordCoreLoader {
 				}
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					if (this->currentConnectionData[0] == 0) {
-						std::cout << shiftToBrightBlue() << "Connecting Shard 1 of unknown number...." << reset() << std::endl;
-					} else {
-						std::cout << shiftToBrightBlue() << "Connecting Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
-								  << this->theClients[theIndex]->shard[1].get<int32_t>()
-								  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
-								std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-								  << reset() << std::endl;
-					}
+					std::cout << shiftToBrightBlue() << "Connecting Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
+							  << this->theClients[theIndex]->shard[1].get<int32_t>()
+							  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
+							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
+							  << reset() << std::endl;
 				}
 				this->sendReadyMessage(theIndex);
 				this->theClients[theIndex]->getInputBuffer().clear();
 				this->theClients[theIndex]->sendGuilds = true;
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					if (this->currentConnectionData[0] == 0) {
-						std::cout << shiftToBrightGreen() << "Connected Shard 1 of unknown number." << reset() << std::endl;
-					} else {
-						std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
-								  << this->theClients[theIndex]->shard[1].get<int32_t>()
-								  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
-								std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-								  << reset() << std::endl;
-					}
+					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
+							  << this->theClients[theIndex]->shard[1].get<int32_t>()
+							  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
+							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
+							  << reset() << std::endl;
 				}
+			}
+			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
+				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
+						  << std::endl;
 			}
 			return;
 		} catch (...) {
