@@ -1851,8 +1851,11 @@ namespace DiscordCoreLoader {
 		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
 		std::unordered_map<std::string, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
 		std::unordered_map<std::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
+		std::vector<std::unique_ptr<GuildMemberData>> members{};///< Array of GuildMembers.
+		std::vector<std::unique_ptr<ChannelData>> channels{};///< Array of Guild channels.
 		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
-		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, by default.
+		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, y default.
+		std::vector<std::unique_ptr<RoleData>> roles{};///< Array of Guild roles.
 		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
 		int32_t premiumSubscriptionCount{ 0 };///< Premium subscription count.
 		int32_t approximatePresenceCount{ 0 };///< Approximate quantity of presences.
@@ -1862,14 +1865,11 @@ namespace DiscordCoreLoader {
 		int32_t approximateMemberCount{ 0 };///< Approximate member count.
 		WelcomeScreenData welcomeScreen{};///< Welcome screen for the Guild.
 		int32_t maxVideoChannelUsers{ 0 };///< Maximum quantity of users per video Channel.
-		std::vector<ChannelData> channels{};///< Array of Guild channels.
 		AfkTimeOutDurations afkTimeOut{};///< Time for an individual to time out as afk.
-		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
 		std::string discoverySplash{};///< Link to the discovery image's splash.
 		std::string preferredLocale{};///< Preferred locale, for voice chat servers.
 		std::string widgetChannelId{};///< Channel id for the Guild's widget.
 		std::string systemChannelId{};///< Channel id for the Guild's system Channel.
-		std::vector<RoleData> roles{};///< Array of Guild roles.
 		std::string rulesChannelId{};///< Channel id for the Guild's rules Channel.
 		std::string applicationId{};///< The current application id.
 		std::string vanityUrlCode{};///< Vanity Url code, if applicable.

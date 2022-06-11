@@ -200,7 +200,7 @@ namespace DiscordCoreLoader {
 			this->theGuilds[theIndex].push_back(theGuild);
 		}
 		jsonData["d"]["v"] = 10;
-		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(this->jsonifier.generateUser());
+		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(std::move(*this->jsonifier.generateUser()));
 		WebSocketMessage theMessage{};
 		theMessage.jsonMsg = std::move(jsonData);
 		if (this->theMode == WebSocketMode::ETF) {
@@ -406,6 +406,7 @@ namespace DiscordCoreLoader {
 						this->handleBuffer(key);
 					}
 				}
+				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 			}
 			if (this->opCode != WebSocketOpCode::Op_Close) {
 				this->initDisconnect(static_cast<WebSocketCloseCode>(1000), this->currentIndex);
