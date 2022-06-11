@@ -1,5 +1,7 @@
 /*
 *
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
+
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
