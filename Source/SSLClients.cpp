@@ -101,7 +101,24 @@ namespace DiscordCoreLoader {
 	}
 
 	void WebSocketSSLShard::writeData(std::string& data) noexcept {
-		this->outputBuffer.push_back(std::move(data));
+		if (data.size() > 16 * 1024) {
+			size_t remainingBytes{ data.size() };
+			while (remainingBytes > 0) {
+				std::string newString{};
+				size_t amountToCollect{};
+				if (data.size() >= 1024 * 16) {
+					amountToCollect = 1024 * 16;
+				} else {
+					amountToCollect = data.size();
+				}
+				newString.insert(newString.begin(), data.begin(), data.begin() + amountToCollect);
+				this->outputBuffer.push_back(newString);
+				data.erase(data.begin(), data.begin() + amountToCollect);
+				remainingBytes = data.size();
+			}
+		} else {
+			this->outputBuffer.push_back(data);
+		}
 	}
 
 	std::string& WebSocketSSLShard::getInputBuffer() noexcept {
@@ -254,10 +271,10 @@ namespace DiscordCoreLoader {
 		for (auto& [key, value]: theMap) {
 			if ((value->outputBuffer.size() > 0 || value->wantWrite) && !value->wantRead) {
 				FD_SET(key, &writeSet);
+				writeNfds = key > writeNfds ? key : writeNfds;
 			}
 			FD_SET(key, &readSet);
 			readNfds = key > readNfds ? key : readNfds;
-			writeNfds = key > writeNfds ? key : writeNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 

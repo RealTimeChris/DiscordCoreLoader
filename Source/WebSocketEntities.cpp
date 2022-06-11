@@ -72,51 +72,18 @@ namespace DiscordCoreLoader {
 						  << reset() << std::endl
 						  << std::endl;
 			}
-			uint64_t theHeaderLength{};
 			std::string theVector{};
 			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
 				theVector = this->erlPacker.parseJsonToEtf(std::move(dataToSend));
 			} else {
 				theVector = dataToSend.dump();
 			}
-			if (theVector.size() <= webSocketMaxPayloadLengthSmall) {
-				theHeaderLength = 2;
-			} else if (theVector.size() <= webSocketMaxPayloadLengthLarge) {
-				theHeaderLength = 4;
-			} else {
-				theHeaderLength = 10;
-			}
-			uint64_t totalLength{ theVector.size() };
-			std::vector<std::string> theStrings{};
-			if (theVector.size() > (static_cast<uint64_t>(16) * 1024) - theHeaderLength) {
-				uint64_t incrementAmount{ (static_cast<uint64_t>(16) * 1024) - theHeaderLength };
-				uint64_t remainingBytes{ theVector.size() };
-				while (remainingBytes > 0) {
-					std::string theString{};
-					theString.insert(theString.begin(), theVector.end() - remainingBytes, theVector.end() - remainingBytes + incrementAmount);
-					remainingBytes -= incrementAmount;
-					theStrings.push_back(std::move(theString));
-					if (remainingBytes < (static_cast<uint64_t>(16) * 1024) - theHeaderLength) {
-						incrementAmount = remainingBytes;
-					}
-				}
-
-			} else {
-				std::string theString{};
-				theString.insert(theString.begin(), theVector.begin(), theVector.end());
-				totalLength = theString.size();
-				theStrings.push_back(std::move(theString));
-			}
-			for (uint64_t x = 0; x < static_cast<uint64_t>(theStrings.size()); x += 1) {
-				std::string header{};
-				if (x == 0) {
-					this->createHeader(header, totalLength, theOpCode, true, theIndex);
-				}
-				std::string theVectorNew{};
-				theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
-				theVectorNew.insert(theVectorNew.begin() + header.size(), theStrings[x].begin(), theStrings[x].end());
-				this->theClients[theIndex]->writeData(theVectorNew);
-			}
+			std::string header{};
+			this->createHeader(header, theVector.size(), theOpCode, true, theIndex);
+			std::string theVectorNew{};
+			theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
+			theVectorNew.insert(theVectorNew.begin() + header.size(), theVector.begin(), theVector.end());
+			this->theClients[theIndex]->writeData(theVectorNew);
 
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
