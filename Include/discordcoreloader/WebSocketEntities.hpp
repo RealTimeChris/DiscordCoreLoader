@@ -77,7 +77,6 @@ namespace DiscordCoreLoader {
 		std::atomic_bool doWeConnect{ false };
 		const int8_t maxReconnectTries{ 10 };
 		int32_t heartbeatInterval{ 45000 };
-		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
 		std::string sessionId{};
 		uint16_t closeCode{ 0 };
@@ -93,8 +92,6 @@ namespace DiscordCoreLoader {
 		void initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept;
 
 		void connect(int32_t currentShard, int32_t totalShardCount) noexcept;
-
-		void handleDroppedConnection(SOCKET) noexcept;
 
 		void run(std::stop_token theToken) noexcept;
 

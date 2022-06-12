@@ -29,7 +29,6 @@ namespace DiscordCoreLoader {
 
 	class ObjectGenerator : public Randomizer {
 	  public:
-
 		std::unique_ptr<GuildMemberData> generateGuildMember(const std::string& guildId, const std::vector<std::unique_ptr<RoleData>>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);

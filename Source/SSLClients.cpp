@@ -279,13 +279,17 @@ namespace DiscordCoreLoader {
 		}
 
 		ProcessIOReturnData returnValue02{};
-		timeval checkTime{ .tv_usec = 0 };
+		returnValue02.returnCode = ProcessIOReturnCode::Success;
+		timeval checkTime{ .tv_usec = 10000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
 			}
+			returnValue02.returnCode = ProcessIOReturnCode::Error;
 			return returnValue02;
-		} 
+		} else if (resultValue == 0) {
+			return returnValue02;
+		}
 
 		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		for (auto& [key, value]: theMap) {
@@ -387,6 +391,7 @@ namespace DiscordCoreLoader {
 				}
 			}
 		}
+		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		return returnValue02;
 	}
 
