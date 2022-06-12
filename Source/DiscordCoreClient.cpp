@@ -80,6 +80,7 @@ namespace DiscordCoreLoader {
 		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
 		this->baseSocketAgentMap[std::to_string(0)]->connect(0, 0);
+		std::cout << "WERE GONE GONE GONE!" << std::endl;
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -114,22 +115,18 @@ namespace DiscordCoreLoader {
 		}
 		auto totalShards{ 0 };
 		for (int32_t x = 1; x < workerCount; x += 1) {
-			
+			std::cout << "WERE GONE GONE GONE! 0202" << std::endl;	
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
 				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
 			}
-			if (Globals::doWeDisconnect.load()) {
-				std::mt19937_64 theRandomEngine{};
-				size_t theIndex = theRandomEngine() / theRandomEngine.max() * this->baseSocketAgentMap.size();
-				this->baseSocketAgentMap[std::to_string(theIndex)]->theClients.begin().operator*().second->~WebSocketSSLShard();
-				Globals::doWeDisconnect.store(false);
-			}
+			std::cout << "WERE GONE GONE GONE! 0303" << std::endl;
 			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
 				totalShards += 1;
 				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
+				std::cout << "WERE GONE GONE GONE! 0404" << std::endl;
 			}
 			this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 		}
