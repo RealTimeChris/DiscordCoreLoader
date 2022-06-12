@@ -297,8 +297,6 @@ namespace DiscordCoreLoader {
 
 		std::string& getInputBuffer() noexcept;
 
-		bool checkIfConnected() noexcept;
-
 		uint64_t getBytesRead() noexcept;
 
 		~WebSocketSSLShard();
