@@ -295,7 +295,7 @@ namespace DiscordCoreLoader {
 				std::string serverToClientBuffer{};
 				serverToClientBuffer.resize(value->maxBufferSize);
 				size_t readBytes{ 0 };
-				auto returnValue{ SSL_read_ex(value->ssl, serverToClientBuffer.data(), value->currentReadSize, &readBytes) };
+				auto returnValue{ SSL_read_ex(value->ssl, serverToClientBuffer.data(), value->maxBufferSize, &readBytes) };
 				auto errorValue{ SSL_get_error(value->ssl, returnValue) };
 				switch (errorValue) {
 					case SSL_ERROR_NONE: {

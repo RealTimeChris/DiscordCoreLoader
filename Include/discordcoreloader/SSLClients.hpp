@@ -309,7 +309,6 @@ namespace DiscordCoreLoader {
 		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
 		SSL_CTX* theContext{ nullptr };
-		uint64_t currentReadSize{ 0 };
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
