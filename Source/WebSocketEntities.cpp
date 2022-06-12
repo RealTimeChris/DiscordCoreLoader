@@ -280,7 +280,6 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::respondToDisconnect(SOCKET theIndex) noexcept {
 		if (theIndex != 0) {
 			std::string theString{};
-			;
 			theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
 			theString.push_back(0);
 			theString.push_back(static_cast<int8_t>(static_cast<uint16_t>(1000) >> 8));
@@ -293,9 +292,8 @@ namespace DiscordCoreLoader {
 					}
 				}
 			}
-
-			if ((this->maxReconnectTries > this->currentReconnectTries)) {
-				this->currentReconnectTries += 1;
+			if ((this->maxReconnectTries > this->theClients[theIndex]->currentReconnectTries)) {
+				this->theClients[theIndex]->currentReconnectTries += 1;
 				this->handleDroppedConnection(theIndex);
 			} else {
 				this->doWeQuit->store(true);
@@ -325,8 +323,7 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::handleDroppedConnection(SOCKET theIndex) noexcept {
 		if (theIndex != 0) {
-			if (this->currentReconnectTries <= this->maxReconnectTries) {
-				this->currentReconnectTries += 1;
+			if (this->theClients[theIndex]->currentReconnectTries <= this->maxReconnectTries) {
 				ReconnectionPackage theData{};
 				if (this->theClients.contains(theIndex)) {
 					theData.currentShard = this->theClients[theIndex]->shard[0];
