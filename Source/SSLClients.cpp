@@ -124,6 +124,32 @@ namespace DiscordCoreLoader {
 		return this->inputBuffer;
 	}
 
+	bool WebSocketSSLShard::checkIfConnected() noexcept {
+		size_t readBytes{};
+		std::string theBuffer{};
+		theBuffer.resize(1024 * 16);
+		auto returnValue = SSL_peek_ex(this->ssl, theBuffer.data(), theBuffer.size(), &readBytes);
+		auto errorValue = 0;
+		SSL_get_error(this->ssl, returnValue);
+		if (readBytes > 0) {
+			this->currentReadSize = readBytes;
+		}
+		switch (errorValue) {
+			case SSL_ERROR_NONE: {
+				return true;
+			}
+			case SSL_ERROR_WANT_READ: {
+				return true;
+			}
+			case SSL_ERROR_WANT_WRITE: {
+				return true;
+			}
+			default: {
+				return false;
+			}
+		}
+	}
+
 	uint64_t WebSocketSSLShard::getBytesRead() noexcept {
 		return this->bytesRead;
 	}
@@ -295,6 +321,12 @@ namespace DiscordCoreLoader {
 				std::string serverToClientBuffer{};
 				serverToClientBuffer.resize(value->maxBufferSize);
 				size_t readBytes{ 0 };
+				if (!value->checkIfConnected()) {
+					returnValue02.returnCode = ProcessIOReturnCode::Error;
+					returnValue02.returnIndex = key;
+					returnValue02.writtenOrReadCount = 0;
+					return returnValue02;
+				}
 				auto returnValue{ SSL_read_ex(value->ssl, serverToClientBuffer.data(), value->currentReadSize, &readBytes) };
 				auto errorValue{ SSL_get_error(value->ssl, returnValue) };
 				switch (errorValue) {
@@ -414,6 +446,14 @@ namespace DiscordCoreLoader {
 		while (newSocket == SOCKET_ERROR && !this->doWeQuit->load()) {
 			newSocket = accept(this->theServerSocket, this->addrInfo->ai_addr, &theSize);
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+		}
+
+		u_long val{ 1 };
+		if (auto returnValue = ioctlsocket(newSocket, FIONBIO, &val); returnValue == SOCKET_ERROR) {
+			if (this->doWePrintError) {
+				reportError("ioctlsocket() Error: ", returnValue);
+			}
+			return SOCKET_ERROR;
 		}
 
 		return newSocket;
