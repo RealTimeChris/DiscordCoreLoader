@@ -35,7 +35,7 @@ namespace DiscordCoreLoader {
 		return *this;
 	}
 
-	JSONIFier::JSONIFier(ConfigData&& configData) {
+	JSONIFier::JSONIFier(ConfigData&& configData)  {
 		*this = std::move(configData);
 	}
 

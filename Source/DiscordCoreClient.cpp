@@ -34,7 +34,7 @@ namespace DiscordCoreLoader {
 		Globals::doWeQuit.store(true);
 	}
 
-	void signalHandler(int32_t) {
+	void signalHandler(int32_t theSignal) {
 		Globals::doWeQuit.store(true);
 		std::exit(EXIT_SUCCESS);
 	}
@@ -61,7 +61,7 @@ namespace DiscordCoreLoader {
 
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);				
 			}
 			if (Globals::doWeDisconnect.load()) {
 				std::mt19937_64 theRandomEngine{};

@@ -292,14 +292,9 @@ namespace DiscordCoreLoader {
 					}
 				}
 			}
-			if (this->theClients.contains(theIndex)) {
-				ReconnectionPackage theData{};
-				theData.currentShard = this->theClients[theIndex]->shard[0];
-				theData.totalShardCount = this->theClients[theIndex]->shard[1];
-				theData.theMap = &this->theClients;
-				theData.theSocket = this->theClients[theIndex]->clientSocket;
-				this->theClients.erase(theIndex);
-				this->webSocketSSLServerMain->submitReconnectionShard(theData);
+			if ((this->maxReconnectTries > this->theClients[theIndex]->currentReconnectTries)) {
+				this->theClients[theIndex]->currentReconnectTries += 1;
+				this->handleDroppedConnection(theIndex);
 			} else {
 				this->doWeQuit->store(true);
 				this->theTask->request_stop();
@@ -322,6 +317,22 @@ namespace DiscordCoreLoader {
 				theMessage.stringMsg = theString;
 				theMessage.theOpCode = WebSocketOpCode::Op_Close;
 				this->theClients[theIndex]->theMessageQueue.push(theMessage);
+			}
+		}
+	}
+
+	void BaseSocketAgent::handleDroppedConnection(SOCKET theIndex) noexcept {
+		if (theIndex != 0) {
+			if (this->theClients[theIndex]->currentReconnectTries <= this->maxReconnectTries) {
+				ReconnectionPackage theData{};
+				if (this->theClients.contains(theIndex)) {
+					theData.currentShard = this->theClients[theIndex]->shard[0];
+					theData.totalShardCount = this->theClients[theIndex]->shard[1];
+					theData.theMap = &this->theClients;
+					theData.theSocket = this->theClients[theIndex]->clientSocket;
+					this->theClients.erase(theIndex);
+				}
+				this->webSocketSSLServerMain->submitReconnectionShard(theData);
 			}
 		}
 	}
@@ -394,7 +405,7 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::sendGuildMemberChunks() noexcept {
 	}
 
-	void BaseSocketAgent::onMessageReceived(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::onMessageReceived(SOCKET theIndex) noexcept { 
 		try {
 			std::string messageNew{};
 
