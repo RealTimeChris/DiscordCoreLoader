@@ -77,7 +77,6 @@ namespace DiscordCoreLoader {
 		SOCKETWrapper currentNewSocket{ nullptr };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_bool doWeConnect{ false };
-		const int8_t maxReconnectTries{ 10 };
 		int32_t heartbeatInterval{ 45000 };
 		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
