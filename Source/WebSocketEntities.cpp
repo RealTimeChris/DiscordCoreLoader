@@ -333,7 +333,7 @@ namespace DiscordCoreLoader {
 					theData.totalShardCount = this->theClients[theIndex]->shard[1];
 					theData.theMap = &this->theClients;
 					theData.theSocket = this->theClients[theIndex]->clientSocket;
-					this->theClients.erase(theIndex);
+					std::cout << "WERE HERE THIS IS IT!" << std::endl;
 				}
 				this->webSocketSSLServerMain->submitReconnectionShard(theData);
 			}
@@ -378,24 +378,14 @@ namespace DiscordCoreLoader {
 					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
 						auto theKey = key;
+						this->handleBuffer(theKey);
 						if (this->closeCode == 0) {
-							if (value->areWeConnected) {
-								this->handleBuffer(theKey);
-								if (this->closeCode == 0) {
-									if (value->outputBuffer.size() == 0) {
-										if (value->sendGuilds) {
-											this->sendCreateGuilds(theKey);
-										}
-									}
-									this->sendFinalMessage(theKey);
-								} else {
-									this->closeCode = 0;
-									break;
+							if (value->outputBuffer.size() == 0) {
+								if (value->sendGuilds) {
+									this->sendCreateGuilds(theKey);
 								}
 							}
-						} else {
-							this->closeCode = 0;
-							break;
+							this->sendFinalMessage(theKey);
 						}
 					}
 				}

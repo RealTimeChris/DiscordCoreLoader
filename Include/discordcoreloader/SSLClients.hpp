@@ -297,6 +297,8 @@ namespace DiscordCoreLoader {
 
 		std::string& getInputBuffer() noexcept;
 
+		bool checkIfConnected() noexcept;
+
 		uint64_t getBytesRead() noexcept;
 
 		~WebSocketSSLShard();
@@ -308,6 +310,7 @@ namespace DiscordCoreLoader {
 		SOCKETWrapper clientSocket{ nullptr };
 		MessagePackage theCurrentMessage{};
 		SSL_CTX* theContext{ nullptr };
+		uint64_t currentReadSize{ 0 };
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
@@ -317,10 +320,10 @@ namespace DiscordCoreLoader {
 		std::string inputBuffer{};
 		int64_t lastNumberSent{};
 		bool sendGuilds{ false };
-		bool wantWrite{ false };
 		uint64_t bytesRead{ 0 };
 		nlohmann::json shard{};
-		bool wantRead{ false };
+		bool wantWrite{ true };
+		bool wantRead{ true };
 	};
 
 	struct ReconnectionPackage {
