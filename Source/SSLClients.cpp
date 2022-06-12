@@ -51,8 +51,7 @@ namespace DiscordCoreLoader {
 #endif
 	}
 
-	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew)
-		: maxBufferSize(1024 * 16) {
+	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
 		this->doWePrintError = doWePrintErrorsNew;
 		this->theContext = theContextNew;
 		this->clientSocket = theSocket;
@@ -61,6 +60,13 @@ namespace DiscordCoreLoader {
 			if (this->ssl = SSL_new(this->theContext); this->ssl == nullptr) {
 				if (this->doWePrintError) {
 					reportSSLError("SSL_new() Error: ");
+				}
+				return;
+			}
+
+			if (!SSL_set_min_proto_version(this->ssl, TLS1_2_VERSION)) {
+				if (this->doWePrintError) {
+					reportSSLError("SSL_set_min_proto_version() Error: ");
 				}
 				return;
 			}
@@ -221,16 +227,23 @@ namespace DiscordCoreLoader {
 			return;
 		}
 
-		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
+		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
+				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
 			}
 			return;
 		}
 
-		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
+		if (!SSL_CTX_set_ciphersuites(this->context, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256")) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
+				reportSSLError("SSL_CTX_set_ciphersuites() Error: ");
+			}
+			return;
+		}
+
+		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
 			}
 			return;
 		}
@@ -243,7 +256,7 @@ namespace DiscordCoreLoader {
 		}
 
 		SSL_CTX_set_verify(this->context, SSL_VERIFY_PEER, NULL);
-		if (!SSL_CTX_load_verify_locations(this->context, certPath.c_str(), NULL)) {
+		if (!SSL_CTX_load_verify_locations(this->context, "Cert.pem", NULL)) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_load_verify_locations() Error: ");
 			}
@@ -264,7 +277,7 @@ namespace DiscordCoreLoader {
 
 	ProcessIOReturnData WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept {
 		fd_set readSet{}, writeSet{};
-		
+
 		int32_t readNfds{ 0 }, writeNfds{ 0 }, finalNfds{ 0 };
 		FD_ZERO(&readSet);
 		FD_ZERO(&writeSet);
@@ -273,7 +286,9 @@ namespace DiscordCoreLoader {
 				FD_SET(key, &writeSet);
 				writeNfds = key > writeNfds ? key : writeNfds;
 			}
-			FD_SET(key, &readSet);
+			if (!value->wantWrite) {
+				FD_SET(key, &readSet);
+			}			
 			readNfds = key > readNfds ? key : readNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
@@ -285,13 +300,11 @@ namespace DiscordCoreLoader {
 			if (this->doWePrintError) {
 				reportError("select() Error: ", resultValue);
 			}
-			returnValue02.returnCode = ProcessIOReturnCode::Error;
 			return returnValue02;
 		} else if (resultValue == 0) {
 			return returnValue02;
 		}
-
-		returnValue02.returnCode = ProcessIOReturnCode::Success;
+		
 		for (auto& [key, value]: theMap) {
 			if (FD_ISSET(key, &readSet)) {
 				value->wantRead = false;
@@ -347,51 +360,50 @@ namespace DiscordCoreLoader {
 				if (value->outputBuffer.size() > 0) {
 					theString = std::move(value->outputBuffer.front());
 				}
-				size_t bytesToWrite = value->maxBufferSize < theString.size() ? value->maxBufferSize : theString.size();
-				auto returnValue{ SSL_write_ex(value->ssl, theString.data(), bytesToWrite, &writtenBytes) };
-				auto errorValue{ SSL_get_error(value->ssl, returnValue) };
-				switch (errorValue) {
-					case SSL_ERROR_NONE: {
-						if (value->outputBuffer.size() > 0 && writtenBytes > 0) {
-							value->outputBuffer.erase(value->outputBuffer.begin());
-						} else if (value->outputBuffer.size() > 0 && writtenBytes == 0) {
-							value->outputBuffer[0] = std::move(theString);
+				if (theString.size() > 0) {
+					size_t bytesToWrite = value->maxBufferSize < theString.size() ? value->maxBufferSize : theString.size();
+					auto returnValue{ SSL_write_ex(value->ssl, theString.data(), bytesToWrite, &writtenBytes) };
+					auto errorValue{ SSL_get_error(value->ssl, returnValue) };
+					switch (errorValue) {
+						case SSL_ERROR_NONE: {
+							if (value->outputBuffer.size() > 0 && writtenBytes > 0) {
+								value->outputBuffer.erase(value->outputBuffer.begin());
+							}
+							value->bytesWritten += writtenBytes;
+							returnValue02.writtenOrReadCount += 1;
+							returnValue02.returnIndex = key;
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
+							break;
 						}
-						value->bytesWritten += writtenBytes;
-						returnValue02.writtenOrReadCount += 1;
-						returnValue02.returnIndex = key;
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
-						break;
-					}
-					case SSL_ERROR_WANT_READ: {
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
-						value->wantRead = true;
-						break;
-					}
-					case SSL_ERROR_WANT_WRITE: {
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
-						value->wantWrite = true;
-						break;
-					}
-					case SSL_ERROR_SYSCALL: {
-						[[fallthrough]];
-					}
-					case SSL_ERROR_ZERO_RETURN: {
-						[[fallthrough]];
-					}
-					default: {
-						if (value->doWePrintError) {
-							reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue, value->ssl);
-							reportError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue);
+						case SSL_ERROR_WANT_READ: {
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
+							value->wantRead = true;
+							break;
 						}
-						returnValue02.returnCode = ProcessIOReturnCode::Error;
-						returnValue02.returnIndex = value->clientSocket;
-						return returnValue02;
+						case SSL_ERROR_WANT_WRITE: {
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
+							value->wantWrite = true;
+							break;
+						}
+						case SSL_ERROR_SYSCALL: {
+							[[fallthrough]];
+						}
+						case SSL_ERROR_ZERO_RETURN: {
+							[[fallthrough]];
+						}
+						default: {
+							if (value->doWePrintError) {
+								reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue, value->ssl);
+								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue);
+							}
+							returnValue02.returnCode = ProcessIOReturnCode::Error;
+							returnValue02.returnIndex = value->clientSocket;
+							return returnValue02;
+						}
 					}
 				}
 			}
 		}
-		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		return returnValue02;
 	}
 

@@ -36,7 +36,6 @@ namespace DiscordCoreLoader {
 		this->jsonifier = discordCoreClient->configParser.getTheData();
 		this->webSocketSSLServerMain = webSocketSSLServerMainNew;
 		this->discordCoreClient = discordCoreClient;
-		this->state = WebSocketState::Initializing;
 		this->doWeQuit = doWeQuitNew;
 		this->theTask = std::make_unique<std::jthread>([this](std::stop_token theToken) {
 			this->run(theToken);
@@ -234,7 +233,7 @@ namespace DiscordCoreLoader {
 		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
 	}
 
-	std::vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, const std::string& separator, SOCKET theIndex) noexcept {
+	std::vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, SOCKET theIndex, const std::string& separator) noexcept {
 		try {
 			std::string::size_type value{ 0 };
 			std::vector<std::string> dataOut{};
@@ -251,14 +250,14 @@ namespace DiscordCoreLoader {
 							break;
 						}
 					}
-
 					int32_t version = stoi(newString.substr(0, index));
 					if (version != 10) {
 						this->initDisconnect(WebSocketCloseCode::Invalid_API_Version, theIndex);
 					}
 				}
 				if (dataIn.substr(value, output - value).find("Sec-WebSocket-Key:") != std::string::npos) {
-					this->authKey = dataOut[dataOut.size() - 1].substr(dataOut[dataOut.size() - 1].find("Sec-WebSocket-Key: ") + std::string{ "Sec-WebSocket-Key: " }.size());
+					this->authKeys[theIndex] =
+						dataOut[dataOut.size() - 1].substr(dataOut[dataOut.size() - 1].find("Sec-WebSocket-Key: ") + std::string{ "Sec-WebSocket-Key: " }.size());
 				}
 				if (dataIn.substr(value, output - value).find("json") != std::string::npos) {
 					this->theMode = WebSocketMode::JSON;
@@ -381,12 +380,13 @@ namespace DiscordCoreLoader {
 				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 			}
 			if (this->opCode != WebSocketOpCode::Op_Close) {
-				this->initDisconnect(static_cast<WebSocketCloseCode>(1000), this->theClients.begin().operator*().first);
+				this->initDisconnect(static_cast<WebSocketCloseCode>(1000), this->currentIndex);
 			}
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::run()");
 			}
+			this->respondToDisconnect(this->currentIndex);
 		}
 	}
 
@@ -468,17 +468,17 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::handleBuffer(SOCKET theIndex) noexcept {
 		try {
 			std::string newVector = this->theClients[theIndex]->getInputBuffer();
-			switch (this->state) {
+			switch (this->states[theIndex]) {
 				case WebSocketState::Initializing:
 					if (newVector.find("\r\n\r\n") != std::string::npos) {
 						std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
 						newVector.erase(0, newVector.find("\r\n\r\n") + 4);
-						std::vector<std::string> headerOut = tokenize(headers);
+						std::vector<std::string> headerOut = tokenize(headers, theIndex);
 						if (headerOut.size()) {
 							std::string statusLine = headerOut[0];
 							headerOut.erase(headerOut.begin());
-							std::vector<std::string> status = tokenize(statusLine, " ");
-							this->state = WebSocketState::Connected;
+							std::vector<std::string> status = tokenize(statusLine, theIndex, " ");
+							this->states[theIndex] = WebSocketState::Connected;
 							this->theClients[theIndex]->getInputBuffer().clear();
 							this->theClients[theIndex]->getInputBuffer().insert(this->theClients[theIndex]->getInputBuffer().end(), newVector.begin(), newVector.end());
 							this->parseHeader(theIndex);
@@ -577,17 +577,18 @@ namespace DiscordCoreLoader {
 		try {
 			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket);
 			SOCKET theSocket = theClient->clientSocket;
+			this->currentIndex = theSocket;
 
 			this->theClients[theSocket] = std::move(theClient);
-			this->state = WebSocketState::Initializing;
+			this->states[theSocket] = WebSocketState::Initializing;
 
-			while (this->authKey == "") {
+			while (this->authKeys[theSocket] == "") {
 				auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
 				this->handleBuffer(theSocket);
 			}
 
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
-			sendString += this->authKey + "\r\n\r\n";
+			sendString += this->authKeys[theSocket] + "\r\n\r\n";
 			this->sendMessage(&sendString, theSocket);
 			auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
 			if (returnValue.returnCode == ProcessIOReturnCode::Error) {
@@ -611,7 +612,6 @@ namespace DiscordCoreLoader {
 	}
 
 	void BaseSocketAgent::connect(int32_t currentShard, int32_t totalShardCount) noexcept {
-	
 		this->currentConnectionData.clear();
 		this->currentConnectionData.push_back(currentShard);
 		this->currentConnectionData.push_back(totalShardCount);

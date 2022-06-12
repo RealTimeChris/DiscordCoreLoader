@@ -69,6 +69,8 @@ namespace DiscordCoreLoader {
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
+		std::unordered_map<SOCKET, WebSocketState> states{};
+		std::unordered_map<SOCKET, std::string> authKeys{};
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
 		nlohmann::json currentConnectionData{ 0, 0 };
@@ -77,17 +79,16 @@ namespace DiscordCoreLoader {
 		std::atomic_bool doWeConnect{ false };
 		const int8_t maxReconnectTries{ 10 };
 		int32_t heartbeatInterval{ 45000 };
+		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
 		std::string sessionId{};
 		uint16_t closeCode{ 0 };
-		WebSocketState state{};
-		std::string authKey{};
 		ErlPacker erlPacker{};
 		JSONIFier jsonifier{};
 
 		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept;
 
-		std::vector<std::string> tokenize(const std::string&, const std::string& = "\r\n", SOCKET theIndex = 0) noexcept;
+		std::vector<std::string> tokenize(const std::string& dataIn, SOCKET theIndex, const std::string& separator = "\r\n") noexcept;
 
 		void initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept;
 
