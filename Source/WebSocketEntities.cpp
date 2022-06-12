@@ -58,7 +58,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::sendMessage()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 		}
 	}
 
@@ -91,7 +91,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::sendMessage()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 		}
 	}
 
@@ -124,7 +124,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::createHeader()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 			return uint64_t{};
 		}
 	}
@@ -272,7 +272,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::tokenize()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 			return std::vector<std::string>{};
 		}
 	}
@@ -333,7 +333,7 @@ namespace DiscordCoreLoader {
 					theData.totalShardCount = this->theClients[theIndex]->shard[1];
 					theData.theMap = &this->theClients;
 					theData.theSocket = this->theClients[theIndex]->clientSocket;
-					std::cout << "WERE HERE THIS IS IT!" << std::endl;
+					this->theClients.erase(theIndex);
 				}
 				this->webSocketSSLServerMain->submitReconnectionShard(theData);
 			}
@@ -386,6 +386,9 @@ namespace DiscordCoreLoader {
 								}
 							}
 							this->sendFinalMessage(theKey);
+						} else {
+							this->closeCode = 0;
+							break;
 						}
 					}
 				}
@@ -398,7 +401,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::run()");
 			}
-			this->handleDroppedConnection(this->currentIndex);
+			this->respondToDisconnect(this->currentIndex);
 		}
 	}
 
@@ -472,7 +475,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::onMessageReceived()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 			return;
 		}
 	}
@@ -506,7 +509,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::handleBuffer()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 		}
 	}
 
@@ -580,7 +583,7 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::parseHeader()");
 			}
-			this->handleDroppedConnection(theIndex);
+			this->respondToDisconnect(theIndex);
 			return false;
 		}
 	}

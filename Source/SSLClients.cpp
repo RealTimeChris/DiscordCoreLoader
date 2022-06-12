@@ -366,7 +366,6 @@ namespace DiscordCoreLoader {
 						}
 						returnValue02.returnCode = ProcessIOReturnCode::Error;
 						returnValue02.returnIndex = value->clientSocket;
-						theMap.erase(key);
 						return returnValue02;
 					}
 				}
@@ -384,7 +383,6 @@ namespace DiscordCoreLoader {
 				auto errorValue{ SSL_get_error(value->ssl, returnValue) };
 				switch (errorValue) {
 					case SSL_ERROR_NONE: {
-						std::cout << "THE WRITTEN BYTES: " << theString << std::endl; 
 						if (value->outputBuffer.size() > 0 && writtenBytes > 0) {
 							value->outputBuffer.erase(value->outputBuffer.begin());
 						} else if (value->outputBuffer.size() > 0 && writtenBytes == 0) {
@@ -419,7 +417,6 @@ namespace DiscordCoreLoader {
 						}
 						returnValue02.returnCode = ProcessIOReturnCode::Error;
 						returnValue02.returnIndex = value->clientSocket;
-						theMap.erase(key);
 						return returnValue02;
 					}
 				}
