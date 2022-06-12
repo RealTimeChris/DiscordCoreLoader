@@ -590,8 +590,7 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::connectInternal() noexcept {
 		try {
-			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket, this->currentConnectionData[0].get<int32_t>(),
-				this->currentConnectionData[1].get<int32_t>());
+			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket);
 			SOCKET theSocket = theClient->clientSocket;
 			this->currentIndex = theSocket;
 

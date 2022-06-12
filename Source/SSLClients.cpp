@@ -51,13 +51,10 @@ namespace DiscordCoreLoader {
 #endif
 	}
 
-	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew, int32_t currentShard, int32_t totalNumberOfShards)
+	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew)
 		: maxBufferSize(1024 * 16) {
 		this->doWePrintError = doWePrintErrorsNew;
 		this->theContext = theContextNew;
-		this->shard = nlohmann::json::array();
-		this->shard.push_back(currentShard);
-		this->shard.push_back(totalNumberOfShards);
 		this->clientSocket = theSocket;
 
 		if (this->clientSocket != SOCKET_ERROR) {
@@ -280,13 +277,13 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	std::unique_ptr<WebSocketSSLShard> WebSocketSSLServerMain::connectShard(SOCKET newShard, int32_t currentShard, int32_t totalShardCount) {
+	std::unique_ptr<WebSocketSSLShard> WebSocketSSLServerMain::connectShard(SOCKET newShard) {
 		auto currentTime = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 		while (currentTime - this->timeOfLastConnection < 5000) {
 			currentTime = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
-		std::unique_ptr<WebSocketSSLShard> theShard{ std::make_unique<WebSocketSSLShard>(newShard, this->context, this->doWePrintError, currentShard, totalShardCount) };
+		std::unique_ptr<WebSocketSSLShard> theShard{ std::make_unique<WebSocketSSLShard>(newShard, this->context, this->doWePrintError) };
 		this->timeOfLastConnection = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 		return theShard;
 	}

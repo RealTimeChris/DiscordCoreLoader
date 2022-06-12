@@ -291,7 +291,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLShard() = default;
 
-		WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContext, bool doWePrintErrorsNew, int32_t currentShard, int32_t totalNumberOfShards);
+		WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContext, bool doWePrintErrorsNew);
 
 		void writeData(std::string& data) noexcept;
 
@@ -341,9 +341,9 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit);
 
-		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard, int32_t currentShard, int32_t totalShardCount);
-
 		ProcessIOReturnData processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept;
+
+		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard);
 
 		void submitReconnectionShard(ReconnectionPackage);
 
