@@ -239,10 +239,11 @@ namespace DiscordCoreLoader {
 		};
 
 		SOCKETWrapper& operator=(SOCKETWrapper&& other) noexcept {
-			this->socketPtr.swap(other.socketPtr);
-			*other.socketPtr = SOCKET_ERROR;
-			other.socketPtr = nullptr;
-			return *this;
+			if (this != &other) {
+				this->socketPtr.swap(other.socketPtr);
+				*other.socketPtr = SOCKET_ERROR;
+				return *this;
+			}
 		}
 
 		SOCKETWrapper(SOCKETWrapper&& other) noexcept {
@@ -254,19 +255,15 @@ namespace DiscordCoreLoader {
 			return *this;
 		}
 
-		SOCKETWrapper(SOCKET other) {
-			*this = other;
-		}
-
 		operator SOCKET() {
 			return *this->socketPtr;
 		}
 
-		SOCKETWrapper(nullptr_t) {
+		SOCKETWrapper(std::nullptr_t) {
 		}
 
 	  protected:
-		std::unique_ptr<SOCKET, SOCKETDeleter> socketPtr{ new SOCKET{ static_cast<SOCKET>(SOCKET_ERROR) }, SOCKETDeleter{} };
+		std::unique_ptr<int32_t, SOCKETDeleter> socketPtr{ new SOCKET{ static_cast<int32_t>(SOCKET_ERROR) }, SOCKETDeleter{} };
 	};
 
 	enum class ProcessIOReturnCode : int32_t {

@@ -283,13 +283,12 @@ namespace DiscordCoreLoader {
 		FD_ZERO(&writeSet);
 		for (auto& [key, value]: theMap) {
 			if ((value->outputBuffer.size() > 0 || value->wantWrite)) {
-				FD_SET(key, &writeSet);
-				writeNfds = key > writeNfds ? key : writeNfds;
-			}
-			if (!value->wantWrite) {
-				FD_SET(key, &readSet);
+				FD_SET(value->clientSocket, &writeSet);
+				writeNfds = value->clientSocket > writeNfds ? static_cast<SOCKET>(value->clientSocket) : writeNfds;
+			} else if (!value->wantWrite) {
+				FD_SET(value->clientSocket, &readSet);
 			}			
-			readNfds = key > readNfds ? key : readNfds;
+			readNfds = value->clientSocket > readNfds ? static_cast<SOCKET>(value->clientSocket) : readNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
@@ -306,7 +305,7 @@ namespace DiscordCoreLoader {
 		}
 		
 		for (auto& [key, value]: theMap) {
-			if (FD_ISSET(key, &readSet)) {
+			if (FD_ISSET(value->clientSocket, &readSet)) {
 				value->wantRead = false;
 				value->wantWrite = false;
 				std::string serverToClientBuffer{};
