@@ -54,7 +54,8 @@ namespace DiscordCoreLoader {
 
 	std::unique_ptr<ChannelData> ObjectGenerator::generateChannel(std::string guildId) {
 		std::unique_ptr<ChannelData> theData{ std::make_unique<ChannelData>() };
-		theData->rtcRegion = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
+		theData->rtcRegion =
+			this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData->name = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData->topic = this->randomizeString(this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
 		theData->permissions = std::to_string(this->randomize64BitUInt());

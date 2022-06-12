@@ -51,8 +51,7 @@ namespace DiscordCoreLoader {
 #endif
 	}
 
-	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew)
-		: maxBufferSize(1024 * 16) {
+	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
 		this->doWePrintError = doWePrintErrorsNew;
 		this->theContext = theContextNew;
 		this->clientSocket = theSocket;
@@ -264,7 +263,7 @@ namespace DiscordCoreLoader {
 
 	ProcessIOReturnData WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept {
 		fd_set readSet{}, writeSet{};
-		
+
 		int32_t readNfds{ 0 }, writeNfds{ 0 }, finalNfds{ 0 };
 		FD_ZERO(&readSet);
 		FD_ZERO(&writeSet);
@@ -285,7 +284,7 @@ namespace DiscordCoreLoader {
 				reportError("select() Error: ", resultValue);
 			}
 			return returnValue02;
-		} 
+		}
 
 		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		for (auto& [key, value]: theMap) {

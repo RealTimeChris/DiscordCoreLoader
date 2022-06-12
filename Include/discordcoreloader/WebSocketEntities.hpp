@@ -94,8 +94,6 @@ namespace DiscordCoreLoader {
 
 		void connect(int32_t currentShard, int32_t totalShardCount) noexcept;
 
-		void handleDroppedConnection(SOCKET) noexcept;
-
 		void run(std::stop_token theToken) noexcept;
 
 		void respondToDisconnect(SOCKET) noexcept;
