@@ -6,7 +6,7 @@
   "DoWePrintWebSocketSuccessSentMessages": false,
   "DoWePrintWebSocketSuccessReceiveMessages": true,
   "DoWePrintWebSocketErrorMessages": true,
-  "GuildQuantity": 2500,
+  "GuildQuantity": 2000,
   "StdDeviationForStringLength": 10,
   "MeanForStringLength": 50,
   "StdDeviationForMemberCount": 40,
