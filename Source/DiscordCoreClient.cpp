@@ -113,18 +113,20 @@ namespace DiscordCoreLoader {
 			leftOverShards -= newShardAmount;
 		}
 		auto totalShards{ 0 };
-		for (int32_t x = 1; x < workerCount; x += 1) {
+		int32_t currentBaseSocketAgent{ 0 };
+		for (auto& value: shardsPerWorkerVect) {
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
 				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
 			}
 			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
-			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
+			for (int32_t y = 0; y < value; y += 1) {
 				totalShards += 1;
 				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
 			}
-			this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
+			this->baseSocketAgentMap[std::to_string(currentBaseSocketAgent)] = std::move(thePtr02);
+			currentBaseSocketAgent += 1;
 		}
 		if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 			std::cout << shiftToBrightGreen() << "All of the shards are connected for the current process!" << reset() << std::endl << std::endl;

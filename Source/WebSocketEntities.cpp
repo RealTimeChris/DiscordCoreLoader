@@ -153,7 +153,8 @@ namespace DiscordCoreLoader {
 		jsonData["t"] = "READY";
 		jsonData["d"]["session_id"] = this->jsonifier.randomizeId();
 		jsonData["d"]["guilds"];
-		int32_t guildSize = this->discordCoreClient->guildQuantity / this->discordCoreClient->shardingOptions.totalNumberOfShards;
+		int32_t guildSize = static_cast<int32_t>(
+			floor(static_cast<double>(this->discordCoreClient->guildQuantity) / static_cast<double>(this->discordCoreClient->shardingOptions.totalNumberOfShards)));
 		this->theClients[theIndex]->totalGuildCount = guildSize;
 		if (guildSize > 2500) {
 			this->initDisconnect(WebSocketCloseCode::Sharding_Required, theIndex);
