@@ -455,7 +455,8 @@ namespace DiscordCoreLoader {
 								  << this->theClients[theIndex]->shard[1].get<int32_t>()
 								  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 2) + " of " +
 								std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-								  << reset() << std::endl;
+								  << reset() << std::endl
+								  << std::endl;
 					}
 				}
 			}
