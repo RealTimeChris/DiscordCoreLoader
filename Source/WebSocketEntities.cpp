@@ -412,12 +412,6 @@ namespace DiscordCoreLoader {
 				payload = nlohmann::json::parse(messageNew);
 			}
 
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
-				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
-						  << std::endl;
-			}
-
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
 			}
@@ -448,6 +442,12 @@ namespace DiscordCoreLoader {
 							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
 							  << reset() << std::endl;
 				}
+				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
+					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
+							  << std::endl
+							  << std::endl;
+				}
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					if (this->theClients[theIndex]->shard[0] < this->theClients[theIndex]->shard[1] - 1) {
 						std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
@@ -459,7 +459,17 @@ namespace DiscordCoreLoader {
 								  << std::endl;
 					}
 				}
+			} else {
+				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
+					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
+							  << std::endl
+							  << std::endl;
+				}
 			}
+
+			
+
 			return;
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
