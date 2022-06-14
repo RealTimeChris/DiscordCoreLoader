@@ -412,6 +412,12 @@ namespace DiscordCoreLoader {
 				payload = nlohmann::json::parse(messageNew);
 			}
 
+			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
+				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
+						  << std::endl;
+			}
+
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
 			}
@@ -452,11 +458,6 @@ namespace DiscordCoreLoader {
 								  << reset() << std::endl;
 					}
 				}
-			}
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
-				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset() << std::endl
-						  << std::endl;
 			}
 			return;
 		} catch (...) {
