@@ -464,8 +464,6 @@ namespace DiscordCoreLoader {
 				}
 			}
 
-			
-
 			return;
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
