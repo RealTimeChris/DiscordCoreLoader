@@ -452,12 +452,7 @@ namespace DiscordCoreLoader {
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					if (this->theClients[theIndex]->shard[0] < this->theClients[theIndex]->shard[1] - 1) {
 						std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-						std::cout << shiftToBrightBlue() << "Connecting Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 2) << " of "
-								  << this->theClients[theIndex]->shard[1].get<int32_t>()
-								  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 2) + " of " +
-								std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
-								  << reset() << std::endl
-								  << std::endl;
+						std::cout << shiftToBrightBlue() << "Connecting the next Shard..." << reset() << std::endl << std::endl;
 					}
 				}
 			} else {
