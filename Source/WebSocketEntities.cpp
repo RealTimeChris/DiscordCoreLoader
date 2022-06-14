@@ -431,6 +431,12 @@ namespace DiscordCoreLoader {
 					this->discordCoreClient->haveWeCollectedShardingInfo = true;
 					this->discordCoreClient->shardingOptions.startingShard = this->theClients[theIndex]->shard[0];
 				}
+				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
+					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
+							  << std::endl
+							  << std::endl;
+				}
 				this->sendReadyMessage(theIndex);
 				this->theClients[theIndex]->getInputBuffer().clear();
 				this->theClients[theIndex]->sendGuilds = true;
@@ -442,12 +448,7 @@ namespace DiscordCoreLoader {
 							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
 							  << reset() << std::endl;
 				}
-				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
-					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
-							  << std::endl
-							  << std::endl;
-				}
+				
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					if (this->theClients[theIndex]->shard[0] < this->theClients[theIndex]->shard[1] - 1) {
 						std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
