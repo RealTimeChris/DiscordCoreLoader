@@ -59,21 +59,21 @@ namespace DiscordCoreLoader {
 		if (this->clientSocket != SOCKET_ERROR) {
 			if (this->ssl = SSL_new(this->theContext); this->ssl == nullptr) {
 				if (this->doWePrintError) {
-					reportSSLError("SSL_new() Error: ");
+					reportSSLError("SSL_new(), ");
 				}
 				return;
 			}
 
 			if (!SSL_set_min_proto_version(this->ssl, TLS1_2_VERSION)) {
 				if (this->doWePrintError) {
-					reportSSLError("SSL_set_min_proto_version() Error: ");
+					reportSSLError("SSL_set_min_proto_version(), ");
 				}
 				return;
 			}
 
 			if (auto returnValue = SSL_set_fd(this->ssl, this->clientSocket); !returnValue) {
 				if (this->doWePrintError) {
-					reportSSLError("SSL_set_fd() Error: ", returnValue, this->ssl);
+					reportSSLError("SSL_set_fd(), ", returnValue, this->ssl);
 				}
 				return;
 			}
@@ -160,14 +160,14 @@ namespace DiscordCoreLoader {
 
 		if (auto resultValue = getaddrinfo(this->baseUrl.c_str(), this->port.c_str(), hints, this->addrInfo); resultValue != 0) {
 			if (this->doWePrintError) {
-				reportError("getaddrinfo() Error: ", resultValue);
+				reportError("getaddrinfo(), ", resultValue);
 			}
 			return;
 		}
 
 		if (this->theServerSocket = socket(this->addrInfo->ai_family, this->addrInfo->ai_socktype, this->addrInfo->ai_protocol); this->theServerSocket == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("socket() Error: ", this->theServerSocket);
+				reportError("socket(), ", this->theServerSocket);
 			}
 			return;
 		}
@@ -175,7 +175,7 @@ namespace DiscordCoreLoader {
 		int32_t val{ 16384 };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_SOCKET, SO_SNDBUF, ( char* )&val, sizeof(val)); returnValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("setsockopt() Error: ", returnValue);
+				reportError("setsockopt(), ", returnValue);
 			}
 			return;
 		}
@@ -184,7 +184,7 @@ namespace DiscordCoreLoader {
 		char optionValue{ true };
 		if (auto returnValue = setsockopt(this->theServerSocket, IPPROTO_TCP, TCP_NODELAY, &optionValue, sizeof(optionValue)); returnValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("setsockopt() Error: ", returnValue);
+				reportError("setsockopt(), ", returnValue);
 			}
 			return;
 		}
@@ -192,7 +192,7 @@ namespace DiscordCoreLoader {
 		int32_t optionValue{ 1 };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_TCP, TCP_NODELAY, &optionValue, sizeof(optionValue)); returnValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("setsockopt() Error: ", returnValue);
+				reportError("setsockopt(), ", returnValue);
 			}
 			return;
 		}
@@ -201,56 +201,56 @@ namespace DiscordCoreLoader {
 		std::unique_ptr<char> optVal{ new char{ 1 } };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_SOCKET, SO_REUSEADDR, optVal.get(), sizeof(optVal)); returnValue < 0) {
 			if (this->doWePrintError) {
-				reportError("setsockopt() Error: ", returnValue);
+				reportError("setsockopt(), ", returnValue);
 			}
 			return;
 		}
 
 		if (auto returnValue = bind(this->theServerSocket, this->addrInfo->ai_addr, static_cast<int32_t>(this->addrInfo->ai_addrlen)); returnValue != 0) {
 			if (this->doWePrintError) {
-				reportError("bind() Error: ", returnValue);
+				reportError("bind(), ", returnValue);
 			}
 			return;
 		}
 
 		if (auto returnValue = listen(this->theServerSocket, 5); returnValue != 0) {
 			if (this->doWePrintError) {
-				reportError("listen() Error: ", returnValue);
+				reportError("listen(), ", returnValue);
 			}
 			return;
 		}
 
 		if (this->context = SSL_CTX_new(TLS_server_method()); this->context == nullptr) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_new() Error: ");
+				reportSSLError("SSL_CTX_new(), ");
 			}
 			return;
 		}
 
 		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
+				reportSSLError("SSL_CTX_set_min_proto_version(), ");
 			}
 			return;
 		}
 
 		if (!SSL_CTX_set_ciphersuites(this->context, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256")) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_set_ciphersuites() Error: ");
+				reportSSLError("SSL_CTX_set_ciphersuites(), ");
 			}
 			return;
 		}
 
 		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
+				reportSSLError("SSL_CTX_use_certificate_chain_file(), ");
 			}
 			return;
 		}
 
 		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.c_str(), SSL_FILETYPE_PEM) <= 0) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_use_PrivateKey_file() Error: ");
+				reportSSLError("SSL_CTX_use_PrivateKey_file(), ");
 			}
 			return;
 		}
@@ -258,7 +258,7 @@ namespace DiscordCoreLoader {
 		SSL_CTX_set_verify(this->context, SSL_VERIFY_PEER, NULL);
 		if (!SSL_CTX_load_verify_locations(this->context, "Cert.pem", NULL)) {
 			if (this->doWePrintError) {
-				reportSSLError("SSL_CTX_load_verify_locations() Error: ");
+				reportSSLError("SSL_CTX_load_verify_locations(), ");
 			}
 			return;
 		}
@@ -297,7 +297,7 @@ namespace DiscordCoreLoader {
 		timeval checkTime{ .tv_usec = 10000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("select() Error: ", resultValue);
+				reportError("select(), ", resultValue);
 			}
 			return returnValue02;
 		} else if (resultValue == 0) {
@@ -342,8 +342,8 @@ namespace DiscordCoreLoader {
 					}
 					default: {
 						if (value->doWePrintError) {
-							reportSSLError("WebSocketSSLServerMain::processIO::SSL_read_ex() Error: ", returnValue, value->ssl);
-							reportError("WebSocketSSLServerMain::processIO::SSL_read_ex() Error: ", returnValue);
+							reportSSLError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ", returnValue, value->ssl);
+							reportError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ", returnValue);
 						}
 						returnValue02.returnCode = ProcessIOReturnCode::Error;
 						returnValue02.returnIndex = value->clientSocket;
@@ -392,8 +392,8 @@ namespace DiscordCoreLoader {
 						}
 						default: {
 							if (value->doWePrintError) {
-								reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue, value->ssl);
-								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue);
+								reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ", returnValue, value->ssl);
+								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ", returnValue);
 							}
 							returnValue02.returnCode = ProcessIOReturnCode::Error;
 							returnValue02.returnIndex = value->clientSocket;
