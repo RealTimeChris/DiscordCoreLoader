@@ -321,7 +321,7 @@ namespace DiscordCoreLoader {
 				WebSocketMessage theMessage{};
 				theMessage.stringMsg = theString;
 				theMessage.theOpCode = WebSocketOpCode::Op_Close;
-				this->theClients[theIndex]->theMessageQueue.push(theMessage);
+				this->theClients[theIndex]->writeData(theString);
 			}
 		}
 	}
@@ -346,13 +346,13 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
-			if (this->theGuilds.size() > 2500) {
-				this->initDisconnect(WebSocketCloseCode::Sharding_Required, this->currentNewSocket);
-				this->theGuilds.clear();
-			}
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
+				}
+				if (this->theGuilds.size() > 2500) {
+					this->initDisconnect(WebSocketCloseCode::Sharding_Required, this->currentNewSocket);
+					this->theGuilds.clear();
 				}
 				if (this->theClients.size() > 0) {
 					ProcessIOReturnData returnValue{};
