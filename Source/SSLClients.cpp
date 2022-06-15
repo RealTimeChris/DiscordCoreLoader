@@ -53,8 +53,8 @@ namespace DiscordCoreLoader {
 		theStream << strerror(errno) << reset();
 #endif
 		return theStream.str();
-
 	}
+
 	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
 		this->doWePrintError = doWePrintErrorsNew;
 		this->theContext = theContextNew;
