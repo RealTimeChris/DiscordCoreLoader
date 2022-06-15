@@ -72,6 +72,14 @@ namespace DiscordCoreLoader {
 		std::vector<std::string> theStrings{};
 	};
 
+	struct ConnectionError : public std::runtime_error {
+		explicit ConnectionError(const std::string& theString) : std::runtime_error(theString){};
+	};
+
+	struct ProcessingError : public std::runtime_error {
+		explicit ProcessingError(const std::string& theString) : std::runtime_error(theString){};
+	};
+
 	struct WebSocketMessage {
 		WebSocketMessage& operator=(WebSocketMessage&& other) noexcept {
 			this->stringMsg = std::move(other.stringMsg);
@@ -101,7 +109,7 @@ namespace DiscordCoreLoader {
 	#define SOCKET_ERROR (-1)
 #endif
 
-	void reportError(const std::string& errorPosition, int32_t errorValue) noexcept;
+	std::string reportError(const std::string& errorPosition) noexcept;
 #ifdef _WIN32
 	struct WSADataWrapper {
 		struct WSADataDeleter {
@@ -336,7 +344,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit);
 
-		ProcessIOReturnData processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept;
+		ProcessIOReturnData processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
 
 		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard);
 

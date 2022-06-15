@@ -42,6 +42,7 @@
 
 #include <condition_variable>
 #include <nlohmann/json.hpp>
+#include <source_location>
 #include <unordered_map>
 #include <functional>
 #include <semaphore>
@@ -601,7 +602,7 @@ namespace DiscordCoreLoader {
 
 	void constructMultiPartData(HttpWorkloadData& dataPackage, nlohmann::json theData, const std::vector<File>& files);
 
-	void reportException(const std::string& stackTrace, UnboundedMessageBlock<std::exception>* sendBuffer = nullptr, bool rethrow = false);
+	void reportException(const std::string& currentFunctionName, std::source_location theLocation = std::source_location::current());
 
 	std::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat);
 
