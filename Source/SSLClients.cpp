@@ -31,24 +31,27 @@ namespace DiscordCoreLoader {
 	}
 
 	void reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
+		std::stringstream theStream{};
 		if (ssl) {
-			std::cout << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << std::endl;
+			theStream << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << ", " << ERR_error_string(errorValue, nullptr) << reset() << std::endl;
 		} else {
-			std::cout << shiftToBrightRed() << errorPosition << std::endl;
+			theStream << shiftToBrightRed() << errorPosition << reset() << std::endl;
 		}
-		ERR_print_errors_fp(stdout);
-		std::cout << std::endl << reset();
+
+		std::cout << theStream.str();
 	}
 
 	void reportError(const std::string& errorPosition, int32_t errorValue) noexcept {
-		std::cout << shiftToBrightRed() << errorPosition;
+		std::stringstream theStream{};
+		theStream << shiftToBrightRed() << errorPosition;
 #ifdef _WIN32
 		std::unique_ptr<char[]> string{ std::make_unique<char[]>(1024) };
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), string.get(), 1024, NULL);
-		std::cout << WSAGetLastError() << ", " << string << std::endl << reset();
+		theStream << WSAGetLastError() << ", " << string << reset();
 #else
-		std::cout << strerror(errno) << std::endl << reset();
+		theStream << strerror(errno) << reset();
 #endif
+		std::cout << theStream.str();
 	}
 
 	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
