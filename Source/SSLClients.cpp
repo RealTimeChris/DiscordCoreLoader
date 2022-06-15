@@ -87,11 +87,11 @@ namespace DiscordCoreLoader {
 			this->inputBuffer = std::move(other.inputBuffer);
 			this->doWePrintError = other.doWePrintError;
 			this->maxBufferSize = other.maxBufferSize;
+			this->theContext = std::move(theContext);
 			this->bytesWritten = other.bytesWritten;
 			this->bytesRead = other.bytesRead;
 			this->ssl = std::move(other.ssl);
 			this->wantRead = other.wantRead;
-			this->theContext = theContext;
 		}
 		return *this;
 	}

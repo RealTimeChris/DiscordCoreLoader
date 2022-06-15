@@ -311,9 +311,9 @@ namespace DiscordCoreLoader {
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::vector<std::string> outputBuffer{};
 		SOCKETWrapper clientSocket{ nullptr };
+		SSL_CTXWrapper theContext{ nullptr };
 		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
-		SSL_CTX* theContext{ nullptr };
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
