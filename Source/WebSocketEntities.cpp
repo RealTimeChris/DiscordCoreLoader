@@ -347,9 +347,6 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
-				if (this->doWeConnect.load()) {
-					this->connectInternal();
-				}
 				if (this->theGuilds.size() > 2500) {
 					this->initDisconnect(WebSocketCloseCode::Sharding_Required, this->currentNewSocket);
 					this->theGuilds.clear();
@@ -363,6 +360,9 @@ namespace DiscordCoreLoader {
 						}
 					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
+						if (this->doWeConnect.load()) {
+							this->connectInternal();
+						}
 						auto theKey = key;
 						this->handleBuffer(theKey);
 						if (this->closeCode == 0) {
