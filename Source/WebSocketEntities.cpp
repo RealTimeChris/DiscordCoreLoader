@@ -185,6 +185,7 @@ namespace DiscordCoreLoader {
 			this->theClients[theIndex]->theMessageQueue.pop();
 		}
 		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
+		std::cout << "WERE HERE THIS IS IT!" << std::endl;
 	}
 
 	void BaseSocketAgent::sendHelloMessage(SOCKET theIndex) noexcept {
@@ -355,14 +356,8 @@ namespace DiscordCoreLoader {
 					this->theGuilds.clear();
 				}
 				if (this->theClients.size() > 0) {
-					ProcessIOReturnData returnValue{};
-					do {
-						returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-							this->respondToDisconnect(returnValue.returnIndex);
-						}
-					} while (returnValue.writtenOrReadCount != 0);
-					for (auto& [key, value]: this->theClients) {
+					this->webSocketSSLServerMain->processIO(this->theClients);
+					for (auto& [key, value]: this->theClients) {						
 						auto theKey = key;
 						this->handleBuffer(theKey);
 						if (this->closeCode == 0) {
@@ -584,35 +579,46 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::connectInternal() noexcept {
 		try {
-			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket);
-			SOCKET theSocket = theClient->clientSocket;
-			this->currentIndex = theSocket;
+			if (this->connectionStopWatch.hasTimePassed()) {
+				this->connectionStopWatch.resetTimer();
 
-			this->theClients[theSocket] = std::move(theClient);
-			this->states[theSocket] = WebSocketState::Initializing;
+				auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket);
+				SOCKET theSocket = theClient->clientSocket;
+				this->currentIndex = theSocket;
 
-			while (this->authKeys[theSocket] == "") {
+				this->theClients[theSocket] = std::move(theClient);
+				this->states[theSocket] = WebSocketState::Initializing;
+
+				while (this->authKeys[theSocket] == "") {
+					auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
+					this->handleBuffer(theSocket);
+				}
+				this->doWeConnect.store(false);
+				std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
+				sendString += this->authKeys[theSocket] + "\r\n\r\n";
+				this->sendMessage(&sendString, theSocket);
 				auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-				this->handleBuffer(theSocket);
+				if (returnValue.returnCode == ProcessIOReturnCode::Error) {
+					theSocket = SOCKET_ERROR;
+				} else {
+					std::cout << "WERE HERE THIS SI IT 010101" << std::endl;
+					this->handleBuffer(theSocket);
+				}
+				std::cout << "WERE HERE THIS SI IT 020202" << std::endl;
+				this->sendHelloMessage(theSocket);
+				std::cout << "WERE HERE THIS SI IT 03030303" << std::endl;
+				this->sendFinalMessage(theSocket);
+				std::cout << "WERE HERE THIS SI IT 040404" << std::endl;
+				while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
+					std::cout << "WERE HERE THIS SI IT 050505" << std::endl;
+					returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
+					std::cout << "WERE HERE THIS SI IT 060606" << std::endl;
+					this->handleBuffer(theSocket);
+					std::cout << "WERE HERE THIS SI IT 070707" << std::endl;
+				}
+				std::cout << "WERE HERE THIS SI IT 080808" << std::endl;
+				this->doWeQuit->store(false);
 			}
-
-			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
-			sendString += this->authKeys[theSocket] + "\r\n\r\n";
-			this->sendMessage(&sendString, theSocket);
-			auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-			if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-				theSocket = SOCKET_ERROR;
-			} else {
-				this->handleBuffer(theSocket);
-			}
-			this->sendHelloMessage(theSocket);
-			this->sendFinalMessage(theSocket);
-			while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
-				returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-				this->handleBuffer(theSocket);
-			}
-			this->doWeQuit->store(false);
-			this->doWeConnect.store(false);
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::connect()");
