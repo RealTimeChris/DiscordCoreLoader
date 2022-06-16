@@ -42,22 +42,21 @@ namespace DiscordCoreLoader {
 		});
 	}
 
-	void BaseSocketAgent::sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept {
+	void BaseSocketAgent::sendMessage(std::string* dataToSend, WebSocketSSLShard& theIndex) noexcept {
 		try {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessSentMessages) {
 				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightBlue() << "Sending WebSocket " + this->theClients[theIndex]->shard.dump() + std::string("'s Message: ") << std::endl
+				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << std::endl
 						  << *dataToSend << reset();
 			}
 
 			if (this->webSocketSSLServerMain != nullptr) {
-				this->theClients[theIndex]->writeData(*dataToSend);
+				theIndex.writeData(*dataToSend);
 			}
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::sendMessage()");
 			}
-			this->respondToDisconnect(theIndex);
 		}
 	}
 
@@ -65,26 +64,17 @@ namespace DiscordCoreLoader {
 		return this->theTask.get();
 	}
 
-	void BaseSocketAgent::sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept {
+	void BaseSocketAgent::sendMessage(nlohmann::json& dataToSend, WebSocketSSLShard& theIndex) noexcept {
 		try {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessSentMessages) {
 				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightBlue() << "Sending WebSocket " + this->theClients[theIndex]->shard.dump() + std::string("'s Message: ") << dataToSend.dump() << reset()
+				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << dataToSend.dump() << reset()
 						  << reset() << std::endl
 						  << std::endl;
 			}
-			std::string theVector{};
-			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
-				theVector = this->erlPacker.parseJsonToEtf(std::move(dataToSend));
-			} else {
-				theVector = dataToSend.dump();
-			}
-			std::string header{};
-			this->createHeader(header, theVector.size(), theOpCode, true, theIndex);
-			std::string theVectorNew{};
-			theVectorNew.insert(theVectorNew.begin(), header.begin(), header.end());
-			theVectorNew.insert(theVectorNew.begin() + header.size(), theVector.begin(), theVector.end());
-			this->theClients[theIndex]->writeData(theVectorNew);
+			std::string theString{};
+			this->stringifyJsonData(dataToSend, theString);
+			theIndex.writeData(theString);
 
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
@@ -94,7 +84,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept {
+	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept {
 		try {
 			if (isItFinal) {
 				outBuffer.push_back(static_cast<uint8_t>(opCodeNew) | webSocketFinishBit);
@@ -123,17 +113,16 @@ namespace DiscordCoreLoader {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::createHeader()");
 			}
-			this->respondToDisconnect(theIndex);
 			return uint64_t{};
 		}
 	}
 
-	void BaseSocketAgent::sendCreateGuilds(SOCKET theIndex) noexcept {
-		if (this->theClients[theIndex]->currentGuildCount < this->theClients[theIndex]->totalGuildCount) {
-			this->theClients[theIndex]->currentGuildCount += 1;
-			this->theClients[theIndex]->lastNumberSent += 1;
+	void BaseSocketAgent::sendCreateGuilds(WebSocketSSLShard& theIndex) noexcept {
+		if (theIndex.currentGuildCount < theIndex.totalGuildCount) {
+			theIndex.currentGuildCount += 1;
+			theIndex.lastNumberSent += 1;
 			auto theGuildNew = this->discordCoreClient->theGuildHolder;
-			theGuildNew["s"] = this->theClients[theIndex]->lastNumberSent;
+			theGuildNew["s"] = theIndex.lastNumberSent;
 			WebSocketMessage theMessage{};
 			theMessage.jsonMsg = std::move(theGuildNew);
 			if (this->theMode == WebSocketMode::ETF) {
@@ -141,53 +130,41 @@ namespace DiscordCoreLoader {
 			} else {
 				theMessage.theOpCode = WebSocketOpCode::Op_Text;
 			}
-			this->theClients[theIndex]->theMessageQueue.push(std::move(theMessage));
+			theIndex.theMessageQueue.push(std::move(theMessage));
 		}
 	}
 
-	void BaseSocketAgent::sendReadyMessage(SOCKET theIndex) noexcept {
-		this->theClients[theIndex]->lastNumberSent += 1;
+	void BaseSocketAgent::sendReadyMessage(WebSocketSSLShard& theIndex) noexcept {
+		theIndex.lastNumberSent += 1;
 		nlohmann::json jsonData{};
 		jsonData["op"] = static_cast<int8_t>(0);
-		jsonData["s"] = this->theClients[theIndex]->lastNumberSent;
+		jsonData["s"] = theIndex.lastNumberSent;
 		jsonData["t"] = "READY";
 		jsonData["d"]["session_id"] = this->jsonifier.randomizeId();
 		jsonData["d"]["guilds"];
 		int32_t guildSize = static_cast<int32_t>(
 			floor(static_cast<double>(this->discordCoreClient->guildQuantity) / static_cast<double>(this->discordCoreClient->shardingOptions.totalNumberOfShards)));
-		this->theClients[theIndex]->totalGuildCount = guildSize;
+		theIndex.totalGuildCount = guildSize;
 		if (guildSize > 2500) {
 			this->initDisconnect(WebSocketCloseCode::Sharding_Required, theIndex);
 			return;
 		}
 		for (int32_t x = 0; x < this->discordCoreClient->guildQuantity / this->discordCoreClient->shardingOptions.totalNumberOfShards; x += 1) {
 			auto theDifference = UINT64_MAX / this->discordCoreClient->shardingOptions.totalNumberOfShards;
-			auto minValue = static_cast<uint64_t>(theDifference) * static_cast<uint64_t>(this->theClients[theIndex]->shard[0]);
+			auto minValue = static_cast<uint64_t>(theDifference) * static_cast<uint64_t>(theIndex.shard[0]);
 			auto maxValue = minValue + theDifference;
 			auto theGuild = this->jsonifier.generateUnavailableGuild(minValue, maxValue);
 			jsonData["d"]["guilds"].push_back(this->jsonifier.JSONIFYUnavailableGuild(theGuild));
-			this->theGuilds[theIndex].push_back(theGuild);
+			this->theGuilds[theIndex.clientSocket].push_back(theGuild);
 		}
 		jsonData["d"]["v"] = 10;
 		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(std::move(*this->jsonifier.generateUser()));
-		WebSocketMessage theMessage{};
-		theMessage.jsonMsg = std::move(jsonData);
-		if (this->theMode == WebSocketMode::ETF) {
-			theMessage.theOpCode = WebSocketOpCode::Op_Binary;
-		} else {
-			theMessage.theOpCode = WebSocketOpCode::Op_Text;
-		}
-
-		std::queue<WebSocketMessage> theMessageQueue{};
-		theMessageQueue.push(std::move(theMessage));
-		for (uint32_t x = 0; x < this->theClients[theIndex]->theMessageQueue.size(); x += 1) {
-			theMessageQueue.push(std::move(this->theClients[theIndex]->theMessageQueue.front()));
-			this->theClients[theIndex]->theMessageQueue.pop();
-		}
-		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
+		std::string theString{};
+		this->stringifyJsonData(jsonData, theString);
+		theIndex.writeData(theString);
 	}
 
-	void BaseSocketAgent::sendHelloMessage(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::sendHelloMessage(WebSocketSSLShard& theIndex) noexcept {
 		nlohmann::json jsonData{};
 		jsonData["op"] = static_cast<int8_t>(10);
 		jsonData["s"];
@@ -195,46 +172,23 @@ namespace DiscordCoreLoader {
 		jsonData["d"]["heartbeat_interval"] = static_cast<uint16_t>(this->heartbeatInterval);
 		jsonData["d"]["_trace"] = nlohmann::json::array();
 		jsonData["d"]["_trace"].push_back(std::string({ "[\"gateway-prd-main-6dtt\",{\"micros\":0.0}]" }));
-		WebSocketMessage theMessage{};
-		theMessage.jsonMsg = std::move(jsonData);
-		if (this->theMode == WebSocketMode::ETF) {
-			theMessage.theOpCode = WebSocketOpCode::Op_Binary;
-		} else {
-			theMessage.theOpCode = WebSocketOpCode::Op_Text;
-		}
-
-		std::queue<WebSocketMessage> theMessageQueue{};
-		theMessageQueue.push(std::move(theMessage));
-		for (uint32_t x = 0; x < this->theClients[theIndex]->theMessageQueue.size(); x += 1) {
-			theMessageQueue.push(std::move(this->theClients[theIndex]->theMessageQueue.front()));
-			this->theClients[theIndex]->theMessageQueue.pop();
-		}
-		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
+		std::string theString{};
+		this->stringifyJsonData(jsonData, theString);
+		theIndex.writeData(theString);
 	}
 
-	void BaseSocketAgent::sendHeartBeat(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::sendHeartBeat(WebSocketSSLShard& theIndex) noexcept {
 		nlohmann::json jsonData{};
 		jsonData["op"] = static_cast<int8_t>(11);
 		jsonData["s"];
 		jsonData["t"];
 		jsonData["d"];
-		WebSocketMessage theMessage{};
-		theMessage.jsonMsg = std::move(jsonData);
-		if (this->theMode == WebSocketMode::ETF) {
-			theMessage.theOpCode = WebSocketOpCode::Op_Binary;
-		} else {
-			theMessage.theOpCode = WebSocketOpCode::Op_Text;
-		}
-		std::queue<WebSocketMessage> theMessageQueue{};
-		theMessageQueue.push(std::move(theMessage));
-		for (uint32_t x = 0; x < this->theClients[theIndex]->theMessageQueue.size(); x += 1) {
-			theMessageQueue.push(std::move(this->theClients[theIndex]->theMessageQueue.front()));
-			this->theClients[theIndex]->theMessageQueue.pop();
-		}
-		this->theClients[theIndex]->theMessageQueue = std::move(theMessageQueue);
+		std::string theString{};
+		this->stringifyJsonData(jsonData, theString);
+		theIndex.writeData(theString);
 	}
 
-	std::vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, SOCKET theIndex, const std::string& separator) noexcept {
+	std::vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, WebSocketSSLShard& theIndex, const std::string& separator) noexcept {
 		try {
 			std::string::size_type value{ 0 };
 			std::vector<std::string> dataOut{};
@@ -257,7 +211,7 @@ namespace DiscordCoreLoader {
 					}
 				}
 				if (dataIn.substr(value, output - value).find("Sec-WebSocket-Key:") != std::string::npos) {
-					this->authKeys[theIndex] =
+					this->authKeys[theIndex.clientSocket] =
 						dataOut[dataOut.size() - 1].substr(dataOut[dataOut.size() - 1].find("Sec-WebSocket-Key: ") + std::string{ "Sec-WebSocket-Key: " }.size());
 				}
 				if (dataIn.substr(value, output - value).find("json") != std::string::npos) {
@@ -277,28 +231,28 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::respondToDisconnect(SOCKET theIndex) noexcept {
-		if (theIndex != 0) {
+	void BaseSocketAgent::respondToDisconnect(WebSocketSSLShard& theIndex) noexcept {
+		if (theIndex.clientSocket != 0) {
 			std::string theString{};
 			theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
 			theString.push_back(0);
 			theString.push_back(static_cast<int8_t>(static_cast<uint16_t>(1000) >> 8));
 			theString.push_back(static_cast<int8_t>(1000 & 0xff));
 			if (this->webSocketSSLServerMain != nullptr) {
-				if (this->theClients.contains(theIndex)) {
-					this->theClients[theIndex]->writeData(theString);
+				if (this->theClients.contains(theIndex.clientSocket)) {
+					theIndex.writeData(theString);
 					if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
-						std::cout << shiftToBrightRed() << "WebSocket " + this->theClients[theIndex]->shard.dump() + " Closed; Code: " << this->closeCode << reset() << std::endl;
+						std::cout << shiftToBrightRed() << "WebSocket " + theIndex.shard.dump() + " Closed; Code: " << this->closeCode << reset() << std::endl;
 					}
 				}
 			}
-			if (this->theClients.contains(theIndex)) {
+			if (this->theClients.contains(theIndex.clientSocket)) {
 				ReconnectionPackage theData{};
-				theData.currentShard = this->theClients[theIndex]->shard[0];
-				theData.totalShardCount = this->theClients[theIndex]->shard[1];
+				theData.currentShard = theIndex.shard[0];
+				theData.totalShardCount = theIndex.shard[1];
 				theData.theMap = &this->theClients;
-				theData.theSocket = this->theClients[theIndex]->clientSocket;
-				this->theClients.erase(theIndex);
+				theData.theSocket = theIndex.clientSocket;
+				this->theClients.erase(theIndex.clientSocket);
 				this->webSocketSSLServerMain->submitReconnectionShard(theData);
 			} else {
 				this->doWeQuit->store(true);
@@ -307,37 +261,37 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept {
-		if (theIndex != 0) {
+	void BaseSocketAgent::initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard& theIndex) noexcept {
+		if (theIndex.clientSocket != 0) {
 			std::string theString{};
 			theString.push_back(static_cast<int8_t>(WebSocketOpCode::Op_Close) | static_cast<int8_t>(webSocketFinishBit));
 			theString.push_back(0);
 			theString.push_back(static_cast<uint16_t>(reason) >> 8);
 			theString.push_back(static_cast<int8_t>(reason) & 0xff);
-			if (this->theClients.contains(theIndex)) {
-				while (this->theClients[theIndex]->theMessageQueue.size() > 0) {
-					this->theClients[theIndex]->theMessageQueue.pop();
+			if (this->theClients.contains(theIndex.clientSocket)) {
+				while (theIndex.theMessageQueue.size() > 0) {
+					theIndex.theMessageQueue.pop();
 				}
 				WebSocketMessage theMessage{};
 				theMessage.stringMsg = theString;
 				theMessage.theOpCode = WebSocketOpCode::Op_Close;
-				this->theClients[theIndex]->writeData(theString);
+				theIndex.writeData(theString);
 			}
 		}
 	}
 
-	void BaseSocketAgent::sendFinalMessage(SOCKET theIndex) noexcept {
-		if (this->theClients[theIndex]->outputBuffer.size() == 0) {
-			if (this->theClients[theIndex]->theMessageQueue.size() > 0) {
-				WebSocketMessage newMessage = std::move(this->theClients[theIndex]->theMessageQueue.front());
-				this->theClients[theIndex]->theMessageQueue.pop();
+	void BaseSocketAgent::sendFinalMessage(WebSocketSSLShard& theIndex) noexcept {
+		if (theIndex.outputBuffer.size() == 0) {
+			if (theIndex.theMessageQueue.size() > 0) {
+				WebSocketMessage newMessage = std::move(theIndex.theMessageQueue.front());
+				theIndex.theMessageQueue.pop();
 				if (newMessage.stringMsg.size() > 0) {
-					this->sendMessage(&newMessage.stringMsg, this->theClients[theIndex]->clientSocket);
+					this->sendMessage(&newMessage.stringMsg, theIndex);
 				} else {
 					if (this->theMode == WebSocketMode::ETF) {
-						this->sendMessage(newMessage.jsonMsg, WebSocketOpCode::Op_Binary, this->theClients[theIndex]->clientSocket);
+						this->sendMessage(newMessage.jsonMsg, theIndex);
 					} else {
-						this->sendMessage(newMessage.jsonMsg, WebSocketOpCode::Op_Text, this->theClients[theIndex]->clientSocket);
+						this->sendMessage(newMessage.jsonMsg, theIndex);
 					}
 				}
 			}
@@ -350,55 +304,47 @@ namespace DiscordCoreLoader {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
 				}
-				if (this->theGuilds.size() > 2500) {
-					this->initDisconnect(WebSocketCloseCode::Sharding_Required, this->currentNewSocket);
-					this->theGuilds.clear();
-				}
 				if (this->theClients.size() > 0) {
-					ProcessIOReturnData returnValue{};
-					do {
-						returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-						if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-							this->respondToDisconnect(returnValue.returnIndex);
-						}
-					} while (returnValue.writtenOrReadCount != 0);
 					for (auto& [key, value]: this->theClients) {
-						auto theKey = key;
-						this->handleBuffer(theKey);
+						this->webSocketSSLServerMain->processIO(this->theClients);
+						if (this->doWeConnect.load()) {
+							this->connectInternal();
+						}
+						this->parseHeader(*value);
 						if (this->closeCode == 0) {
-							if (value->outputBuffer.size() == 0) {
+							if (value->outputBuffer.size() == 0 && value->theStopWatch.hasTimePassed()) {
+								value->theStopWatch.resetTimer();
 								if (value->sendGuilds) {
-									this->sendCreateGuilds(theKey);
+									this->sendCreateGuilds(*value);
 								}
+								this->sendFinalMessage(*value);
 							}
-							this->sendFinalMessage(theKey);
 						} else {
 							this->closeCode = 0;
 							break;
 						}
 					}
+					if (this->doWeConnect.load()) {
+						this->connectInternal();
+					}
 				}
 				std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-			}
-			if (this->opCode != WebSocketOpCode::Op_Close) {
-				this->initDisconnect(static_cast<WebSocketCloseCode>(1000), this->currentIndex);
 			}
 		} catch (...) {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::run()");
 			}
-			this->respondToDisconnect(this->currentIndex);
 		}
 	}
 
 	void BaseSocketAgent::sendGuildMemberChunks() noexcept {
 	}
 
-	void BaseSocketAgent::onMessageReceived(SOCKET theIndex) noexcept {
+	void BaseSocketAgent::onMessageReceived(WebSocketSSLShard& theIndex) noexcept {
 		try {
 			std::string messageNew{};
 
-			messageNew = std::move(this->theClients[theIndex]->getInputBuffer());
+			messageNew = std::move(theIndex.getInputBuffer());
 			nlohmann::json payload{};
 
 			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
@@ -414,51 +360,54 @@ namespace DiscordCoreLoader {
 
 			if (payload["op"] == 8) {
 				this->sendGuildMemberChunks();
+				theIndex.getInputBuffer().clear();
 			}
 
 			if (payload["op"] == 1) {
 				this->sendHeartBeat(theIndex);
-				this->theClients[theIndex]->getInputBuffer().clear();
+				theIndex.getInputBuffer().clear();
 			}
 
 			if (payload["op"] == 2) {
 				if (payload["d"].contains("shard")) {
-					this->theClients[theIndex]->shard = payload["d"]["shard"];
+					theIndex.shard.clear();
+					theIndex.shard = payload["d"]["shard"];
 					this->intentsValue = payload["d"]["intents"];
 				}
 				if (!this->discordCoreClient->haveWeCollectedShardingInfo) {
-					this->discordCoreClient->shardingOptions.totalNumberOfShards = this->theClients[theIndex]->shard[1];
+					this->discordCoreClient->shardingOptions.totalNumberOfShards = theIndex.shard[1];
 					this->discordCoreClient->haveWeCollectedShardingInfo = true;
-					this->discordCoreClient->shardingOptions.startingShard = this->theClients[theIndex]->shard[0];
+					this->discordCoreClient->shardingOptions.startingShard = theIndex.shard[0];
 				}
 				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset()
 							  << std::endl
 							  << std::endl;
 				}
 				this->sendReadyMessage(theIndex);
-				this->theClients[theIndex]->getInputBuffer().clear();
-				this->theClients[theIndex]->sendGuilds = true;
+				theIndex.getInputBuffer().clear();
+				theIndex.sendGuilds = true;
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) << " of "
-							  << this->theClients[theIndex]->shard[1].get<int32_t>()
-							  << std::string(" Shards for this process. (") + std::to_string(this->theClients[theIndex]->shard[0].get<int32_t>() + 1) + " of " +
-							std::to_string(this->theClients[theIndex]->shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
+					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(theIndex.shard[0].get<int32_t>() + 1) << " of "
+							  << theIndex.shard[1].get<int32_t>()
+							  << std::string(" Shards for this process. (") + std::to_string(theIndex.shard[0].get<int32_t>() + 1) + " of " +
+							std::to_string(theIndex.shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
 							  << reset() << std::endl;
 				}
 				
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
-					if (this->theClients[theIndex]->shard[0] < this->theClients[theIndex]->shard[1] - 1) {
+					if (theIndex.shard[0] < theIndex.shard[1] - 1) {
 						std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
 						std::cout << shiftToBrightBlue() << "Connecting the next Shard..." << reset() << std::endl << std::endl;
 					}
 				}
+				theIndex.getInputBuffer().clear();
 			} else {
 				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + this->theClients[theIndex]->shard.dump() + ": " << payload.dump() << reset()
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset()
 							  << std::endl
 							  << std::endl;
 				}
@@ -474,46 +423,29 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::handleBuffer(SOCKET theIndex) noexcept {
-		try {
-			std::string newVector = this->theClients[theIndex]->getInputBuffer();
-			switch (this->states[theIndex]) {
-				case WebSocketState::Initializing:
-					if (newVector.find("\r\n\r\n") != std::string::npos) {
-						std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
-						newVector.erase(0, newVector.find("\r\n\r\n") + 4);
-						std::vector<std::string> headerOut = tokenize(headers, theIndex);
-						if (headerOut.size()) {
-							std::string statusLine = headerOut[0];
-							headerOut.erase(headerOut.begin());
-							std::vector<std::string> status = tokenize(statusLine, theIndex, " ");
-							this->states[theIndex] = WebSocketState::Connected;
-							this->theClients[theIndex]->getInputBuffer().clear();
-							this->theClients[theIndex]->getInputBuffer().insert(this->theClients[theIndex]->getInputBuffer().end(), newVector.begin(), newVector.end());
-							this->parseHeader(theIndex);
-						}
-					}
-					break;
-				case WebSocketState::Connected:
-					while (this->parseHeader(theIndex)) {
-					};
-					return;
+	bool BaseSocketAgent::parseHeader(WebSocketSSLShard& theIndex) noexcept {
+		std::string newVector = theIndex.getInputBuffer();
+		switch (theIndex.theState) {
+		case WebSocketState::Initializing:
+			if (newVector.find("\r\n\r\n") != std::string::npos) {
+				std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
+				newVector.erase(0, newVector.find("\r\n\r\n") + 4);
+				std::vector<std::string> headerOut = tokenize(headers, theIndex);
+				if (headerOut.size()) {
+					std::string statusLine = headerOut[0];
+					headerOut.erase(headerOut.begin());
+					std::vector<std::string> status = tokenize(statusLine, theIndex, " ");
+					theIndex.theState = WebSocketState::Connected;
+					theIndex.getInputBuffer().clear();
+					theIndex.getInputBuffer().insert(theIndex.getInputBuffer().end(), newVector.begin(), newVector.end());
+				}
 			}
-		} catch (...) {
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
-				reportException("BaseSocketAgent::handleBuffer()");
-			}
-			this->respondToDisconnect(theIndex);
-		}
-	}
-
-	bool BaseSocketAgent::parseHeader(SOCKET theIndex) noexcept {
-		try {
-			std::string newVector = this->theClients[theIndex]->getInputBuffer();
-			if (this->theClients[theIndex]->getInputBuffer().size() < 4) {
+			break;
+		case WebSocketState::Connected:
+			if (theIndex.getInputBuffer().size() < 4) {
 				return false;
 			} else {
-				uint8_t theValue = this->theClients[theIndex]->getInputBuffer()[0];
+				uint8_t theValue = theIndex.getInputBuffer()[0];
 				std::bitset<8> theBits = theValue;
 				theBits.set(7, 0);
 				this->opCode = static_cast<WebSocketOpCode>(theBits.to_ulong());
@@ -523,47 +455,47 @@ namespace DiscordCoreLoader {
 					case WebSocketOpCode::Op_Binary:
 					case WebSocketOpCode::Op_Ping:
 					case WebSocketOpCode::Op_Pong: {
-						uint8_t length01 = this->theClients[theIndex]->getInputBuffer()[1];
+						uint8_t length01 = theIndex.getInputBuffer()[1];
 						std::bitset<8> theBits02 = length01;
 						theBits02.set(7, 0);
 						uint32_t payloadStartOffset = 2;
 						uint64_t length02 = theBits02.to_ullong();
 						if (length02 == webSocketPayloadLengthMagicLarge) {
-							if (this->theClients[theIndex]->getInputBuffer().size() < 8) {
+							if (theIndex.getInputBuffer().size() < 8) {
 								return false;
 							}
-							uint8_t length03 = this->theClients[theIndex]->getInputBuffer()[2];
-							uint8_t length04 = this->theClients[theIndex]->getInputBuffer()[3];
+							uint8_t length03 = theIndex.getInputBuffer()[2];
+							uint8_t length04 = theIndex.getInputBuffer()[3];
 							length02 = static_cast<uint64_t>((length03 << 8) | length04);
 							payloadStartOffset += 2;
 						} else if (length02 == webSocketPayloadLengthMagicHuge) {
-							if (this->theClients[theIndex]->getInputBuffer().size() < 10) {
+							if (theIndex.getInputBuffer().size() < 10) {
 								return false;
 							}
 							length02 = 0;
 							for (uint64_t value = 2, shift = 56; value < 10; ++value, shift -= 8) {
-								uint8_t length05 = static_cast<uint8_t>(this->theClients[theIndex]->getInputBuffer()[value]);
+								uint8_t length05 = static_cast<uint8_t>(theIndex.getInputBuffer()[value]);
 								length02 |= static_cast<uint64_t>(length05) << shift;
 							}
 							payloadStartOffset += 8;
 						}
-						if (this->theClients[theIndex]->getInputBuffer().size() < payloadStartOffset + length02) {
+						if (theIndex.getInputBuffer().size() < payloadStartOffset + length02) {
 							return false;
 						} else {
 							std::string newerVector{};
-							newerVector.insert(newerVector.begin(), this->theClients[theIndex]->getInputBuffer().begin() + payloadStartOffset + 4,
-								this->theClients[theIndex]->getInputBuffer().begin() + payloadStartOffset + length02 + 4);
-							this->theClients[theIndex]->getInputBuffer() = std::move(newerVector);
+							newerVector.insert(newerVector.begin(), theIndex.getInputBuffer().begin() + payloadStartOffset + 4,
+								theIndex.getInputBuffer().begin() + payloadStartOffset + length02 + 4);
+							theIndex.getInputBuffer() = std::move(newerVector);
 							this->onMessageReceived(theIndex);
 						}
 						return true;
 					}
 					case WebSocketOpCode::Op_Close: {
-						uint16_t close = this->theClients[theIndex]->getInputBuffer()[2] & 0xff;
+						uint16_t close = theIndex.getInputBuffer()[2] & 0xff;
 						close <<= 8;
-						close |= this->theClients[theIndex]->getInputBuffer()[3] & 0xff;
+						close |= theIndex.getInputBuffer()[3] & 0xff;
 						this->closeCode = close;
-						this->theClients[theIndex]->getInputBuffer().clear();
+						theIndex.getInputBuffer().clear();
 						this->respondToDisconnect(theIndex);
 						return false;
 					}
@@ -573,13 +505,24 @@ namespace DiscordCoreLoader {
 					}
 				}
 			}
-		} catch (...) {
-			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketErrorMessages) {
-				reportException("BaseSocketAgent::parseHeader()");
-			}
-			this->respondToDisconnect(theIndex);
-			return false;
+			return true;
 		}
+	}
+
+	void BaseSocketAgent::stringifyJsonData(const nlohmann::json&jsonData, std::string&theString) noexcept{
+		std::string theVector{};
+		WebSocketOpCode theOpCode{};
+		if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
+			theVector = this->erlPacker.parseJsonToEtf(jsonData);
+			theOpCode = WebSocketOpCode::Op_Binary;
+		} else {
+			theVector = jsonData.dump();
+			theOpCode = WebSocketOpCode::Op_Text;
+		}
+		std::string header{};
+		this->createHeader(header, theVector.size(), theOpCode, true);
+		theString.insert(theString.begin(), header.begin(), header.end());
+		theString.insert(theString.begin() + header.size(), theVector.begin(), theVector.end());
 	}
 
 	void BaseSocketAgent::connectInternal() noexcept {
@@ -587,30 +530,32 @@ namespace DiscordCoreLoader {
 			auto theClient = this->discordCoreClient->webSocketSSLServerMain->connectShard(this->currentNewSocket);
 			SOCKET theSocket = theClient->clientSocket;
 			this->currentIndex = theSocket;
-
-			this->theClients[theSocket] = std::move(theClient);
-			this->states[theSocket] = WebSocketState::Initializing;
-
+			std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theMap{};
+			theMap[theSocket] = std::move(theClient);
+			theMap[theSocket]->theState = WebSocketState::Initializing;
+			theMap[theSocket]->shard.push_back(theSocket);
 			while (this->authKeys[theSocket] == "") {
-				auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-				this->handleBuffer(theSocket);
-			}
-
+				this->webSocketSSLServerMain->processIO(theMap);
+				this->parseHeader(*theMap[theSocket]);
+			}	
+			
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKeys[theSocket] + "\r\n\r\n";
-			this->sendMessage(&sendString, theSocket);
-			auto returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-			if (returnValue.returnCode == ProcessIOReturnCode::Error) {
-				theSocket = SOCKET_ERROR;
-			} else {
-				this->handleBuffer(theSocket);
-			}
-			this->sendHelloMessage(theSocket);
-			this->sendFinalMessage(theSocket);
+			this->sendMessage(&sendString, *theMap[theSocket]);
+			ProcessIOReturnData returnValue{};
 			while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
-				returnValue = this->webSocketSSLServerMain->processIO(this->theClients);
-				this->handleBuffer(theSocket);
+				returnValue = this->webSocketSSLServerMain->processIO(theMap);
 			}
+			this->parseHeader(*theMap[theSocket]);
+			this->sendHelloMessage(*theMap[theSocket]);
+			
+			this->sendFinalMessage(*theMap[theSocket]);
+			returnValue.returnIndex = 0;
+			while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
+				returnValue = this->webSocketSSLServerMain->processIO(theMap);
+			}
+			this->parseHeader(*theMap[theSocket]);
+			this->theClients[theSocket] = std::move(theMap[theSocket]);
 			this->doWeQuit->store(false);
 			this->doWeConnect.store(false);
 		} catch (...) {
@@ -620,15 +565,9 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::connect(int32_t currentShard, int32_t totalShardCount) noexcept {
-		this->currentConnectionData.clear();
-		this->currentConnectionData.push_back(currentShard);
-		this->currentConnectionData.push_back(totalShardCount);
+	void BaseSocketAgent::connect() noexcept {
 		this->currentNewSocket = this->webSocketSSLServerMain->getNewSocket();
 		this->doWeConnect.store(true);
-		while (this->doWeConnect.load()) {
-			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-		}
 	}
 
 	BaseSocketAgent::~BaseSocketAgent() noexcept {

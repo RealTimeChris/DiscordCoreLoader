@@ -68,6 +68,8 @@ namespace DiscordCoreLoader {
 
 	enum class WebSocketOpCode : int8_t { Op_Continuation = 0x00, Op_Text = 0x01, Op_Binary = 0x02, Op_Close = 0x08, Op_Ping = 0x09, Op_Pong = 0x0a };
 
+	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
+
 	struct MessagePackage {
 		std::vector<std::string> theStrings{};
 	};
@@ -307,6 +309,7 @@ namespace DiscordCoreLoader {
 		~WebSocketSSLShard();
 
 	  protected:
+		StopWatch<std::chrono::milliseconds> theStopWatch{ std::chrono::milliseconds{ 6000 } };
 		std::queue<WebSocketMessage> theMessageQueue{};
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::vector<std::string> outputBuffer{};
@@ -319,6 +322,7 @@ namespace DiscordCoreLoader {
 		int64_t currentGuildCount{};
 		uint64_t bytesWritten{ 0 };
 		int64_t totalGuildCount{};
+		WebSocketState theState{};
 		SSLWrapper ssl{ nullptr };
 		std::string inputBuffer{};
 		int64_t lastNumberSent{};

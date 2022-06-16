@@ -61,7 +61,7 @@ namespace DiscordCoreLoader {
 
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect();
 			}
 			if (Globals::doWeDisconnect.load()) {
 				std::mt19937_64 theRandomEngine{};
@@ -79,7 +79,7 @@ namespace DiscordCoreLoader {
 			std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true, &Globals::doWeQuit);
 		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
-		this->baseSocketAgentMap[std::to_string(0)]->connect(0, 0);
+		this->baseSocketAgentMap[std::to_string(0)]->connect();
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -113,20 +113,27 @@ namespace DiscordCoreLoader {
 			leftOverShards -= newShardAmount;
 		}
 		auto totalShards{ 0 };
-		int32_t currentBaseSocketAgent{ 0 };
-		for (auto& value: shardsPerWorkerVect) {
+		for (int32_t x = 0; x < shardsPerWorkerVect.size(); x += 1) {
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect();
 			}
-			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
-			for (int32_t y = 0; y < value; y += 1) {
+			if (x > 0) {
+				auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
+				this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
+			}
+			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
+				if (x == 0 && y == 0) {
+					continue;
+				}
+				while (!this->theStopWatch.hasTimePassed()) {
+					std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+				}
 				totalShards += 1;
-				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
+				this->baseSocketAgentMap[std::to_string(x)]->connect();
+				this->theStopWatch.resetTimer();
 			}
-			this->baseSocketAgentMap[std::to_string(currentBaseSocketAgent)] = std::move(thePtr02);
-			currentBaseSocketAgent += 1;
 		}
 		if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 			std::cout << shiftToBrightGreen() << "All of the shards are connected for the current process!" << reset() << std::endl << std::endl;

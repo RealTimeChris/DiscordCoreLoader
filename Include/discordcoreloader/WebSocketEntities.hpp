@@ -30,8 +30,6 @@ namespace DiscordCoreLoader {
 
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
-	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
-
 	enum class WebSocketCloseCode : uint16_t {
 		Unknown_Error = 4000,///< We're not sure what went wrong. Try reconnecting?
 		Unknown_Opcode = 4001,///< You sent an invalid Gateway opcode or an invalid payload for an opcode. Don't do that!
@@ -55,9 +53,9 @@ namespace DiscordCoreLoader {
 
 		BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew) noexcept;
 
-		void sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept;
+		void sendMessage(std::string* dataToSend, WebSocketSSLShard& theIndex) noexcept;
 
-		void sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept;
+		void sendMessage(nlohmann::json& dataToSend, WebSocketSSLShard& theIndex) noexcept;
 
 		std::jthread* getTheTask() noexcept;
 
@@ -69,11 +67,9 @@ namespace DiscordCoreLoader {
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
-		std::unordered_map<SOCKET, WebSocketState> states{};
 		std::unordered_map<SOCKET, std::string> authKeys{};
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
-		nlohmann::json currentConnectionData{ 0, 0 };
 		SOCKETWrapper currentNewSocket{ nullptr };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_bool doWeConnect{ false };
@@ -85,38 +81,38 @@ namespace DiscordCoreLoader {
 		ErlPacker erlPacker{};
 		JSONIFier jsonifier{};
 
-		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept;
+		std::vector<std::string> tokenize(const std::string& dataIn, WebSocketSSLShard& theIndex, const std::string& separator = "\r\n") noexcept;
 
-		std::vector<std::string> tokenize(const std::string& dataIn, SOCKET theIndex, const std::string& separator = "\r\n") noexcept;
+		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept;
 
-		void initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept;
+		void stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept;
 
-		void connect(int32_t currentShard, int32_t totalShardCount) noexcept;
+		void initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard& theIndex) noexcept;
+
+		void respondToDisconnect(WebSocketSSLShard& theIndex) noexcept;
+
+		void onMessageReceived(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendCreateGuilds(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendReadyMessage(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendFinalMessage(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendHelloMessage(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendHeartBeat(WebSocketSSLShard& theIndex) noexcept;
+
+		bool parseHeader(WebSocketSSLShard& theIndex) noexcept;
 
 		void run(std::stop_token theToken) noexcept;
 
-		void respondToDisconnect(SOCKET) noexcept;
-
-		void onMessageReceived(SOCKET) noexcept;
-
-		void sendCreateGuilds(SOCKET) noexcept;
-
-		void sendReadyMessage(SOCKET) noexcept;
-
-		void sendFinalMessage(SOCKET) noexcept;
-
-		void sendHelloMessage(SOCKET) noexcept;
-
 		void sendGuildMemberChunks() noexcept;
-
-		void sendHeartBeat(SOCKET) noexcept;
-
-		void handleBuffer(SOCKET) noexcept;
-
-		bool parseHeader(SOCKET) noexcept;
 
 		void sendFinalMessage() noexcept;
 
 		void connectInternal() noexcept;
+
+		void connect() noexcept;
 	};
 }// namespace DiscordCoreLoader

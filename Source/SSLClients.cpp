@@ -241,19 +241,17 @@ namespace DiscordCoreLoader {
 			if ((value->outputBuffer.size() > 0 || value->wantWrite)) {
 				FD_SET(value->clientSocket, &writeSet);
 				writeNfds = value->clientSocket > writeNfds ? static_cast<SOCKET>(value->clientSocket) : writeNfds;
-			} else if (!value->wantWrite) {
-				FD_SET(value->clientSocket, &readSet);
-			}			
+			}
+			FD_SET(value->clientSocket, &readSet);
 			readNfds = value->clientSocket > readNfds ? static_cast<SOCKET>(value->clientSocket) : readNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
 		ProcessIOReturnData returnValue02{};
 		returnValue02.returnCode = ProcessIOReturnCode::Success;
-		timeval checkTime{ .tv_usec = 10000 };
+		timeval checkTime{ .tv_usec = 1000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			throw ProcessingError{ reportError("select(), ") };
-			return returnValue02;
 		} else if (resultValue == 0) {
 			return returnValue02;
 		}
@@ -297,9 +295,6 @@ namespace DiscordCoreLoader {
 					default: {
 						throw ProcessingError{ reportSSLError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ", returnValue, value->ssl) +
 							reportError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ") };
-						returnValue02.returnCode = ProcessIOReturnCode::Error;
-						returnValue02.returnIndex = value->clientSocket;
-						return returnValue02;
 					}
 				}
 			}
@@ -345,9 +340,6 @@ namespace DiscordCoreLoader {
 						default: {
 							throw ProcessingError{ reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ", returnValue, value->ssl) +
 								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ") };
-							returnValue02.returnCode = ProcessIOReturnCode::Error;
-							returnValue02.returnIndex = value->clientSocket;
-							return returnValue02;
 						}
 					}
 				}
