@@ -28,8 +28,6 @@
 
 namespace DiscordCoreLoader {
 
-	using namespace std::literals;
-
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
 	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
@@ -68,7 +66,6 @@ namespace DiscordCoreLoader {
 	  protected:
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
-		StopWatch<std::chrono::milliseconds> connectionStopWatch{ 5000ms };
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
