@@ -276,17 +276,6 @@ namespace DiscordCoreLoader {
 		std::unique_ptr<int32_t, SOCKETDeleter> socketPtr{ new SOCKET{ static_cast<int32_t>(SOCKET_ERROR) }, SOCKETDeleter{} };
 	};
 
-	enum class ProcessIOReturnCode : int32_t {
-		Error = -1,///< Error occurred.
-		Success = 0,///< Succesful read or write occurred.
-	};
-
-	struct ProcessIOReturnData {
-		ProcessIOReturnCode returnCode{};
-		int32_t writtenOrReadCount{ 0 };
-		SOCKET returnIndex{};
-	};
-
 	class WebSocketSSLShard {
 	  public:
 		friend class WebSocketSSLServerMain;
@@ -348,7 +337,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit);
 
-		ProcessIOReturnData processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
+		void processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
 
 		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard);
 

@@ -542,18 +542,12 @@ namespace DiscordCoreLoader {
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKeys[theSocket] + "\r\n\r\n";
 			this->sendMessage(&sendString, *theMap[theSocket]);
-			ProcessIOReturnData returnValue{};
-			while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
-				returnValue = this->webSocketSSLServerMain->processIO(theMap);
-			}
+			this->webSocketSSLServerMain->processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);
 			this->sendHelloMessage(*theMap[theSocket]);
-			
+			this->webSocketSSLServerMain->processIO(theMap);
 			this->sendFinalMessage(*theMap[theSocket]);
-			returnValue.returnIndex = 0;
-			while (static_cast<int32_t>(returnValue.returnIndex) == 0) {
-				returnValue = this->webSocketSSLServerMain->processIO(theMap);
-			}
+			this->webSocketSSLServerMain->processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);
 			this->theClients[theSocket] = std::move(theMap[theSocket]);
 			this->doWeQuit->store(false);

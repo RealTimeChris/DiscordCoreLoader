@@ -231,7 +231,7 @@ namespace DiscordCoreLoader {
 		return theShard;
 	}
 
-	ProcessIOReturnData WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) {
+	void WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) {
 		fd_set readSet{}, writeSet{};
 
 		int32_t readNfds{ 0 }, writeNfds{ 0 }, finalNfds{ 0 };
@@ -247,13 +247,11 @@ namespace DiscordCoreLoader {
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
-		ProcessIOReturnData returnValue02{};
-		returnValue02.returnCode = ProcessIOReturnCode::Success;
 		timeval checkTime{ .tv_usec = 1000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
 			throw ProcessingError{ reportError("select(), ") };
 		} else if (resultValue == 0) {
-			return returnValue02;
+			return;
 		}
 		
 		for (auto& [key, value]: theMap) {
@@ -271,19 +269,12 @@ namespace DiscordCoreLoader {
 							value->inputBuffer.insert(value->inputBuffer.end(), serverToClientBuffer.begin(), serverToClientBuffer.begin() + readBytes);
 							value->bytesRead += readBytes;
 						}
-						returnValue02.writtenOrReadCount += 1;
-						returnValue02.returnIndex = key;
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
 						break;
 					}
 					case SSL_ERROR_WANT_READ: {
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
-						value->wantRead = true;
 						break;
 					}
 					case SSL_ERROR_WANT_WRITE: {
-						returnValue02.returnCode = ProcessIOReturnCode::Success;
-						value->wantWrite = true;
 						break;
 					}
 					case SSL_ERROR_SYSCALL: {
@@ -316,18 +307,13 @@ namespace DiscordCoreLoader {
 								value->outputBuffer.erase(value->outputBuffer.begin());
 							}
 							value->bytesWritten += writtenBytes;
-							returnValue02.writtenOrReadCount += 1;
-							returnValue02.returnIndex = key;
-							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							break;
 						}
 						case SSL_ERROR_WANT_READ: {
-							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							value->wantRead = true;
 							break;
 						}
 						case SSL_ERROR_WANT_WRITE: {
-							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							value->wantWrite = true;
 							break;
 						}
@@ -345,7 +331,6 @@ namespace DiscordCoreLoader {
 				}
 			}
 		}
-		return returnValue02;
 	}
 
 	void WebSocketSSLServerMain::submitReconnectionShard(ReconnectionPackage theData) {
