@@ -93,13 +93,13 @@ namespace DiscordCoreLoader {
 
 		void onMessageReceived(WebSocketSSLShard& theIndex) noexcept;
 
-		void sendCreateGuilds(WebSocketSSLShard& theIndex) noexcept;
-
 		void sendReadyMessage(WebSocketSSLShard& theIndex) noexcept;
 
 		void sendFinalMessage(WebSocketSSLShard& theIndex) noexcept;
 
 		void sendHelloMessage(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendCreateGuild(WebSocketSSLShard& theIndex) noexcept;
 
 		void sendHeartBeat(WebSocketSSLShard& theIndex) noexcept;
 

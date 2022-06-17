@@ -117,7 +117,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	void BaseSocketAgent::sendCreateGuilds(WebSocketSSLShard& theIndex) noexcept {
+	void BaseSocketAgent::sendCreateGuild(WebSocketSSLShard& theIndex) noexcept {
 		if (theIndex.currentGuildCount < theIndex.totalGuildCount) {
 			theIndex.currentGuildCount += 1;
 			theIndex.lastNumberSent += 1;
@@ -314,7 +314,7 @@ namespace DiscordCoreLoader {
 						if (this->closeCode == 0) {
 							if (value->outputBuffer.size() == 0) {
 								if (value->sendGuilds) {
-									this->sendCreateGuilds(*value);
+									this->sendCreateGuild(*value);
 								}
 								this->sendFinalMessage(*value);
 							}
