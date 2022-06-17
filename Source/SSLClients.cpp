@@ -238,7 +238,7 @@ namespace DiscordCoreLoader {
 		FD_ZERO(&readSet);
 		FD_ZERO(&writeSet);
 		for (auto& [key, value]: theMap) {
-			if ((value->outputBuffer.size() > 0 || value->wantWrite)) {
+			if ((value->outputBuffer.size() > 0 || value->wantWrite) && !value->wantRead) {
 				FD_SET(value->clientSocket, &writeSet);
 				writeNfds = value->clientSocket > writeNfds ? static_cast<SOCKET>(value->clientSocket) : writeNfds;
 			}

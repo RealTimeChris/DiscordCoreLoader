@@ -116,17 +116,12 @@ namespace DiscordCoreLoader {
 		if (theIndex.currentGuildCount < theIndex.totalGuildCount) {
 			theIndex.currentGuildCount += 1;
 			theIndex.lastNumberSent += 1;
-			auto theGuildNew = this->discordCoreClient->theGuildHolder;
-			theGuildNew["d"]["id"] = this->jsonifier.randomizeId();
-			theGuildNew["s"] = theIndex.lastNumberSent;
-			WebSocketMessage theMessage{};
-			theMessage.jsonMsg = std::move(theGuildNew);
-			if (this->theMode == WebSocketMode::ETF) {
-				theMessage.theOpCode = WebSocketOpCode::Op_Binary;
-			} else {
-				theMessage.theOpCode = WebSocketOpCode::Op_Text;
-			}
-			theIndex.theMessageQueue.push(std::move(theMessage));
+			auto jsonData = this->discordCoreClient->theGuildHolder;
+			jsonData["d"]["id"] = this->jsonifier.randomizeId();
+			jsonData["s"] = theIndex.lastNumberSent;
+			std::string theString{};
+			this->stringifyJsonData(jsonData, theString);
+			theIndex.writeData(theString);
 		}
 	}
 
@@ -296,8 +291,6 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
-			StopWatch theStopWatch{ 3500ms };
-			theStopWatch.resetTimer();
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
@@ -310,13 +303,11 @@ namespace DiscordCoreLoader {
 						}
 						this->parseHeader(*value);
 						if (this->closeCode == 0) {
-							if (value->outputBuffer.size() == 0 && theStopWatch.hasTimePassed()) {
-								theStopWatch.resetTimer();
-								if (value->sendGuilds) {
-									this->sendCreateGuild(*value);
-								}
-								this->sendFinalMessage(*value);
+							if (value->sendGuilds && value->outputBuffer.size() == 0) {
+								value->wantRead = true;
+								this->sendCreateGuild(*value);
 							}
+							this->sendFinalMessage(*value);
 						} else {
 							this->closeCode = 0;
 							break;
@@ -438,6 +429,7 @@ namespace DiscordCoreLoader {
 				if (theIndex.getInputBuffer().size() < 4) {
 					return false;
 				} else {
+					std::cout << "THE INPUT BUFFER: " << theIndex.getInputBuffer() << std::endl;
 					uint8_t theValue = theIndex.getInputBuffer()[0];
 					std::bitset<8> theBits = theValue;
 					theBits.set(7, 0);

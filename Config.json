@@ -1,5 +1,5 @@
 {
-  "ConnectionIp": "127.0.0.1",
+  "ConnectionIp": "0.0.0.0",
   "ConnectionPort": "443",
   "DoWePrintGeneralSuccessMessages": true,
   "DoWePrintGeneralErrorMessages": true,
