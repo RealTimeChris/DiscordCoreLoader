@@ -33,8 +33,7 @@ namespace DiscordCoreLoader {
 	std::string reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
 		std::stringstream theStream{};
 		if (ssl) {
-			theStream << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << ", " << ERR_error_string(errorValue, nullptr)
-					  << reset() << std::endl;
+			theStream << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << ", " << ERR_error_string(errorValue, nullptr) << reset() << std::endl;
 		} else {
 			theStream << shiftToBrightRed() << errorPosition << reset() << std::endl;
 		}
@@ -175,10 +174,11 @@ namespace DiscordCoreLoader {
 		int32_t optionValue{ 1 };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_TCP, TCP_NODELAY, &optionValue, sizeof(optionValue)); returnValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("setsockopt(), ") };
-			}
-			return;
+				reportError("setsockopt(), ")
+			};
 		}
+		return;
+	}
 #endif
 
 		std::unique_ptr<char> optVal{ new char{ 1 } };
@@ -253,7 +253,7 @@ namespace DiscordCoreLoader {
 		} else if (resultValue == 0) {
 			return;
 		}
-		
+
 		for (auto& [key, value]: theMap) {
 			if (FD_ISSET(value->clientSocket, &readSet)) {
 				value->wantRead = false;
@@ -352,7 +352,7 @@ namespace DiscordCoreLoader {
 #ifdef WIN32
 		auto theSize = static_cast<int32_t>(this->addrInfo->ai_addrlen);
 #else
-		auto theSize = static_cast<uint32_t>(this->addrInfo->ai_addrlen);
+	auto theSize = static_cast<uint32_t>(this->addrInfo->ai_addrlen);
 #endif
 		while (newSocket == SOCKET_ERROR && !this->doWeQuit->load()) {
 			newSocket = accept(this->theServerSocket, this->addrInfo->ai_addr, &theSize);

@@ -46,8 +46,7 @@ namespace DiscordCoreLoader {
 		try {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessSentMessages) {
 				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << std::endl
-						  << *dataToSend << reset();
+				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << std::endl << *dataToSend << reset();
 			}
 
 			if (this->webSocketSSLServerMain != nullptr) {
@@ -68,8 +67,8 @@ namespace DiscordCoreLoader {
 		try {
 			if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessSentMessages) {
 				std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << dataToSend.dump() << reset()
-						  << reset() << std::endl
+				std::cout << shiftToBrightBlue() << "Sending WebSocket " + theIndex.shard.dump() + std::string("'s Message: ") << dataToSend.dump() << reset() << reset()
+						  << std::endl
 						  << std::endl;
 			}
 			std::string theString{};
@@ -380,22 +379,19 @@ namespace DiscordCoreLoader {
 				}
 				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset()
-							  << std::endl
-							  << std::endl;
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset() << std::endl << std::endl;
 				}
 				this->sendReadyMessage(theIndex);
 				theIndex.getInputBuffer().clear();
 				theIndex.sendGuilds = true;
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(theIndex.shard[0].get<int32_t>() + 1) << " of "
-							  << theIndex.shard[1].get<int32_t>()
+					std::cout << shiftToBrightGreen() << "Connected Shard " + std::to_string(theIndex.shard[0].get<int32_t>() + 1) << " of " << theIndex.shard[1].get<int32_t>()
 							  << std::string(" Shards for this process. (") + std::to_string(theIndex.shard[0].get<int32_t>() + 1) + " of " +
 							std::to_string(theIndex.shard[1].get<int32_t>()) + std::string(" Shards total across all processes)")
 							  << reset() << std::endl;
 				}
-				
+
 				if (this->discordCoreClient->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 					if (theIndex.shard[0] < theIndex.shard[1] - 1) {
 						std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
@@ -406,9 +402,7 @@ namespace DiscordCoreLoader {
 			} else {
 				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
 					std::lock_guard<std::mutex> theLock{ this->discordCoreClient->coutMutex };
-					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset()
-							  << std::endl
-							  << std::endl;
+					std::cout << shiftToBrightGreen() << "Message received from WebSocket " + theIndex.shard.dump() + ": " << payload.dump() << reset() << std::endl << std::endl;
 				}
 			}
 
@@ -425,90 +419,90 @@ namespace DiscordCoreLoader {
 	bool BaseSocketAgent::parseHeader(WebSocketSSLShard& theIndex) noexcept {
 		std::string newVector = theIndex.getInputBuffer();
 		switch (theIndex.theState) {
-		case WebSocketState::Initializing:
-			if (newVector.find("\r\n\r\n") != std::string::npos) {
-				std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
-				newVector.erase(0, newVector.find("\r\n\r\n") + 4);
-				std::vector<std::string> headerOut = tokenize(headers, theIndex);
-				if (headerOut.size()) {
-					std::string statusLine = headerOut[0];
-					headerOut.erase(headerOut.begin());
-					std::vector<std::string> status = tokenize(statusLine, theIndex, " ");
-					theIndex.theState = WebSocketState::Connected;
-					theIndex.getInputBuffer().clear();
-					theIndex.getInputBuffer().insert(theIndex.getInputBuffer().end(), newVector.begin(), newVector.end());
-				}
-			}
-			break;
-		case WebSocketState::Connected:
-			if (theIndex.getInputBuffer().size() < 4) {
-				return false;
-			} else {
-				uint8_t theValue = theIndex.getInputBuffer()[0];
-				std::bitset<8> theBits = theValue;
-				theBits.set(7, 0);
-				this->opCode = static_cast<WebSocketOpCode>(theBits.to_ulong());
-				switch (this->opCode) {
-					case WebSocketOpCode::Op_Continuation:
-					case WebSocketOpCode::Op_Text:
-					case WebSocketOpCode::Op_Binary:
-					case WebSocketOpCode::Op_Ping:
-					case WebSocketOpCode::Op_Pong: {
-						uint8_t length01 = theIndex.getInputBuffer()[1];
-						std::bitset<8> theBits02 = length01;
-						theBits02.set(7, 0);
-						uint32_t payloadStartOffset = 2;
-						uint64_t length02 = theBits02.to_ullong();
-						if (length02 == webSocketPayloadLengthMagicLarge) {
-							if (theIndex.getInputBuffer().size() < 8) {
-								return false;
-							}
-							uint8_t length03 = theIndex.getInputBuffer()[2];
-							uint8_t length04 = theIndex.getInputBuffer()[3];
-							length02 = static_cast<uint64_t>((length03 << 8) | length04);
-							payloadStartOffset += 2;
-						} else if (length02 == webSocketPayloadLengthMagicHuge) {
-							if (theIndex.getInputBuffer().size() < 10) {
-								return false;
-							}
-							length02 = 0;
-							for (uint64_t value = 2, shift = 56; value < 10; ++value, shift -= 8) {
-								uint8_t length05 = static_cast<uint8_t>(theIndex.getInputBuffer()[value]);
-								length02 |= static_cast<uint64_t>(length05) << shift;
-							}
-							payloadStartOffset += 8;
-						}
-						if (theIndex.getInputBuffer().size() < payloadStartOffset + length02) {
-							return false;
-						} else {
-							std::string newerVector{};
-							newerVector.insert(newerVector.begin(), theIndex.getInputBuffer().begin() + payloadStartOffset + 4,
-								theIndex.getInputBuffer().begin() + payloadStartOffset + length02 + 4);
-							theIndex.getInputBuffer() = std::move(newerVector);
-							this->onMessageReceived(theIndex);
-						}
-						return true;
-					}
-					case WebSocketOpCode::Op_Close: {
-						uint16_t close = theIndex.getInputBuffer()[2] & 0xff;
-						close <<= 8;
-						close |= theIndex.getInputBuffer()[3] & 0xff;
-						this->closeCode = close;
+			case WebSocketState::Initializing:
+				if (newVector.find("\r\n\r\n") != std::string::npos) {
+					std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
+					newVector.erase(0, newVector.find("\r\n\r\n") + 4);
+					std::vector<std::string> headerOut = tokenize(headers, theIndex);
+					if (headerOut.size()) {
+						std::string statusLine = headerOut[0];
+						headerOut.erase(headerOut.begin());
+						std::vector<std::string> status = tokenize(statusLine, theIndex, " ");
+						theIndex.theState = WebSocketState::Connected;
 						theIndex.getInputBuffer().clear();
-						this->respondToDisconnect(theIndex);
-						return false;
-					}
-					default: {
-						this->closeCode = 1000;
-						return false;
+						theIndex.getInputBuffer().insert(theIndex.getInputBuffer().end(), newVector.begin(), newVector.end());
 					}
 				}
-			}
-			return true;
+				break;
+			case WebSocketState::Connected:
+				if (theIndex.getInputBuffer().size() < 4) {
+					return false;
+				} else {
+					uint8_t theValue = theIndex.getInputBuffer()[0];
+					std::bitset<8> theBits = theValue;
+					theBits.set(7, 0);
+					this->opCode = static_cast<WebSocketOpCode>(theBits.to_ulong());
+					switch (this->opCode) {
+						case WebSocketOpCode::Op_Continuation:
+						case WebSocketOpCode::Op_Text:
+						case WebSocketOpCode::Op_Binary:
+						case WebSocketOpCode::Op_Ping:
+						case WebSocketOpCode::Op_Pong: {
+							uint8_t length01 = theIndex.getInputBuffer()[1];
+							std::bitset<8> theBits02 = length01;
+							theBits02.set(7, 0);
+							uint32_t payloadStartOffset = 2;
+							uint64_t length02 = theBits02.to_ullong();
+							if (length02 == webSocketPayloadLengthMagicLarge) {
+								if (theIndex.getInputBuffer().size() < 8) {
+									return false;
+								}
+								uint8_t length03 = theIndex.getInputBuffer()[2];
+								uint8_t length04 = theIndex.getInputBuffer()[3];
+								length02 = static_cast<uint64_t>((length03 << 8) | length04);
+								payloadStartOffset += 2;
+							} else if (length02 == webSocketPayloadLengthMagicHuge) {
+								if (theIndex.getInputBuffer().size() < 10) {
+									return false;
+								}
+								length02 = 0;
+								for (uint64_t value = 2, shift = 56; value < 10; ++value, shift -= 8) {
+									uint8_t length05 = static_cast<uint8_t>(theIndex.getInputBuffer()[value]);
+									length02 |= static_cast<uint64_t>(length05) << shift;
+								}
+								payloadStartOffset += 8;
+							}
+							if (theIndex.getInputBuffer().size() < payloadStartOffset + length02) {
+								return false;
+							} else {
+								std::string newerVector{};
+								newerVector.insert(newerVector.begin(), theIndex.getInputBuffer().begin() + payloadStartOffset + 4,
+									theIndex.getInputBuffer().begin() + payloadStartOffset + length02 + 4);
+								theIndex.getInputBuffer() = std::move(newerVector);
+								this->onMessageReceived(theIndex);
+							}
+							return true;
+						}
+						case WebSocketOpCode::Op_Close: {
+							uint16_t close = theIndex.getInputBuffer()[2] & 0xff;
+							close <<= 8;
+							close |= theIndex.getInputBuffer()[3] & 0xff;
+							this->closeCode = close;
+							theIndex.getInputBuffer().clear();
+							this->respondToDisconnect(theIndex);
+							return false;
+						}
+						default: {
+							this->closeCode = 1000;
+							return false;
+						}
+					}
+				}
+				return true;
 		}
 	}
 
-	void BaseSocketAgent::stringifyJsonData(const nlohmann::json&jsonData, std::string&theString) noexcept{
+	void BaseSocketAgent::stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept {
 		std::string theVector{};
 		WebSocketOpCode theOpCode{};
 		if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
@@ -536,8 +530,8 @@ namespace DiscordCoreLoader {
 			while (this->authKeys[theSocket] == "") {
 				this->webSocketSSLServerMain->processIO(theMap);
 				this->parseHeader(*theMap[theSocket]);
-			}	
-			
+			}
+
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKeys[theSocket] + "\r\n\r\n";
 			this->sendMessage(&sendString, *theMap[theSocket]);
