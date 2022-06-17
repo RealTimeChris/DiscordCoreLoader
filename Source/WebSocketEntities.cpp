@@ -84,13 +84,9 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept {
+	uint64_t BaseSocketAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept {
 		try {
-			if (isItFinal) {
-				outBuffer.push_back(static_cast<uint8_t>(opCodeNew) | webSocketFinishBit);
-			} else {
-				outBuffer.push_back(static_cast<uint8_t>(opCodeNew));
-			}
+			outBuffer.push_back(static_cast<uint8_t>(opCodeNew) | webSocketFinishBit);
 
 			uint32_t indexCount{ 0 };
 			if (sendLength <= webSocketMaxPayloadLengthSmall) {
@@ -301,6 +297,8 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
+			StopWatch theStopWatch{ 3500ms };
+			theStopWatch.resetTimer();
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
@@ -313,7 +311,8 @@ namespace DiscordCoreLoader {
 						}
 						this->parseHeader(*value);
 						if (this->closeCode == 0) {
-							if (value->outputBuffer.size() == 0) {
+							if (value->outputBuffer.size() == 0 && theStopWatch.hasTimePassed()) {
+								theStopWatch.resetTimer();
 								if (value->sendGuilds) {
 									this->sendCreateGuild(*value);
 								}
@@ -520,7 +519,7 @@ namespace DiscordCoreLoader {
 			theOpCode = WebSocketOpCode::Op_Text;
 		}
 		std::string header{};
-		this->createHeader(header, theVector.size(), theOpCode, true);
+		this->createHeader(header, theVector.size(), theOpCode);
 		theString.insert(theString.begin(), header.begin(), header.end());
 		theString.insert(theString.begin() + header.size(), theVector.begin(), theVector.end());
 	}

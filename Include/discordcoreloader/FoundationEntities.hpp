@@ -92,19 +92,6 @@
  * \defgroup foundation_entities Foundation Entities
  * \brief For all of the building blocks of the main endpoints.
  */
-namespace DiscordCoreLoader {
-
-	struct HttpWorkloadData;
-	class SoundCloudRequestBuilder;
-	class YouTubeRequestBuilder;
-	class VoiceSocketAgent;
-	class BaseSocketAgent;
-	class SoundCloudAPI;
-	class YouTubeAPI;
-	class HttpClient;
-	class DataParser;
-
-}// namespace DiscordCoreLoader
 
 /**
  * \addtogroup foundation_entities
@@ -114,12 +101,15 @@ namespace DiscordCoreLoader {
 /// library.
 namespace DiscordCoreLoader {
 
+	using namespace std::literals;
+
 	struct RecurseThroughMessagePagesData;
 	struct DeleteInteractionResponseData;
 	struct DeleteFollowUpMessageData;
 	struct OnInteractionCreationData;
 	struct GetGuildMemberRolesData;
 	struct BaseFunctionArguments;
+	struct HttpWorkloadData;
 	struct GetRolesData;
 	struct CommandData;
 	struct File;
@@ -130,15 +120,20 @@ namespace DiscordCoreLoader {
 	class CreateInteractionResponseData;
 	class EditInteractionResponseData;
 	class CreateFollowUpMessageData;
+	class SoundCloudRequestBuilder;
 	class RespondToInputEventData;
 	class EditFollowUpMessageData;
+	class YouTubeRequestBuilder;
 	class SelectMenuCollector;
 	class DiscordCoreClient;
 	class CreateMessageData;
+	class VoiceSocketAgent;
+	class BaseSocketAgent;
 	class VoiceConnection;
 	class EditMessageData;
 	class ButtonCollector;
 	class ModalCollector;
+	class SoundCloudAPI;
 	class Interactions;
 	class EventManager;
 	class EventHandler;
@@ -147,6 +142,9 @@ namespace DiscordCoreLoader {
 	class ChannelData;
 	class InputEvents;
 	class EventWaiter;
+	class YouTubeAPI;
+	class HttpClient;
+	class DataParser;
 	class SendDMData;
 	class Reactions;
 	class Messages;

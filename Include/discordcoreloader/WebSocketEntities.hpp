@@ -83,7 +83,7 @@ namespace DiscordCoreLoader {
 
 		std::vector<std::string> tokenize(const std::string& dataIn, WebSocketSSLShard& theIndex, const std::string& separator = "\r\n") noexcept;
 
-		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal) noexcept;
+		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
 
 		void stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept;
 

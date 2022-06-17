@@ -70,10 +70,6 @@ namespace DiscordCoreLoader {
 
 	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
 
-	struct MessagePackage {
-		std::vector<std::string> theStrings{};
-	};
-
 	struct ConnectionError : public std::runtime_error {
 		explicit ConnectionError(const std::string& theString) : std::runtime_error(theString){};
 	};
@@ -303,7 +299,6 @@ namespace DiscordCoreLoader {
 		std::vector<std::string> outputBuffer{};
 		SOCKETWrapper clientSocket{ nullptr };
 		SSL_CTXWrapper theContext{ nullptr };
-		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
