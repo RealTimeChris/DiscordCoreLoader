@@ -312,8 +312,7 @@ namespace DiscordCoreLoader {
 						}
 						this->parseHeader(*value);
 						if (this->closeCode == 0) {
-							if (value->outputBuffer.size() == 0 && value->theStopWatch.hasTimePassed()) {
-								value->theStopWatch.resetTimer();
+							if (value->outputBuffer.size() == 0) {
 								if (value->sendGuilds) {
 									this->sendCreateGuilds(*value);
 								}
@@ -545,7 +544,6 @@ namespace DiscordCoreLoader {
 			this->webSocketSSLServerMain->processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);
 			this->sendHelloMessage(*theMap[theSocket]);
-			this->webSocketSSLServerMain->processIO(theMap);
 			this->sendFinalMessage(*theMap[theSocket]);
 			this->webSocketSSLServerMain->processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);

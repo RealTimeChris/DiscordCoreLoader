@@ -298,7 +298,6 @@ namespace DiscordCoreLoader {
 		~WebSocketSSLShard();
 
 	  protected:
-		StopWatch<std::chrono::milliseconds> theStopWatch{ std::chrono::milliseconds{ 6000 } };
 		std::queue<WebSocketMessage> theMessageQueue{};
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::vector<std::string> outputBuffer{};
