@@ -20,7 +20,7 @@
 /// \file DiscordCoreClient.cpp
 
 #include <discordcoreloader/DiscordCoreClient.hpp>
-#include <signal.h>
+#include <csignal>
 #include <atomic>
 
 namespace DiscordCoreLoader {
@@ -35,18 +35,17 @@ namespace DiscordCoreLoader {
 	}
 
 	void signalHandler(int32_t) {
-		Globals::doWeQuit.store(true);
 		std::exit(EXIT_SUCCESS);
 	}
 
 	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) {
-		std::atexit(atexitHandler);
-		signal(SIGABRT, signalHandler);
-		signal(SIGINT, signalHandler);
-		signal(SIGILL, signalHandler);
-		signal(SIGFPE, signalHandler);
-		signal(SIGSEGV, signalHandler);
-		signal(SIGTERM, signalHandler);
+		std::atexit(&atexitHandler);
+		std::signal(SIGTERM, &signalHandler);
+		std::signal(SIGSEGV, &signalHandler);
+		std::signal(SIGINT, &signalHandler);
+		std::signal(SIGILL, &signalHandler);
+		std::signal(SIGABRT, &signalHandler);
+		std::signal(SIGFPE, &signalHandler);
 		this->configParser = ConfigParser{ configFilePath };
 		this->guildQuantity = this->configParser.getTheData().guildQuantity;
 		this->jsonifier = this->configParser.getTheData();
