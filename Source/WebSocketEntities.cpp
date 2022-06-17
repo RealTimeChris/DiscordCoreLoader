@@ -122,6 +122,7 @@ namespace DiscordCoreLoader {
 			theIndex.currentGuildCount += 1;
 			theIndex.lastNumberSent += 1;
 			auto theGuildNew = this->discordCoreClient->theGuildHolder;
+			theGuildNew["d"]["id"] = this->jsonifier.randomizeId();
 			theGuildNew["s"] = theIndex.lastNumberSent;
 			WebSocketMessage theMessage{};
 			theMessage.jsonMsg = std::move(theGuildNew);
