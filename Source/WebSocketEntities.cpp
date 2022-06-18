@@ -429,7 +429,6 @@ namespace DiscordCoreLoader {
 				if (theShard.getInputBuffer().size() < 4) {
 					return false;
 				} else {
-					std::cout << "THE INPUT BUFFER: " << theShard.getInputBuffer() << std::endl;
 					uint8_t theValue = theShard.getInputBuffer()[0];
 					std::bitset<8> theBits = theValue;
 					theBits.set(7, 0);
@@ -522,7 +521,6 @@ namespace DiscordCoreLoader {
 			while (this->authKeys[theSocket] == "") {
 				this->webSocketSSLServerMain->processIO(theMap);
 				this->parseHeader(*theMap[theSocket]);
-				std::cout << "WERE HERE LEAVING LEAVING LEAVING" << std::endl;
 			}
 
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";

@@ -74,8 +74,6 @@ namespace DiscordCoreLoader {
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
 		this->baseSocketAgentMap[std::to_string(0)]->connect();
 		this->theStopWatch.resetTimer();
-		this->theAgent = std::make_unique<GeneratorAgent>(&Globals::doWeQuit, &this->jsonifier, this->baseSocketAgentMap[std::to_string(0)]->theMode,
-			&this->baseSocketAgentMap[std::to_string(0)]->erlPacker);
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -107,10 +105,6 @@ namespace DiscordCoreLoader {
 			}
 			leftOverShards -= newShardAmount;
 		}
-		std::cout << "THE TOTALS: ";
-		for (auto& value: shardsPerWorkerVect) {
-			std::cout << "VALUE: " << value << std::endl;
-		}
 		auto totalShards{ 0 };
 		for (int32_t x = 0; x < shardsPerWorkerVect.size(); x += 1) {
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
@@ -123,7 +117,6 @@ namespace DiscordCoreLoader {
 				this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 			}
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
-				std::cout << "VALUE: " << y << std::endl;
 				if (x == 0 && y == 0) {
 					continue;
 				}

@@ -355,7 +355,6 @@ namespace DiscordCoreLoader {
 	auto theSize = static_cast<uint32_t>(this->addrInfo->ai_addrlen);
 #endif
 		while (newSocket == SOCKET_ERROR && !this->doWeQuit->load()) {
-			std::cout << "WERE HERE GON EEGONEGNO  LEAVING" << std::endl;
 			newSocket = accept(this->theServerSocket, this->addrInfo->ai_addr, &theSize);
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
