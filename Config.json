@@ -7,12 +7,12 @@
   "DoWePrintWebSocketSuccessReceiveMessages": true,
   "DoWePrintWebSocketErrorMessages": true,
   "GuildQuantity": 200000,
-  "StdDeviationForStringLength": 3,
-  "MeanForStringLength": 10,
+  "StdDeviationForStringLength": 10,
+  "MeanForStringLength": 50,
   "StdDeviationForMemberCount": 40,
-  "MeanForMemberCount": 100,
+  "MeanForMemberCount": 500,
   "StdDeviationForChannelCount": 10,
-  "MeanForChannelCount": 20,
+  "MeanForChannelCount": 50,
   "StdDeviationForRoleCount": 10,
-  "MeanForRoleCount": 20
+  "MeanForRoleCount": 50
 } 
