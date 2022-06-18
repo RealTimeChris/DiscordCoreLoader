@@ -23,8 +23,6 @@
 
 #include <discordcoreloader/ErlPacker.hpp>
 #include <discordcoreloader/ObjectGenerator.hpp>
-#include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/Randomizer.hpp>
 
 namespace DiscordCoreLoader {
 

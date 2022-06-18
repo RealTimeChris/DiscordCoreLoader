@@ -52,16 +52,16 @@ namespace DiscordCoreLoader {
 		uint64_t memberCount = guildOld.memberCount;
 		jsonData["channels"];
 		for (auto& value: guildOld.channels) {
-			jsonData["channels"].push_back(this->JSONIFYChannel(std::move(*value)));
+			jsonData["channels"].push_back(this->JSONIFYChannel(std::move(value)));
 		}
 		jsonData["member_count"] = memberCount;
 		jsonData["members"];
 		for (auto& value: guildOld.members) {
-			jsonData["members"].push_back(this->JSONIFYGuildMember(std::move(*value)));
+			jsonData["members"].push_back(this->JSONIFYGuildMember(std::move(value)));
 		}
 		jsonData["roles"];
 		for (auto& value: guildOld.roles) {
-			jsonData["roles"].push_back(this->JSONIFYRole(std::move(*value)));
+			jsonData["roles"].push_back(this->JSONIFYRole(std::move(value)));
 		}
 		jsonData["afk_channel_id"] = guildOld.afkChannelId;
 		jsonData["afk_time_out"] = guildOld.afkTimeOut;
@@ -135,7 +135,7 @@ namespace DiscordCoreLoader {
 	nlohmann::json JSONIFier::JSONIFYGuildMember(GuildMemberData&& theData) {
 		nlohmann::json jsonData{};
 		jsonData["communication_disabled_until"] = theData.communicationDisabledUntil.getOriginalTimeStamp();
-		jsonData["user"] = this->JSONIFYUser(std::move(*this->generateUser()));
+		jsonData["user"] = this->JSONIFYUser(std::move(this->generateUser()));
 		jsonData["joined_at"] = theData.joinedAt.getOriginalTimeStamp();
 		jsonData["premium_since"] = theData.premiumSince;
 		jsonData["permissions"] = theData.permissions;

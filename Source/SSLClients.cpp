@@ -289,6 +289,8 @@ namespace DiscordCoreLoader {
 					}
 				}
 			}
+		}
+		for (auto& [key, value]: theMap) {
 			if (FD_ISSET(value->clientSocket, &writeSet)) {
 				value->wantRead = false;
 				value->wantWrite = false;
