@@ -564,11 +564,11 @@ namespace DiscordCoreLoader {
 
 	void GeneratorAgent::generateGuildCreate(int32_t theIndex) {
 		this->theLastNumbersSent[theIndex] += 1;
-		auto theGuild = this->jsonifier->generateGuild(this->jsonifier->randomizeId());
 		nlohmann::json jsonData{};
 		jsonData["op"] = 0;
 		jsonData["t"] = "GUILD_CREATE";
-		jsonData["d"] = this->jsonifier->JSONIFYGuild(std::move(theGuild));
+		jsonData["d"] = this->guildHolder;
+		jsonData["d"]["id"] = this->jsonifier->randomizeId();
 		jsonData["s"] = this->theLastNumbersSent[theIndex];
 		std::string theString{};
 		this->stringifyJsonData(jsonData, theString);
@@ -630,6 +630,7 @@ namespace DiscordCoreLoader {
 		this->erlPacker = erlPackerNew;
 		this->doWeQuit = doWeQuitNew;
 		this->theMode = theModeNew;
+		this->guildHolder = this->jsonifier->JSONIFYGuild(this->jsonifier->generateGuild(std::string{}));
 		this->theTask = std::jthread{ [this](std::stop_token theToken) mutable {
 			this->run(theToken);
 		} };
@@ -638,10 +639,9 @@ namespace DiscordCoreLoader {
 	void GeneratorAgent::run(std::stop_token theToken) {
 		while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 			for (auto& [key, value]: this->theWorkloadBuffer) {
-				if (value.size() > 0) {
-					auto workload = value.front();
-					value.pop();
-					switch (workload) {
+				if (value.size() > 0 && this->theSendBuffer[key].size() <= 1) {
+					GeneratorAgentWorkloadTypes workloadType = value.front();
+					switch (workloadType) {
 						case GeneratorAgentWorkloadTypes::Guild_Create: {
 							this->generateGuildCreate(key);
 						}

@@ -392,6 +392,11 @@ namespace DiscordCoreLoader {
 			this->theArray = std::queue<ObjectType>{};
 		}
 
+		size_t size() {
+			std::lock_guard<std::mutex> theLock{ this->accessMutex };
+			return this->theArray.size();
+		}
+
 		/// Tries to receive an object of type ObjectType to be placed into a reference. \brief Tries to receive an object of type ObjectType to be placed into a reference.
 		/// \param theObject A reference of type ObjectType for placing the potentially received object.
 		/// \returns A bool, denoting whether or not we received an object.

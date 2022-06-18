@@ -123,6 +123,7 @@ namespace DiscordCoreLoader {
 
 	class GeneratorAgent {
 	  public:
+
 		GeneratorAgent& operator=(GeneratorAgent&& other) {
 			this->theLastNumbersSent = other.theLastNumbersSent;
 			this->theWorkloadBuffer = other.theWorkloadBuffer;
@@ -134,12 +135,17 @@ namespace DiscordCoreLoader {
 			this->theMode = other.theMode;
 			return *this;
 		}
+
 		GeneratorAgent(GeneratorAgent&& other) {
 			*this = std::move(other);
 		}
+
 		GeneratorAgent() = default;
+
 		GeneratorAgent(std::atomic_bool* doWeQuit, JSONIFier* jsonifier, WebSocketMode theMode, ErlPacker* erlPackerNew);
+
 		void placeOrder(int32_t, int32_t, GeneratorAgentWorkloadTypes) noexcept;
+
 		std::string collectWorkload(int32_t) noexcept;
 
 	  protected:
@@ -149,6 +155,7 @@ namespace DiscordCoreLoader {
 		std::atomic_bool* doWeQuit{ nullptr };
 		JSONIFier* jsonifier{ nullptr };
 		ErlPacker* erlPacker{ nullptr };
+		nlohmann::json guildHolder{};
 		std::mutex theAccessMutex{};
 		WebSocketMode theMode{};
 		std::jthread theTask{};
