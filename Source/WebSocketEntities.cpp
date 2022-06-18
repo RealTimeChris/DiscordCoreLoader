@@ -310,7 +310,7 @@ namespace DiscordCoreLoader {
 								}
 								
 							}
-							if (this->discordCoreClient->theAgent != nullptr) {
+							if (this->discordCoreClient->theAgent != nullptr && value->outputBuffer.size() == 0) {
 								if (auto theString = this->discordCoreClient->theAgent->collectWorkload(key); theString != "") {
 									value->writeData(theString);
 								}
