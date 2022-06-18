@@ -437,7 +437,6 @@ namespace DiscordCoreLoader {
 				if (theIndex.getInputBuffer().size() < 4) {
 					return false;
 				} else {
-					std::cout << "THE INPUT BUFFER: " << theIndex.getInputBuffer() << std::endl;
 					uint8_t theValue = theIndex.getInputBuffer()[0];
 					std::bitset<8> theBits = theValue;
 					theBits.set(7, 0);
