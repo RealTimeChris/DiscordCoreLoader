@@ -149,7 +149,7 @@ namespace DiscordCoreLoader {
 			this->theGuilds[theIndex.clientSocket].push_back(theGuild);
 		}
 		jsonData["d"]["v"] = 10;
-		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(std::move(this->jsonifier.generateUser()));
+		jsonData["d"]["user"] = this->jsonifier.JSONIFYUser(std::move(*this->jsonifier.generateUser()));
 		std::string theString{};
 		this->stringifyJsonData(jsonData, theString);
 		theIndex.writeData(theString);
@@ -303,17 +303,9 @@ namespace DiscordCoreLoader {
 						}
 						this->parseHeader(*value);
 						if (this->closeCode == 0) {
-							if (value->sendGuilds) {
-								if (this->discordCoreClient->theAgent != nullptr) {
-									this->discordCoreClient->theAgent->placeOrder(key, value->totalGuildCount, GeneratorAgentWorkloadTypes::Guild_Create);
-									value->sendGuilds = false;
-								}
-								
-							}
-							if (this->discordCoreClient->theAgent != nullptr) {
-								if (auto theString = this->discordCoreClient->theAgent->collectWorkload(key); theString != "") {
-									value->writeData(theString);
-								}
+							if (value->sendGuilds && value->outputBuffer.size() == 0) {
+								value->wantRead = true;
+								this->sendCreateGuild(*value);
 							}
 							this->sendFinalMessage(*value);
 						} else {
@@ -344,11 +336,11 @@ namespace DiscordCoreLoader {
 			messageNew = std::move(theIndex.getInputBuffer());
 			nlohmann::json payload{};
 
-			if (this->theMode == WebSocketMode::ETF) {
+			if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
 				try {
 					payload = this->erlPacker.parseEtfToJson(&messageNew);
 				} catch (...) {
-					reportException("ErlPacker::parseEtfToJson()");
+					DiscordCoreLoader::reportException("ErlPacker::parseEtfToJson()");
 					return;
 				}
 			} else {
@@ -505,7 +497,7 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept {
 		std::string theVector{};
 		WebSocketOpCode theOpCode{};
-		if (this->theMode == WebSocketMode::ETF) {
+		if (this->theMode == DiscordCoreLoader::WebSocketMode::ETF) {
 			theVector = this->erlPacker.parseJsonToEtf(jsonData);
 			theOpCode = WebSocketOpCode::Op_Binary;
 		} else {
@@ -562,104 +554,4 @@ namespace DiscordCoreLoader {
 			this->theTask->join();
 		}
 	}
-
-	void GeneratorAgent::generateGuildCreate(int32_t theIndex) {
-		this->theLastNumbersSent[theIndex] += 1;
-		auto theGuild = this->jsonifier->generateGuild(this->jsonifier->randomizeId());
-		nlohmann::json jsonData{};
-		jsonData["op"] = 0;
-		jsonData["t"] = "GUILD_CREATE";
-		jsonData["d"] = this->jsonifier->JSONIFYGuild(std::move(theGuild));
-		jsonData["s"] = this->theLastNumbersSent[theIndex];
-		std::string theString{};
-		this->stringifyJsonData(jsonData, theString);
-		this->theSendBuffer[theIndex].push(theString);
-	}
-
-	void GeneratorAgent::stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept {
-		std::string theVector{};
-		WebSocketOpCode theOpCode{};
-		if (this->theMode == WebSocketMode::ETF) {
-			theVector = this->erlPacker->parseJsonToEtf(jsonData);
-			theOpCode = WebSocketOpCode::Op_Binary;
-		} else {
-			theVector = jsonData.dump();
-			theOpCode = WebSocketOpCode::Op_Text;
-		}
-		std::string header{};
-		this->createHeader(header, theVector.size(), theOpCode);
-		theString.insert(theString.begin(), header.begin(), header.end());
-		theString.insert(theString.begin() + header.size(), theVector.begin(), theVector.end());
-	}
-
-	void GeneratorAgent::createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept {
-		outBuffer.push_back(static_cast<uint8_t>(opCodeNew) | webSocketFinishBit);
-
-		uint32_t indexCount{ 0 };
-		if (sendLength <= webSocketMaxPayloadLengthSmall) {
-			outBuffer.push_back(static_cast<uint8_t>(sendLength));
-			indexCount = 0;
-		} else if (sendLength <= webSocketMaxPayloadLengthLarge) {
-			outBuffer.push_back(static_cast<uint8_t>(webSocketPayloadLengthMagicLarge));
-			indexCount = 2;
-		} else {
-			outBuffer.push_back(static_cast<uint8_t>(webSocketPayloadLengthMagicHuge));
-			indexCount = 8;
-		}
-		for (int32_t x = indexCount - 1; x >= 0; x--) {
-			outBuffer.push_back(static_cast<uint8_t>(sendLength >> x * 8));
-		}
-
-		outBuffer[1] |= 0 << 7;
-	}
-
-	std::string GeneratorAgent::collectWorkload(int32_t theIndex) noexcept {
-		std::lock_guard<std::mutex> theLock{ this->theAccessMutex };
-		if (!this->theSendBuffer.contains(theIndex)) {
-			this->theSendBuffer[theIndex] = std::queue<std::string>{};
-		}
-		if (this->theSendBuffer[theIndex].size() > 0) {
-			std::string returnValue = this->theSendBuffer[theIndex].front();
-			this->theSendBuffer[theIndex].pop();
-			return returnValue;
-		}
-		return std::string{};
-	}
-
-	GeneratorAgent::GeneratorAgent(std::atomic_bool* doWeQuitNew, JSONIFier* jsonifierNew, WebSocketMode theModeNew, ErlPacker* erlPackerNew) {
-		this->jsonifier = jsonifierNew;
-		this->erlPacker = erlPackerNew;
-		this->doWeQuit = doWeQuitNew;
-		this->theMode = theModeNew;
-		this->theTask = std::jthread{ [this](std::stop_token theToken) mutable {
-			this->run(theToken);
-		} };
-	}
-
-	void GeneratorAgent::run(std::stop_token theToken) {
-		while (!theToken.stop_requested() && !this->doWeQuit->load()) {
-			for (auto& [key, value]: this->theWorkloadBuffer) {
-				if (value.size() > 0) {
-					auto workload = value.front();
-					value.pop();
-					switch (workload) {
-						case GeneratorAgentWorkloadTypes::Guild_Create: {
-							this->generateGuildCreate(key);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	void GeneratorAgent::placeOrder(int32_t currentIndex, int32_t quantity, GeneratorAgentWorkloadTypes workloadType) noexcept {
-		if (!this->theWorkloadBuffer.contains(currentIndex)) {
-			this->theWorkloadBuffer[currentIndex] = std::queue<GeneratorAgentWorkloadTypes>{};
-		}
-		std::lock_guard<std::mutex> theLock{ this->theAccessMutex };
-		for (int32_t x = 0; x < quantity; x += 1) {
-			this->theWorkloadBuffer[currentIndex].push(workloadType);
-		}
-	}
-
 };

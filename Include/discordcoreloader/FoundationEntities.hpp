@@ -1852,11 +1852,11 @@ namespace DiscordCoreLoader {
 		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
 		std::unordered_map<std::string, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
 		std::unordered_map<std::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
-		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
-		std::vector<ChannelData> channels{};///< Array of Guild channels.
+		std::vector<std::unique_ptr<GuildMemberData>> members{};///< Array of GuildMembers.
+		std::vector<std::unique_ptr<ChannelData>> channels{};///< Array of Guild channels.
 		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
 		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, y default.
-		std::vector<RoleData> roles{};///< Array of Guild roles.
+		std::vector<std::unique_ptr<RoleData>> roles{};///< Array of Guild roles.
 		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
 		int32_t premiumSubscriptionCount{ 0 };///< Premium subscription count.
 		int32_t approximatePresenceCount{ 0 };///< Approximate quantity of presences.
