@@ -53,8 +53,6 @@ namespace DiscordCoreLoader {
 	  protected:
 		std::unordered_map<std::string, std::unique_ptr<BaseSocketAgent>> baseSocketAgentMap{};
 		std::unique_ptr<WebSocketSSLServerMain> webSocketSSLServerMain{ nullptr };
-		StopWatch<std::chrono::milliseconds> theStopWatch{ 5000ms };
-		std::unique_ptr<GeneratorAgent> theAgent{ nullptr };
 		bool haveWeCollectedShardingInfo{ false };
 		ShardingOptions shardingOptions{};
 		nlohmann::json theGuildHolder{};
@@ -66,6 +64,7 @@ namespace DiscordCoreLoader {
 		std::mutex coutMutex{};
 		JSONIFier jsonifier{};
 		int32_t workerCount{};
+
 
 		void instantiateWebSockets();
 

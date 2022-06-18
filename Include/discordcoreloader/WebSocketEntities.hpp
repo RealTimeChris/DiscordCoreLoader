@@ -25,7 +25,6 @@
 #include <discordcoreloader/ErlPacker.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/JSONIfier.hpp>
-#include <discordcoreloader/ObjectGenerator.hpp>
 
 namespace DiscordCoreLoader {
 
@@ -115,51 +114,6 @@ namespace DiscordCoreLoader {
 		void connectInternal() noexcept;
 
 		void connect() noexcept;
-	};
-
-	enum class GeneratorAgentWorkloadTypes {
-		Guild_Create = 0,
-	};
-
-	class GeneratorAgent {
-	  public:
-		GeneratorAgent& operator=(GeneratorAgent&& other) noexcept {
-			this->theLastNumbersSent = other.theLastNumbersSent;
-			this->theWorkloadBuffer = other.theWorkloadBuffer;
-			this->theSendBuffer = other.theSendBuffer;
-			this->theTask.swap(other.theTask);
-			this->erlPacker = other.erlPacker;
-			this->jsonifier = other.jsonifier;
-			this->doWeQuit = other.doWeQuit;
-			this->theMode = other.theMode;
-			return *this;
-		}
-		GeneratorAgent(GeneratorAgent&& other) noexcept {
-			*this = std::move(other);
-		}
-		GeneratorAgent() = default;
-		GeneratorAgent(std::atomic_bool* doWeQuit, JSONIFier* jsonifier, WebSocketMode theMode, ErlPacker* erlPackerNew);
-		void placeOrder(int32_t, int32_t, GeneratorAgentWorkloadTypes) noexcept;
-		std::string collectWorkload(int32_t) noexcept;
-
-	  protected:
-		std::unordered_map<int32_t, std::queue<GeneratorAgentWorkloadTypes>> theWorkloadBuffer{};
-		std::unordered_map<int32_t, std::queue<std::string>> theSendBuffer{};
-		std::unordered_map<int32_t, int32_t> theLastNumbersSent{};
-		std::atomic_bool* doWeQuit{ nullptr };
-		JSONIFier* jsonifier{ nullptr };
-		ErlPacker* erlPacker{ nullptr };
-		std::mutex theAccessMutex{};
-		WebSocketMode theMode{};
-		std::jthread theTask{};
-
-		void createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
-
-		void stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept;
-
-		void generateGuildCreate(int32_t theIndex);
-				
-		void run(std::stop_token theToken);
 	};
 
 }// namespace DiscordCoreLoader

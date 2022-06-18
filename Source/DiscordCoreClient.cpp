@@ -70,7 +70,7 @@ namespace DiscordCoreLoader {
 	void DiscordCoreClient::collectShardInfo() {
 		this->webSocketSSLServerMain =
 			std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true, &Globals::doWeQuit);
-		auto thePtr = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
+		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
 		this->baseSocketAgentMap[std::to_string(0)]->connect();
 		this->theStopWatch.resetTimer();
@@ -79,11 +79,10 @@ namespace DiscordCoreLoader {
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
-		std::cout << "WERE HERE THIS IS IT!" << std::endl;
 	}
 
 	void DiscordCoreClient::generateGuildData() {
-		this->theGuildHolder["d"] = this->jsonifier.JSONIFYGuild(std::move(this->jsonifier.generateGuild(this->jsonifier.randomizeId())));
+		this->theGuildHolder["d"] = this->jsonifier.JSONIFYGuild(std::move(*this->jsonifier.generateGuild(this->jsonifier.randomizeId())));
 		this->theGuildHolder["op"] = static_cast<int8_t>(0);
 		this->theGuildHolder["t"] = "GUILD_CREATE";
 	}
@@ -120,7 +119,7 @@ namespace DiscordCoreLoader {
 				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect();
 			}
 			if (x > 0) {
-				auto thePtr02 = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
+				auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 				this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 			}
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {

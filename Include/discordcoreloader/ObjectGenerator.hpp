@@ -29,17 +29,17 @@ namespace DiscordCoreLoader {
 
 	class ObjectGenerator : public Randomizer {
 	  public:
-		GuildMemberData generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles);
+		std::unique_ptr<GuildMemberData> generateGuildMember(const std::string& guildId, const std::vector<std::unique_ptr<RoleData>>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 
-		ChannelData generateChannel(std::string guildId);
+		std::unique_ptr<ChannelData> generateChannel(std::string guildId);
 
-		GuildData generateGuild(std::string guildId);
+		std::unique_ptr<GuildData> generateGuild(std::string guildId);
 
-		RoleData generateRole(uint64_t position);
+		std::unique_ptr<RoleData> generateRole(uint64_t position);
 
-		UserData generateUser();
+		std::unique_ptr<UserData> generateUser();
 
 	  protected:
 		uint64_t stdDeviationForStringLength{};
