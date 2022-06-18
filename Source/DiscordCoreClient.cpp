@@ -48,6 +48,7 @@ namespace DiscordCoreLoader {
 		this->configParser = ConfigParser{ configFilePath };
 		this->guildQuantity = this->configParser.getTheData().guildQuantity;
 		this->jsonifier = this->configParser.getTheData();
+		this->theStopWatch.resetTimer();
 	}
 
 	void DiscordCoreClient::runServer() {
@@ -72,11 +73,13 @@ namespace DiscordCoreLoader {
 		auto thePtr = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
 		this->baseSocketAgentMap[std::to_string(0)]->connect();
+		this->theStopWatch.resetTimer();
+		this->theAgent = std::make_unique<GeneratorAgent>(&Globals::doWeQuit, &this->jsonifier, this->baseSocketAgentMap[std::to_string(0)]->theMode,
+			&this->baseSocketAgentMap[std::to_string(0)]->erlPacker);
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
-		this->theAgent = std::make_unique<GeneratorAgent>(&Globals::doWeQuit, &this->jsonifier, this->baseSocketAgentMap[std::to_string(0)]->theMode,
-			&this->baseSocketAgentMap[std::to_string(0)]->erlPacker);
+		std::cout << "WERE HERE THIS IS IT!" << std::endl;
 	}
 
 	void DiscordCoreClient::generateGuildData() {
@@ -90,7 +93,6 @@ namespace DiscordCoreLoader {
 		this->workerCount = 1;
 		int32_t shardsPerWorker{ static_cast<int32_t>(floor(static_cast<float>(this->shardingOptions.totalNumberOfShards) / static_cast<float>(workerCount))) };
 		int32_t leftOverShards{ this->shardingOptions.totalNumberOfShards - shardsPerWorker * workerCount };
-
 		std::vector<int32_t> shardsPerWorkerVect{};
 		for (int32_t x = 0; x < workerCount; x += 1) {
 			int32_t newShardAmount{};
@@ -126,12 +128,11 @@ namespace DiscordCoreLoader {
 				if (x == 0 && y == 0) {
 					continue;
 				}
-				while (!this->theStopWatch.hasTimePassed()) {
-					std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-				}
 				totalShards += 1;
 				this->baseSocketAgentMap[std::to_string(x)]->connect();
-				this->theStopWatch.resetTimer();
+			}
+			while (!this->theStopWatch.hasTimePassed()) {
+				std::this_thread::sleep_for(1ms);
 			}
 		}
 		if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {

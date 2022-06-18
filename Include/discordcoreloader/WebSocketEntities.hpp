@@ -123,7 +123,7 @@ namespace DiscordCoreLoader {
 
 	class GeneratorAgent {
 	  public:
-		GeneratorAgent& operator=(GeneratorAgent&& other) {
+		GeneratorAgent& operator=(GeneratorAgent&& other) noexcept {
 			this->theLastNumbersSent = other.theLastNumbersSent;
 			this->theWorkloadBuffer = other.theWorkloadBuffer;
 			this->theSendBuffer = other.theSendBuffer;
@@ -134,7 +134,7 @@ namespace DiscordCoreLoader {
 			this->theMode = other.theMode;
 			return *this;
 		}
-		GeneratorAgent(GeneratorAgent&& other) {
+		GeneratorAgent(GeneratorAgent&& other) noexcept {
 			*this = std::move(other);
 		}
 		GeneratorAgent() = default;
