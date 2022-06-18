@@ -87,7 +87,7 @@ namespace DiscordCoreLoader {
 
 	void DiscordCoreClient::instantiateWebSockets() {
 		this->shardingOptions.numberOfShardsForThisProcess = this->shardingOptions.totalNumberOfShards;
-		this->workerCount = static_cast<int32_t>(std::thread::hardware_concurrency()) - 1;
+		this->workerCount = 1;
 		int32_t shardsPerWorker{ static_cast<int32_t>(floor(static_cast<float>(this->shardingOptions.totalNumberOfShards) / static_cast<float>(workerCount))) };
 		int32_t leftOverShards{ this->shardingOptions.totalNumberOfShards - shardsPerWorker * workerCount };
 
@@ -106,6 +106,10 @@ namespace DiscordCoreLoader {
 			}
 			leftOverShards -= newShardAmount;
 		}
+		std::cout << "THE TOTALS: ";
+		for (auto& value: shardsPerWorkerVect) {
+			std::cout << "VALUE: " << value << std::endl;
+		}
 		auto totalShards{ 0 };
 		for (int32_t x = 0; x < shardsPerWorkerVect.size(); x += 1) {
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
@@ -118,6 +122,7 @@ namespace DiscordCoreLoader {
 				this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 			}
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
+				std::cout << "VALUE: " << y << std::endl;
 				if (x == 0 && y == 0) {
 					continue;
 				}
