@@ -334,7 +334,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit);
 
-		void processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
+		static void processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
 
 		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard);
 

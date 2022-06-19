@@ -259,33 +259,7 @@ namespace DiscordCoreLoader {
 			theString.push_back(0);
 			theString.push_back(static_cast<uint16_t>(reason) >> 8);
 			theString.push_back(static_cast<int8_t>(reason) & 0xff);
-			if (this->theClients.contains(theIndex.clientSocket)) {
-				while (theIndex.theMessageQueue.size() > 0) {
-					theIndex.theMessageQueue.pop();
-				}
-				WebSocketMessage theMessage{};
-				theMessage.stringMsg = theString;
-				theMessage.theOpCode = WebSocketOpCode::Op_Close;
-				theIndex.writeData(theString);
-			}
-		}
-	}
-
-	void BaseSocketAgent::sendFinalMessage(WebSocketSSLShard& theIndex) noexcept {
-		if (theIndex.outputBuffer.size() == 0) {
-			if (theIndex.theMessageQueue.size() > 0) {
-				WebSocketMessage newMessage = std::move(theIndex.theMessageQueue.front());
-				theIndex.theMessageQueue.pop();
-				if (newMessage.stringMsg.size() > 0) {
-					this->sendMessage(&newMessage.stringMsg, theIndex);
-				} else {
-					if (this->theMode == WebSocketMode::ETF) {
-						this->sendMessage(newMessage.jsonMsg, theIndex);
-					} else {
-						this->sendMessage(newMessage.jsonMsg, theIndex);
-					}
-				}
-			}
+			theIndex.writeData(theString);
 		}
 	}
 
@@ -297,7 +271,7 @@ namespace DiscordCoreLoader {
 				}
 				if (this->theClients.size() > 0) {
 					for (auto& [key, value]: this->theClients) {
-						this->webSocketSSLServerMain->processIO(this->theClients);
+						WebSocketSSLServerMain::processIO(this->theClients);
 						if (this->doWeConnect.load()) {
 							this->connectInternal();
 						}
@@ -315,7 +289,6 @@ namespace DiscordCoreLoader {
 									value->writeData(theString);
 								}
 							}
-							this->sendFinalMessage(*value);
 						} else {
 							this->closeCode = 0;
 							break;
@@ -527,18 +500,17 @@ namespace DiscordCoreLoader {
 			theMap[theSocket]->theState = WebSocketState::Initializing;
 			theMap[theSocket]->shard.push_back(theSocket);
 			while (this->authKeys[theSocket] == "") {
-				this->webSocketSSLServerMain->processIO(theMap);
+				WebSocketSSLServerMain::processIO(theMap);
 				this->parseHeader(*theMap[theSocket]);
 			}
 
 			std::string sendString = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 			sendString += this->authKeys[theSocket] + "\r\n\r\n";
 			this->sendMessage(&sendString, *theMap[theSocket]);
-			this->webSocketSSLServerMain->processIO(theMap);
+			WebSocketSSLServerMain::processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);
 			this->sendHelloMessage(*theMap[theSocket]);
-			this->sendFinalMessage(*theMap[theSocket]);
-			this->webSocketSSLServerMain->processIO(theMap);
+			WebSocketSSLServerMain::processIO(theMap);
 			this->parseHeader(*theMap[theSocket]);
 			this->theClients[theSocket] = std::move(theMap[theSocket]);
 			this->doWeQuit->store(false);

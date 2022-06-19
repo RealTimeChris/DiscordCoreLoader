@@ -96,8 +96,6 @@ namespace DiscordCoreLoader {
 
 		void sendReadyMessage(WebSocketSSLShard& theIndex) noexcept;
 
-		void sendFinalMessage(WebSocketSSLShard& theIndex) noexcept;
-
 		void sendHelloMessage(WebSocketSSLShard& theIndex) noexcept;
 
 		void sendCreateGuild(WebSocketSSLShard& theIndex) noexcept;
