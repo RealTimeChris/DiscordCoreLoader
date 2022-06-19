@@ -62,8 +62,6 @@
 
 namespace DiscordCoreLoader {
 
-	using namespace std::literals;
-
 	using SOCKET = int32_t;
 
 	class BaseSocketAgent;
