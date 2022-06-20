@@ -41,6 +41,11 @@ namespace DiscordCoreLoader {
 			uint64_t length = returnString.size() - 18;
 			returnString = std::move(returnString.substr(0, returnString.size() - length));
 		}
+		for (int32_t x = 0; x < returnString.size(); x += 1) {
+			if (returnString[x] == '\u0000') {
+				returnString[x] = '7';
+			}
+		}
 		return returnString;
 	}
 

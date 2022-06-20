@@ -265,6 +265,7 @@ namespace DiscordCoreLoader {
 
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
+			StopWatch theTimer{ 1000ms };
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
@@ -285,7 +286,8 @@ namespace DiscordCoreLoader {
 								
 							}
 							if (this->discordCoreClient->theAgent != nullptr && value->outputBuffer.size() <= 1) {
-								if (auto theString = this->discordCoreClient->theAgent->collectWorkload(key); theString != "") {
+								if (auto theString = this->discordCoreClient->theAgent->collectWorkload(key); theString != ""&&theTimer.hasTimePassed()) {
+									theTimer.resetTimer();
 									value->writeData(theString);
 								}
 							}
