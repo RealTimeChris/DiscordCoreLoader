@@ -25,11 +25,12 @@
 #include <discordcoreloader/ErlPacker.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/JSONIfier.hpp>
-#include <discordcoreloader/ObjectGenerator.hpp>
 
 namespace DiscordCoreLoader {
 
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
+
+	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
 
 	enum class WebSocketCloseCode : uint16_t {
 		Unknown_Error = 4000,///< We're not sure what went wrong. Try reconnecting?
@@ -54,9 +55,9 @@ namespace DiscordCoreLoader {
 
 		BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew) noexcept;
 
-		void sendMessage(std::string* dataToSend, WebSocketSSLShard& theIndex) noexcept;
+		void sendMessage(nlohmann::json& dataToSend, WebSocketOpCode theOpCode, SOCKET theIndex) noexcept;
 
-		void sendMessage(nlohmann::json& dataToSend, WebSocketSSLShard& theIndex) noexcept;
+		void sendMessage(std::string* dataToSend, SOCKET theIndex) noexcept;
 
 		std::jthread* getTheTask() noexcept;
 
@@ -66,16 +67,17 @@ namespace DiscordCoreLoader {
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
-		StopWatch<std::chrono::milliseconds> theDCTimer{ 5000ms };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
+		std::unordered_map<SOCKET, WebSocketState> states{};
 		std::unordered_map<SOCKET, std::string> authKeys{};
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
+		nlohmann::json currentConnectionData{ 0, 0 };
 		SOCKETWrapper currentNewSocket{ nullptr };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_bool doWeConnect{ false };
-		int32_t heartbeatInterval{ 41500 };
+		int32_t heartbeatInterval{ 45000 };
 		SOCKET currentIndex{ 0 };
 		WebSocketMode theMode{};
 		std::string sessionId{};
@@ -83,91 +85,38 @@ namespace DiscordCoreLoader {
 		ErlPacker erlPacker{};
 		JSONIFier jsonifier{};
 
-		std::vector<std::string> tokenize(const std::string& dataIn, WebSocketSSLShard& theIndex, const std::string& separator = "\r\n") noexcept;
+		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew, bool isItFinal, SOCKET theIndex) noexcept;
 
-		uint64_t createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
+		std::vector<std::string> tokenize(const std::string& dataIn, SOCKET theIndex, const std::string& separator = "\r\n") noexcept;
 
-		void stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept;
+		void initDisconnect(WebSocketCloseCode reason, SOCKET theIndex) noexcept;
 
-		void initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard& theIndex) noexcept;
-
-		void respondToDisconnect(WebSocketSSLShard& theIndex) noexcept;
-
-		void sendType7Disconnect(WebSocketSSLShard& theIndex) noexcept;
-
-		void onMessageReceived(WebSocketSSLShard& theIndex) noexcept;
-
-		void sendReadyMessage(WebSocketSSLShard& theIndex) noexcept;
-
-		void sendHelloMessage(WebSocketSSLShard& theIndex) noexcept;
-
-		void sendCreateGuild(WebSocketSSLShard& theIndex) noexcept;
-
-		void sendHeartBeat(WebSocketSSLShard& theIndex) noexcept;
-
-		bool parseHeader(WebSocketSSLShard& theIndex) noexcept;
+		void connect(int32_t currentShard, int32_t totalShardCount) noexcept;
 
 		void run(std::stop_token theToken) noexcept;
 
+		void respondToDisconnect(SOCKET) noexcept;
+
+		void onMessageReceived(SOCKET) noexcept;
+
+		void sendCreateGuilds(SOCKET) noexcept;
+
+		void sendReadyMessage(SOCKET) noexcept;
+
+		void sendFinalMessage(SOCKET) noexcept;
+
+		void sendHelloMessage(SOCKET) noexcept;
+
 		void sendGuildMemberChunks() noexcept;
+
+		void sendHeartBeat(SOCKET) noexcept;
+
+		void handleBuffer(SOCKET) noexcept;
+
+		bool parseHeader(SOCKET) noexcept;
 
 		void sendFinalMessage() noexcept;
 
 		void connectInternal() noexcept;
-
-		void connect() noexcept;
 	};
-
-	enum class GeneratorAgentWorkloadTypes {
-		Guild_Create = 0,
-	};
-
-	class GeneratorAgent {
-	  public:
-
-		GeneratorAgent& operator=(GeneratorAgent&& other) {
-			this->theLastNumbersSent = other.theLastNumbersSent;
-			this->theWorkloadBuffer = other.theWorkloadBuffer;
-			this->theSendBuffer = other.theSendBuffer;
-			this->theTask.swap(other.theTask);
-			this->erlPacker = other.erlPacker;
-			this->jsonifier = other.jsonifier;
-			this->doWeQuit = other.doWeQuit;
-			this->theMode = other.theMode;
-			return *this;
-		}
-
-		GeneratorAgent(GeneratorAgent&& other) {
-			*this = std::move(other);
-		}
-
-		GeneratorAgent() = default;
-
-		GeneratorAgent(std::atomic_bool* doWeQuit, JSONIFier* jsonifier, WebSocketMode theMode, ErlPacker* erlPackerNew);
-
-		void placeOrder(int32_t, int32_t, GeneratorAgentWorkloadTypes) noexcept;
-
-		std::string collectWorkload(int32_t) noexcept;
-
-	  protected:
-		std::unordered_map<int32_t, std::queue<GeneratorAgentWorkloadTypes>> theWorkloadBuffer{};
-		std::unordered_map<int32_t, std::queue<std::string>> theSendBuffer{};
-		std::unordered_map<int32_t, int32_t> theLastNumbersSent{};
-		std::atomic_bool* doWeQuit{ nullptr };
-		JSONIFier* jsonifier{ nullptr };
-		ErlPacker* erlPacker{ nullptr };
-		nlohmann::json guildHolder{};
-		std::mutex theAccessMutex{};
-		WebSocketMode theMode{};
-		std::jthread theTask{};
-
-		void createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
-
-		void stringifyJsonData(const nlohmann::json& jsonData, std::string& theString) noexcept;
-
-		void generateGuildCreate(int32_t theIndex);
-				
-		void run(std::stop_token theToken);
-	};
-
 }// namespace DiscordCoreLoader

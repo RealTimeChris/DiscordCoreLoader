@@ -30,28 +30,25 @@ namespace DiscordCoreLoader {
 		return theStream.str().substr(1, theStream.str().size() - 2);
 	}
 
-	std::string reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
-		std::stringstream theStream{};
+	void reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
 		if (ssl) {
-			theStream << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << ", " << ERR_error_string(errorValue, nullptr) << reset() << std::endl;
+			std::cout << shiftToBrightRed() << errorPosition << SSL_get_error(ssl, errorValue) << std::endl;
 		} else {
-			theStream << shiftToBrightRed() << errorPosition << reset() << std::endl;
+			std::cout << shiftToBrightRed() << errorPosition << std::endl;
 		}
-
-		return theStream.str();
+		ERR_print_errors_fp(stdout);
+		std::cout << std::endl << reset();
 	}
 
-	std::string reportError(const std::string& errorPosition) noexcept {
-		std::stringstream theStream{};
-		theStream << shiftToBrightRed() << errorPosition;
+	void reportError(const std::string& errorPosition, int32_t errorValue) noexcept {
+		std::cout << shiftToBrightRed() << errorPosition << errorValue << ", ";
 #ifdef _WIN32
 		std::unique_ptr<char[]> string{ std::make_unique<char[]>(1024) };
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), string.get(), 1024, NULL);
-		theStream << WSAGetLastError() << ", " << string << reset();
+		std::cout << WSAGetLastError() << ", " << string << std::endl << reset();
 #else
-		theStream << strerror(errno) << reset();
+		std::cout << strerror(errno) << std::endl << reset();
 #endif
-		return theStream.str();
 	}
 
 	WebSocketSSLShard::WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
@@ -61,15 +58,24 @@ namespace DiscordCoreLoader {
 
 		if (this->clientSocket != SOCKET_ERROR) {
 			if (this->ssl = SSL_new(this->theContext); this->ssl == nullptr) {
-				throw ConnectionError{ reportSSLError("SSL_new(), ") };
+				if (this->doWePrintError) {
+					reportSSLError("SSL_new() Error: ");
+				}
+				return;
 			}
 
 			if (!SSL_set_min_proto_version(this->ssl, TLS1_2_VERSION)) {
-				throw ConnectionError{ reportSSLError("SSL_set_min_proto_version(), ") };
+				if (this->doWePrintError) {
+					reportSSLError("SSL_set_min_proto_version() Error: ");
+				}
+				return;
 			}
 
 			if (auto returnValue = SSL_set_fd(this->ssl, this->clientSocket); !returnValue) {
-				throw ConnectionError{ reportSSLError("SSL_set_fd(), ", returnValue, this->ssl) };
+				if (this->doWePrintError) {
+					reportSSLError("SSL_set_fd() Error: ", returnValue, this->ssl);
+				}
+				return;
 			}
 
 			while (SSL_accept(this->ssl) != 1) {
@@ -86,11 +92,11 @@ namespace DiscordCoreLoader {
 			this->inputBuffer = std::move(other.inputBuffer);
 			this->doWePrintError = other.doWePrintError;
 			this->maxBufferSize = other.maxBufferSize;
-			this->theContext = std::move(theContext);
 			this->bytesWritten = other.bytesWritten;
 			this->bytesRead = other.bytesRead;
 			this->ssl = std::move(other.ssl);
 			this->wantRead = other.wantRead;
+			this->theContext = theContext;
 		}
 		return *this;
 	}
@@ -153,70 +159,108 @@ namespace DiscordCoreLoader {
 		hints->ai_protocol = IPPROTO_TCP;
 
 		if (auto resultValue = getaddrinfo(this->baseUrl.c_str(), this->port.c_str(), hints, this->addrInfo); resultValue != 0) {
-			throw ConnectionError{ reportError("getaddrinfo(), ") };
+			if (this->doWePrintError) {
+				reportError("getaddrinfo() Error: ", resultValue);
+			}
+			return;
 		}
 
 		if (this->theServerSocket = socket(this->addrInfo->ai_family, this->addrInfo->ai_socktype, this->addrInfo->ai_protocol); this->theServerSocket == SOCKET_ERROR) {
-			throw ConnectionError{ reportError("socket(), ") };
+			if (this->doWePrintError) {
+				reportError("socket() Error: ", this->theServerSocket);
+			}
+			return;
 		}
 
 		int32_t val{ 16384 };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_SOCKET, SO_SNDBUF, ( char* )&val, sizeof(val)); returnValue == SOCKET_ERROR) {
-			throw ConnectionError{ reportError("setsockopt(), ") };
+			if (this->doWePrintError) {
+				reportError("setsockopt() Error: ", returnValue);
+			}
+			return;
 		}
 
 #ifdef _WIN32
 		char optionValue{ true };
 		if (auto returnValue = setsockopt(this->theServerSocket, IPPROTO_TCP, TCP_NODELAY, &optionValue, sizeof(optionValue)); returnValue == SOCKET_ERROR) {
-			throw ConnectionError{ reportError("setsockopt(), ") };
+			if (this->doWePrintError) {
+				reportError("setsockopt() Error: ", returnValue);
+			}
+			return;
 		}
 #else
 		int32_t optionValue{ 1 };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_TCP, TCP_NODELAY, &optionValue, sizeof(optionValue)); returnValue == SOCKET_ERROR) {
 			if (this->doWePrintError) {
-				reportError("setsockopt(), ")
-			};
+				reportError("setsockopt() Error: ", returnValue);
+			}
+			return;
 		}
-		return;
-	}
 #endif
 
 		std::unique_ptr<char> optVal{ new char{ 1 } };
 		if (auto returnValue = setsockopt(this->theServerSocket, SOL_SOCKET, SO_REUSEADDR, optVal.get(), sizeof(optVal)); returnValue < 0) {
-			throw ConnectionError{ reportError("setsockopt(), ") };
+			if (this->doWePrintError) {
+				reportError("setsockopt() Error: ", returnValue);
+			}
+			return;
 		}
 
 		if (auto returnValue = bind(this->theServerSocket, this->addrInfo->ai_addr, static_cast<int32_t>(this->addrInfo->ai_addrlen)); returnValue != 0) {
-			throw ConnectionError{ reportError("bind(), ") };
+			if (this->doWePrintError) {
+				reportError("bind() Error: ", returnValue);
+			}
+			return;
 		}
 
 		if (auto returnValue = listen(this->theServerSocket, 5); returnValue != 0) {
-			throw ConnectionError{ reportError("listen(), ") };
+			if (this->doWePrintError) {
+				reportError("listen() Error: ", returnValue);
+			}
+			return;
 		}
 
 		if (this->context = SSL_CTX_new(TLS_server_method()); this->context == nullptr) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_new(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_new() Error: ");
+			}
+			return;
 		}
 
 		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_set_min_proto_version(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
+			}
+			return;
 		}
 
 		if (!SSL_CTX_set_ciphersuites(this->context, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256")) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_set_ciphersuites(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_set_ciphersuites() Error: ");
+			}
+			return;
 		}
 
 		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_use_certificate_chain_file(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
+			}
+			return;
 		}
 
 		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.c_str(), SSL_FILETYPE_PEM) <= 0) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_use_PrivateKey_file(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_use_PrivateKey_file() Error: ");
+			}
+			return;
 		}
 
 		SSL_CTX_set_verify(this->context, SSL_VERIFY_PEER, NULL);
 		if (!SSL_CTX_load_verify_locations(this->context, "Cert.pem", NULL)) {
-			throw ConnectionError{ reportSSLError("SSL_CTX_load_verify_locations(), ") };
+			if (this->doWePrintError) {
+				reportSSLError("SSL_CTX_load_verify_locations() Error: ");
+			}
+			return;
 		}
 	};
 
@@ -231,29 +275,35 @@ namespace DiscordCoreLoader {
 		return theShard;
 	}
 
-	void WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) {
+	ProcessIOReturnData WebSocketSSLServerMain::processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept {
 		fd_set readSet{}, writeSet{};
 
 		int32_t readNfds{ 0 }, writeNfds{ 0 }, finalNfds{ 0 };
 		FD_ZERO(&readSet);
 		FD_ZERO(&writeSet);
 		for (auto& [key, value]: theMap) {
-			if ((value->outputBuffer.size() > 0 || value->wantWrite) && !value->wantRead) {
+			if ((value->outputBuffer.size() > 0 || value->wantWrite)) {
 				FD_SET(value->clientSocket, &writeSet);
 				writeNfds = value->clientSocket > writeNfds ? static_cast<SOCKET>(value->clientSocket) : writeNfds;
-			}
-			FD_SET(value->clientSocket, &readSet);
+			} else if (!value->wantWrite) {
+				FD_SET(value->clientSocket, &readSet);
+			}			
 			readNfds = value->clientSocket > readNfds ? static_cast<SOCKET>(value->clientSocket) : readNfds;
 			finalNfds = readNfds > writeNfds ? readNfds : writeNfds;
 		}
 
-		timeval checkTime{ .tv_usec = 1000 };
+		ProcessIOReturnData returnValue02{};
+		returnValue02.returnCode = ProcessIOReturnCode::Success;
+		timeval checkTime{ .tv_usec = 10000 };
 		if (auto resultValue = select(finalNfds + 1, &readSet, &writeSet, nullptr, &checkTime); resultValue == SOCKET_ERROR) {
-			throw ProcessingError{ reportError("select(), ") };
+			if (this->doWePrintError) {
+				reportError("select() Error: ", resultValue);
+			}
+			return returnValue02;
 		} else if (resultValue == 0) {
-			return;
+			return returnValue02;
 		}
-
+		
 		for (auto& [key, value]: theMap) {
 			if (FD_ISSET(value->clientSocket, &readSet)) {
 				value->wantRead = false;
@@ -269,12 +319,19 @@ namespace DiscordCoreLoader {
 							value->inputBuffer.insert(value->inputBuffer.end(), serverToClientBuffer.begin(), serverToClientBuffer.begin() + readBytes);
 							value->bytesRead += readBytes;
 						}
+						returnValue02.writtenOrReadCount += 1;
+						returnValue02.returnIndex = key;
+						returnValue02.returnCode = ProcessIOReturnCode::Success;
 						break;
 					}
 					case SSL_ERROR_WANT_READ: {
+						returnValue02.returnCode = ProcessIOReturnCode::Success;
+						value->wantRead = true;
 						break;
 					}
 					case SSL_ERROR_WANT_WRITE: {
+						returnValue02.returnCode = ProcessIOReturnCode::Success;
+						value->wantWrite = true;
 						break;
 					}
 					case SSL_ERROR_SYSCALL: {
@@ -284,13 +341,16 @@ namespace DiscordCoreLoader {
 						[[fallthrough]];
 					}
 					default: {
-						throw ProcessingError{ reportSSLError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ", returnValue, value->ssl) +
-							reportError("WebSocketSSLServerMain::processIO::SSL_read_ex(), ") };
+						if (value->doWePrintError) {
+							reportSSLError("WebSocketSSLServerMain::processIO::SSL_read_ex() Error: ", returnValue, value->ssl);
+							reportError("WebSocketSSLServerMain::processIO::SSL_read_ex() Error: ", returnValue);
+						}
+						returnValue02.returnCode = ProcessIOReturnCode::Error;
+						returnValue02.returnIndex = value->clientSocket;
+						return returnValue02;
 					}
 				}
 			}
-		}
-		for (auto& [key, value]: theMap) {
 			if (FD_ISSET(value->clientSocket, &writeSet)) {
 				value->wantRead = false;
 				value->wantWrite = false;
@@ -309,13 +369,18 @@ namespace DiscordCoreLoader {
 								value->outputBuffer.erase(value->outputBuffer.begin());
 							}
 							value->bytesWritten += writtenBytes;
+							returnValue02.writtenOrReadCount += 1;
+							returnValue02.returnIndex = key;
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							break;
 						}
 						case SSL_ERROR_WANT_READ: {
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							value->wantRead = true;
 							break;
 						}
 						case SSL_ERROR_WANT_WRITE: {
+							returnValue02.returnCode = ProcessIOReturnCode::Success;
 							value->wantWrite = true;
 							break;
 						}
@@ -326,13 +391,19 @@ namespace DiscordCoreLoader {
 							[[fallthrough]];
 						}
 						default: {
-							throw ProcessingError{ reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ", returnValue, value->ssl) +
-								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex(), ") };
+							if (value->doWePrintError) {
+								reportSSLError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue, value->ssl);
+								reportError("WebSocketSSLServerMain::processIO::SSL_write_ex() Error: ", returnValue);
+							}
+							returnValue02.returnCode = ProcessIOReturnCode::Error;
+							returnValue02.returnIndex = value->clientSocket;
+							return returnValue02;
 						}
 					}
 				}
 			}
 		}
+		return returnValue02;
 	}
 
 	void WebSocketSSLServerMain::submitReconnectionShard(ReconnectionPackage theData) {
@@ -354,7 +425,7 @@ namespace DiscordCoreLoader {
 #ifdef WIN32
 		auto theSize = static_cast<int32_t>(this->addrInfo->ai_addrlen);
 #else
-	auto theSize = static_cast<uint32_t>(this->addrInfo->ai_addrlen);
+		auto theSize = static_cast<uint32_t>(this->addrInfo->ai_addrlen);
 #endif
 		while (newSocket == SOCKET_ERROR && !this->doWeQuit->load()) {
 			newSocket = accept(this->theServerSocket, this->addrInfo->ai_addr, &theSize);

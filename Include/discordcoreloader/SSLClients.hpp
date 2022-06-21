@@ -68,14 +68,8 @@ namespace DiscordCoreLoader {
 
 	enum class WebSocketOpCode : int8_t { Op_Continuation = 0x00, Op_Text = 0x01, Op_Binary = 0x02, Op_Close = 0x08, Op_Ping = 0x09, Op_Pong = 0x0a };
 
-	enum class WebSocketState : int8_t { Initializing = 0, Connected = 1 };
-
-	struct ConnectionError : public std::runtime_error {
-		explicit ConnectionError(const std::string& theString) : std::runtime_error(theString){};
-	};
-
-	struct ProcessingError : public std::runtime_error {
-		explicit ProcessingError(const std::string& theString) : std::runtime_error(theString){};
+	struct MessagePackage {
+		std::vector<std::string> theStrings{};
 	};
 
 	struct WebSocketMessage {
@@ -107,7 +101,7 @@ namespace DiscordCoreLoader {
 	#define SOCKET_ERROR (-1)
 #endif
 
-	std::string reportError(const std::string& errorPosition) noexcept;
+	void reportError(const std::string& errorPosition, int32_t errorValue) noexcept;
 #ifdef _WIN32
 	struct WSADataWrapper {
 		struct WSADataDeleter {
@@ -248,8 +242,8 @@ namespace DiscordCoreLoader {
 			if (this != &other) {
 				this->socketPtr.swap(other.socketPtr);
 				*other.socketPtr = SOCKET_ERROR;
+				return *this;
 			}
-			return *this;
 		}
 
 		SOCKETWrapper(SOCKETWrapper&& other) noexcept {
@@ -270,6 +264,17 @@ namespace DiscordCoreLoader {
 
 	  protected:
 		std::unique_ptr<int32_t, SOCKETDeleter> socketPtr{ new SOCKET{ static_cast<int32_t>(SOCKET_ERROR) }, SOCKETDeleter{} };
+	};
+
+	enum class ProcessIOReturnCode : int32_t {
+		Error = -1,///< Error occurred.
+		Success = 0,///< Succesful read or write occurred.
+	};
+
+	struct ProcessIOReturnData {
+		ProcessIOReturnCode returnCode{};
+		int32_t writtenOrReadCount{ 0 };
+		SOCKET returnIndex{};
 	};
 
 	class WebSocketSSLShard {
@@ -294,19 +299,18 @@ namespace DiscordCoreLoader {
 		~WebSocketSSLShard();
 
 	  protected:
-		StopWatch<std::chrono::milliseconds> theStopWatch{ 3500ms };
 		std::queue<WebSocketMessage> theMessageQueue{};
 		uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::vector<std::string> outputBuffer{};
 		SOCKETWrapper clientSocket{ nullptr };
-		SSL_CTXWrapper theContext{ nullptr };
+		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
+		SSL_CTX* theContext{ nullptr };
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		int64_t currentGuildCount{};
 		uint64_t bytesWritten{ 0 };
 		int64_t totalGuildCount{};
-		WebSocketState theState{};
 		SSLWrapper ssl{ nullptr };
 		std::string inputBuffer{};
 		int64_t lastNumberSent{};
@@ -332,7 +336,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit);
 
-		static void processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap);
+		ProcessIOReturnData processIO(std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>>& theMap) noexcept;
 
 		std::unique_ptr<WebSocketSSLShard> connectShard(SOCKET newShard);
 

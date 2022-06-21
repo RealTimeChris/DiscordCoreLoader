@@ -20,12 +20,13 @@
 /// \file DiscordCoreClient.cpp
 
 #include <discordcoreloader/DiscordCoreClient.hpp>
-#include <csignal>
+#include <signal.h>
 #include <atomic>
 
 namespace DiscordCoreLoader {
 
 	namespace Globals {
+		std::atomic_bool doWeDisconnect{ false };
 		std::atomic_bool doWeQuit{ false };
 	}
 
@@ -34,17 +35,18 @@ namespace DiscordCoreLoader {
 	}
 
 	void signalHandler(int32_t) {
+		Globals::doWeQuit.store(true);
 		std::exit(EXIT_SUCCESS);
 	}
 
 	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) {
-		std::atexit(&atexitHandler);
-		std::signal(SIGTERM, &signalHandler);
-		std::signal(SIGSEGV, &signalHandler);
-		std::signal(SIGINT, &signalHandler);
-		std::signal(SIGILL, &signalHandler);
-		std::signal(SIGABRT, &signalHandler);
-		std::signal(SIGFPE, &signalHandler);
+		std::atexit(atexitHandler);
+		signal(SIGABRT, signalHandler);
+		signal(SIGINT, signalHandler);
+		signal(SIGILL, signalHandler);
+		signal(SIGFPE, signalHandler);
+		signal(SIGSEGV, signalHandler);
+		signal(SIGTERM, signalHandler);
 		this->configParser = ConfigParser{ configFilePath };
 		this->guildQuantity = this->configParser.getTheData().guildQuantity;
 		this->jsonifier = this->configParser.getTheData();
@@ -59,7 +61,13 @@ namespace DiscordCoreLoader {
 
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect();
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
+			}
+			if (Globals::doWeDisconnect.load()) {
+				std::mt19937_64 theRandomEngine{};
+				size_t theIndex = theRandomEngine() / theRandomEngine.max() * this->baseSocketAgentMap.size();
+				this->baseSocketAgentMap[std::to_string(theIndex)]->theClients.begin().operator*().second->~WebSocketSSLShard();
+				Globals::doWeDisconnect.store(false);
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
@@ -69,18 +77,16 @@ namespace DiscordCoreLoader {
 	void DiscordCoreClient::collectShardInfo() {
 		this->webSocketSSLServerMain =
 			std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true, &Globals::doWeQuit);
-		auto thePtr = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
+		auto thePtr = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 		this->baseSocketAgentMap[std::to_string(0)] = std::move(thePtr);
-		this->baseSocketAgentMap[std::to_string(0)]->connect();
+		this->baseSocketAgentMap[std::to_string(0)]->connect(0, 0);
 		while (!this->haveWeCollectedShardingInfo) {
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
-		this->theAgent = std::make_unique<GeneratorAgent>(&Globals::doWeQuit, &this->jsonifier, this->baseSocketAgentMap[std::to_string(0)]->theMode,
-			&this->baseSocketAgentMap[std::to_string(0)]->erlPacker);
 	}
 
 	void DiscordCoreClient::generateGuildData() {
-		this->theGuildHolder["d"] = this->jsonifier.JSONIFYGuild(std::move(this->jsonifier.generateGuild(this->jsonifier.randomizeId())));
+		this->theGuildHolder["d"] = this->jsonifier.JSONIFYGuild(std::move(*this->jsonifier.generateGuild(this->jsonifier.randomizeId())));
 		this->theGuildHolder["op"] = static_cast<int8_t>(0);
 		this->theGuildHolder["t"] = "GUILD_CREATE";
 	}
@@ -107,27 +113,18 @@ namespace DiscordCoreLoader {
 			leftOverShards -= newShardAmount;
 		}
 		auto totalShards{ 0 };
-		for (int32_t x = 0; x < shardsPerWorkerVect.size(); x += 1) {
+		for (int32_t x = 1; x < workerCount; x += 1) {
 			auto returnShard = this->webSocketSSLServerMain->reconnectShard();
 			if (returnShard.theMap != nullptr) {
 				int32_t currentAgent = returnShard.currentShard / this->workerCount;
-				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect();
+				this->baseSocketAgentMap[std::to_string(currentAgent)]->connect(returnShard.currentShard, returnShard.totalShardCount);
 			}
-			if (x > 0) {
-				auto thePtr02 = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
-				this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
-			}
+			auto thePtr02 = std::make_unique<DiscordCoreLoader::BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit);
 			for (int32_t y = 0; y < shardsPerWorkerVect[x]; y += 1) {
-				if (x == 0 && y == 0) {
-					continue;
-				}
-				while (!this->theStopWatch.hasTimePassed()) {
-					std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-				}
 				totalShards += 1;
-				this->baseSocketAgentMap[std::to_string(x)]->connect();
-				this->theStopWatch.resetTimer();
+				thePtr02->connect(totalShards - 1, this->shardingOptions.totalNumberOfShards);
 			}
+			this->baseSocketAgentMap[std::to_string(x)] = std::move(thePtr02);
 		}
 		if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 			std::cout << shiftToBrightGreen() << "All of the shards are connected for the current process!" << reset() << std::endl << std::endl;

@@ -56,22 +56,26 @@ namespace DiscordCoreLoader {
 		return theTimeStamp;
 	}
 
-	void reportException(const std::string& currentFunctionName, std::source_location theLocation) {
+	void reportException(const std::string& stackTrace, UnboundedMessageBlock<std::exception>* sendBuffer, bool rethrow) {
 		try {
 			auto currentException = std::current_exception();
 			if (currentException) {
 				std::rethrow_exception(currentException);
 			}
 		} catch (const std::exception& e) {
-			std::stringstream theStream{};
-			theStream << shiftToBrightRed() << "Error Report: \n"
-					  << "Caught At: " << currentFunctionName << ", in File: " << theLocation.file_name() << " (" << std::to_string(theLocation.line()) << ":"
-					  << std::to_string(theLocation.column()) << ")"
-					  << "\nThe Error: \n"
-					  << e.what() << reset() << std::endl
-					  << std::endl;
-			auto theReturnString = theStream.str();
-			std::cout << theReturnString;
+			if (rethrow) {
+				std::rethrow_exception(std::current_exception());
+				return;
+			}
+			if (sendBuffer) {
+				sendBuffer->send(e);
+			} else {
+				if (stackTrace.back() == '\n') {
+					std::cout << shiftToBrightRed() << stackTrace + "Error: " << e.what() << reset() << "\n\n";
+				} else {
+					std::cout << shiftToBrightRed() << stackTrace + " Error: " << e.what() << reset() << "\n\n";
+				}
+			}
 		}
 	}
 

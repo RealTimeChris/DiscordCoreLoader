@@ -42,7 +42,6 @@
 
 #include <condition_variable>
 #include <nlohmann/json.hpp>
-#include <source_location>
 #include <unordered_map>
 #include <functional>
 #include <semaphore>
@@ -92,6 +91,19 @@
  * \defgroup foundation_entities Foundation Entities
  * \brief For all of the building blocks of the main endpoints.
  */
+namespace DiscordCoreLoader {
+
+	struct HttpWorkloadData;
+	class SoundCloudRequestBuilder;
+	class YouTubeRequestBuilder;
+	class VoiceSocketAgent;
+	class BaseSocketAgent;
+	class SoundCloudAPI;
+	class YouTubeAPI;
+	class HttpClient;
+	class DataParser;
+
+}// namespace DiscordCoreLoader
 
 /**
  * \addtogroup foundation_entities
@@ -101,15 +113,12 @@
 /// library.
 namespace DiscordCoreLoader {
 
-	using namespace std::literals;
-
 	struct RecurseThroughMessagePagesData;
 	struct DeleteInteractionResponseData;
 	struct DeleteFollowUpMessageData;
 	struct OnInteractionCreationData;
 	struct GetGuildMemberRolesData;
 	struct BaseFunctionArguments;
-	struct HttpWorkloadData;
 	struct GetRolesData;
 	struct CommandData;
 	struct File;
@@ -120,20 +129,15 @@ namespace DiscordCoreLoader {
 	class CreateInteractionResponseData;
 	class EditInteractionResponseData;
 	class CreateFollowUpMessageData;
-	class SoundCloudRequestBuilder;
 	class RespondToInputEventData;
 	class EditFollowUpMessageData;
-	class YouTubeRequestBuilder;
 	class SelectMenuCollector;
 	class DiscordCoreClient;
 	class CreateMessageData;
-	class VoiceSocketAgent;
-	class BaseSocketAgent;
 	class VoiceConnection;
 	class EditMessageData;
 	class ButtonCollector;
 	class ModalCollector;
-	class SoundCloudAPI;
 	class Interactions;
 	class EventManager;
 	class EventHandler;
@@ -142,9 +146,6 @@ namespace DiscordCoreLoader {
 	class ChannelData;
 	class InputEvents;
 	class EventWaiter;
-	class YouTubeAPI;
-	class HttpClient;
-	class DataParser;
 	class SendDMData;
 	class Reactions;
 	class Messages;
@@ -392,11 +393,6 @@ namespace DiscordCoreLoader {
 			this->theArray = std::queue<ObjectType>{};
 		}
 
-		size_t size() {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			return this->theArray.size();
-		}
-
 		/// Tries to receive an object of type ObjectType to be placed into a reference. \brief Tries to receive an object of type ObjectType to be placed into a reference.
 		/// \param theObject A reference of type ObjectType for placing the potentially received object.
 		/// \returns A bool, denoting whether or not we received an object.
@@ -605,7 +601,7 @@ namespace DiscordCoreLoader {
 
 	void constructMultiPartData(HttpWorkloadData& dataPackage, nlohmann::json theData, const std::vector<File>& files);
 
-	void reportException(const std::string& currentFunctionName, std::source_location theLocation = std::source_location::current());
+	void reportException(const std::string& stackTrace, UnboundedMessageBlock<std::exception>* sendBuffer = nullptr, bool rethrow = false);
 
 	std::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat);
 
@@ -1857,11 +1853,11 @@ namespace DiscordCoreLoader {
 		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
 		std::unordered_map<std::string, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
 		std::unordered_map<std::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
-		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
-		std::vector<ChannelData> channels{};///< Array of Guild channels.
+		std::vector<std::unique_ptr<GuildMemberData>> members{};///< Array of GuildMembers.
+		std::vector<std::unique_ptr<ChannelData>> channels{};///< Array of Guild channels.
 		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
 		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, y default.
-		std::vector<RoleData> roles{};///< Array of Guild roles.
+		std::vector<std::unique_ptr<RoleData>> roles{};///< Array of Guild roles.
 		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
 		int32_t premiumSubscriptionCount{ 0 };///< Premium subscription count.
 		int32_t approximatePresenceCount{ 0 };///< Approximate quantity of presences.
