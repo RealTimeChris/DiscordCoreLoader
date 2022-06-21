@@ -252,6 +252,16 @@ namespace DiscordCoreLoader {
 		}
 	}
 
+	void BaseSocketAgent::sendType7Disconnect(WebSocketSSLShard& theIndex) noexcept {
+		nlohmann::json theData{};
+		theData["op"] = 7;
+		theData["d"] = nullptr;
+		std::string theString{};
+		this->stringifyJsonData(theData, theString);
+		theIndex.writeData(theString);
+		this->initDisconnect(WebSocketCloseCode::Session_Timed_Out, theIndex);
+	}
+
 	void BaseSocketAgent::initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard& theIndex) noexcept {
 		if (theIndex.clientSocket != 0) {
 			std::string theString{};
@@ -266,12 +276,16 @@ namespace DiscordCoreLoader {
 	void BaseSocketAgent::run(std::stop_token theToken) noexcept {
 		try {
 			StopWatch theTimer{ 1000ms };
+			this->theDCTimer.resetTimer();
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->doWeConnect.load()) {
 					this->connectInternal();
 				}
 				if (this->theClients.size() > 0) {
 					for (auto& [key, value]: this->theClients) {
+						if (this->theDCTimer.hasTimePassed()) {
+							this->sendType7Disconnect(*value);
+						}
 						WebSocketSSLServerMain::processIO(this->theClients);
 						if (this->doWeConnect.load()) {
 							this->connectInternal();

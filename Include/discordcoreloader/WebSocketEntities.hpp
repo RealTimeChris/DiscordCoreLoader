@@ -66,6 +66,7 @@ namespace DiscordCoreLoader {
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
 		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
+		StopWatch<std::chrono::milliseconds> theDCTimer{ 5000ms };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		WebSocketOpCode opCode{ WebSocketOpCode::Op_Binary };
 		std::unordered_map<SOCKET, std::string> authKeys{};
@@ -91,6 +92,8 @@ namespace DiscordCoreLoader {
 		void initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard& theIndex) noexcept;
 
 		void respondToDisconnect(WebSocketSSLShard& theIndex) noexcept;
+
+		void sendType7Disconnect(WebSocketSSLShard& theIndex) noexcept;
 
 		void onMessageReceived(WebSocketSSLShard& theIndex) noexcept;
 
