@@ -16,7 +16,7 @@
 */
 /// SSLClents.hpp - Header file for the "SSL Client" stuff.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file SSLClients.hpp
 
 #pragma once
@@ -33,8 +33,11 @@
 #include <filesystem>
 #include <discordcoreloader/FoundationEntities.hpp>
 #include <discordcoreloader/JSONIfier.hpp>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+extern "C" {
+	#undef APPMACROS_ONLY
+	#include <openssl/err.h>
+	#include <openssl/ssl.h>
+}
 
 #ifdef max
 	#undef max
@@ -49,7 +52,7 @@
 	#include <WinSock2.h>
 	#include <WS2tcpip.h>
 	#define poll(fd_set, fd_count, timeout) WSAPoll(fd_set, fd_count, timeout)
-#else
+#elif __linux__
 	#include <fcntl.h>
 	#include <netdb.h>
 	#include <netinet/in.h>
@@ -69,7 +72,11 @@ namespace DiscordCoreLoader {
 	#define SOCKET_ERROR (-1)
 #endif
 
+#ifdef _WIN32
+	using SOCKET = uint32_t;
+#else
 	using SOCKET = int32_t;
+#endif
 
 	struct ConnectionError : public std::runtime_error {
 		int32_t shardNumber{};
@@ -113,169 +120,105 @@ namespace DiscordCoreLoader {
 		std::string stringMsg{};
 	};
 
-	void reportError(const std::string& errorPosition, int32_t errorValue) noexcept;
+	std::string reportError(const char* errorPosition, int32_t errorValue) noexcept;
+
 #ifdef _WIN32
 	struct WSADataWrapper {
 		struct WSADataDeleter {
-			void operator()(WSADATA* other) {
-				WSACleanup();
-				delete other;
-			}
+			void operator()(WSADATA* other);
 		};
 
-		WSADataWrapper() {
-			if (auto errorValue = WSAStartup(MAKEWORD(2, 2), this->thePtr.get()); errorValue != 0) {
-				std::cout << shiftToBrightRed() << "WSAStartup() Error: " << errorValue << ", ";
-				std::cout << std::endl << reset();
-			}
-		}
+		WSADataWrapper();
 
 	  protected:
-		std::unique_ptr<WSADATA, WSADataDeleter> thePtr{ new WSADATA{}, WSADataDeleter{} };
+		std::unique_ptr<WSADATA, WSADataDeleter> ptr{ new WSADATA{}, WSADataDeleter{} };
 	};
 #endif
 
-	struct addrinfoWrapper {
-		addrinfo* operator->() {
-			if (this->addrinfoPtrTwo == nullptr) {
-				throw std::runtime_error{ "Error: addrinfoPtrTwo was nullptr." };
-			}
-			return this->addrinfoPtrTwo;
-		}
-
-		operator addrinfo**() {
-			this->doWeClearAddrInfo = true;
-			if (this->addrinfoPtrTwo == nullptr) {
-				throw std::runtime_error{ "Error: addrinfoPtrTwo was nullptr." };
-			}
-			return &this->addrinfoPtrTwo;
-		}
-
-		operator addrinfo*() {
-			if (this->addrinfoPtrTwo == nullptr) {
-				throw std::runtime_error{ "Error: addrinfoPtrTwo was nullptr." };
-			}
-			return this->addrinfoPtrTwo;
-		}
-
-		addrinfoWrapper(nullptr_t){};
-
-		~addrinfoWrapper() {
-			if (this->doWeClearAddrInfo) {
-				freeaddrinfo(this->addrinfoPtrTwo);
-			} else {
-				delete this->addrinfoPtrTwo;
-			}
-		}
-
-	  protected:
-		addrinfo* addrinfoPtrTwo{ new addrinfo{} };
-		bool doWeClearAddrInfo{ false };
-	};
-
 	struct SSL_CTXWrapper {
 		struct SSL_CTXDeleter {
-			void operator()(SSL_CTX* other) {
-				if (other) {
-					SSL_CTX_free(other);
-					other = nullptr;
-				}
-			}
+			void operator()(SSL_CTX* other);
 		};
 
-		SSL_CTXWrapper& operator=(SSL_CTX* other) {
-			this->sslCTXPtr.reset(other);
-			if (!SSL_CTX_up_ref(other)) {
-				std::cout << shiftToBrightRed() << "SSL_CTX_up_ref() Error: ";
-				ERR_print_errors_fp(stdout);
-				std::cout << std::endl << reset();
-			}
-			return *this;
-		}
+		SSL_CTXWrapper& operator=(SSL_CTX* other);
 
-		operator SSL_CTX*() {
-			return this->sslCTXPtr.get();
-		}
+		operator SSL_CTX*();
 
-		SSL_CTXWrapper(nullptr_t){};
+		SSL_CTXWrapper() noexcept = default;
 
 	  protected:
-		std::unique_ptr<SSL_CTX, SSL_CTXDeleter> sslCTXPtr{ nullptr, SSL_CTXDeleter{} };
+		std::unique_ptr<SSL_CTX, SSL_CTXDeleter> ptr{ nullptr, SSL_CTXDeleter{} };
 	};
 
 	struct SSLWrapper {
 		struct SSLDeleter {
-			void operator()(SSL* other) {
-				if (other) {
-					SSL_shutdown(other);
-					SSL_free(other);
-					other = nullptr;
-				}
-			}
+			void operator()(SSL* other);
 		};
 
-		SSLWrapper& operator=(SSL* other) {
-			this->sslPtr.reset(other);
-			if (!SSL_up_ref(other)) {
-				std::cout << shiftToBrightRed() << "SSL_up_ref() Error: ";
-				ERR_print_errors_fp(stdout);
-				std::cout << std::endl << reset();
-			}
-			return *this;
-		}
+		SSLWrapper& operator=(nullptr_t other);
 
-		operator SSL*() {
-			return this->sslPtr.get();
-		}
+		SSLWrapper& operator=(SSL* other);
 
-		SSLWrapper(nullptr_t){};
+		operator SSL*();
+
+		SSLWrapper() noexcept = default;
 
 	  protected:
-		std::unique_ptr<SSL, SSLDeleter> sslPtr{ nullptr, SSLDeleter{} };
+		std::unique_ptr<SSL, SSLDeleter> ptr{ nullptr, SSLDeleter{} };
 	};
 
 	struct SOCKETWrapper {
 		struct SOCKETDeleter {
-			void operator()(SOCKET* other) {
-				if (other) {
-#ifdef _WIN32
-					shutdown(*other, SD_BOTH);
-					closesocket(*other);
-#else
-					shutdown(*other, SHUT_RDWR);
-					close(*other);
-#endif
-					*other = -1;
-				}
-			}
+			void operator()(SOCKET* other);
 		};
 
-		SOCKETWrapper& operator=(SOCKETWrapper&& other) noexcept {
-			if (this != &other) {
-				*this->socketPtr = *other.socketPtr;
-				*other.socketPtr = SOCKET_ERROR;
-			}
-			return *this;
-		}
+		SOCKETWrapper& operator=(SOCKETWrapper&&) noexcept;
 
-		SOCKETWrapper(SOCKETWrapper&& other) noexcept {
-			*this = std::move(other);
-		}
+		SOCKETWrapper(SOCKETWrapper&&) noexcept;
 
-		SOCKETWrapper& operator=(SOCKET other) {
-			*this->socketPtr = other;
-			return *this;
-		}
+		SOCKETWrapper& operator=(SOCKET other) noexcept;
 
-		operator SOCKET() {
-			return *this->socketPtr;
-		}
+		SOCKETWrapper(SOCKET other) noexcept;
 
-		SOCKETWrapper(std::nullptr_t) {
-		}
+		operator SOCKET*() noexcept;
+
+		operator SOCKET() noexcept;
+
+		SOCKETWrapper() noexcept = default;
 
 	  protected:
-		std::unique_ptr<SOCKET, SOCKETDeleter> socketPtr{ new SOCKET{ static_cast<SOCKET>(SOCKET_ERROR) }, SOCKETDeleter{} };
+		std::unique_ptr<SOCKET, SOCKETDeleter> ptr{ new SOCKET{ static_cast<SOCKET>(SOCKET_ERROR) }, SOCKETDeleter{} };
+	};
+
+	struct sockaddrWrapper {
+		sockaddr* operator->();
+
+		operator sockaddr_in*();
+
+		operator sockaddr*();
+
+		sockaddrWrapper() noexcept = default;
+
+		~sockaddrWrapper() noexcept = default;
+
+	  protected:
+		sockaddr_in ptr{};
+	};
+
+	struct addrinfoWrapper {
+		addrinfo* operator->();
+
+		operator addrinfo**();
+
+		operator addrinfo*();
+
+		addrinfoWrapper() noexcept = default;
+
+		~addrinfoWrapper();
+
+	  protected:
+		addrinfo* ptr{ new addrinfo{} };
+		bool doWeClearAddrInfo{ false };
 	};
 
 	enum class ProcessIOReturnCode : int32_t {
@@ -331,7 +274,7 @@ namespace DiscordCoreLoader {
 		std::deque<WebSocketMessage> theMessageQueue{};
 		const uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::array<char, 1024 * 16> rawInputBuffer{};
-		SOCKETWrapper clientSocket{ nullptr };
+		SOCKETWrapper clientSocket{};
 		std::deque<std::string> outputBuffers{};
 		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
@@ -342,7 +285,7 @@ namespace DiscordCoreLoader {
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		Jsonifier theGuildHolder{};
-		SSLWrapper ssl{ nullptr };
+		SSLWrapper ssl{};
 		int64_t currentGuildCount{};
 		WebSocketState theState{};
 		bool sendGuilds{ false };
@@ -369,7 +312,8 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain() = default;
 
-		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
+		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit,
+			ConfigParser* theData);
 
 		std::vector<WebSocketSSLShard*> processIO(std::vector<WebSocketSSLShard*>& theMap) noexcept;
 
@@ -378,10 +322,10 @@ namespace DiscordCoreLoader {
 	  protected:
 		std::queue<ReconnectionPackage> theReconnections{};
 		const int32_t maxBufferSize{ 1024 * 16 };
-		SOCKETWrapper theServerSocket{ nullptr };
+		SOCKETWrapper theServerSocket{};
 		ConfigParser* theConfigParser{ nullptr };
-		addrinfoWrapper addrInfo{ nullptr };
-		SSL_CTXWrapper context{ nullptr };
+		addrinfoWrapper addrInfo{};
+		SSL_CTXWrapper context{};
 		bool doWePrintError{ false };
 		std::atomic_bool* doWeQuit{};
 		std::mutex theMutex{};
@@ -389,4 +333,4 @@ namespace DiscordCoreLoader {
 		std::string port{};
 	};
 
-}// namespace 
+}// namespace

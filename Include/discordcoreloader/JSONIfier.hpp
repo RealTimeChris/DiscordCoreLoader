@@ -16,7 +16,7 @@
 */
 /// JSONIfier.hpp - Header file for the Jsonifier stuff.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file JSONIfier.hpp
 
 #pragma once

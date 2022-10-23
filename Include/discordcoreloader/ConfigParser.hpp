@@ -16,7 +16,7 @@
 */
 /// ConfigParser.hpp - Header file for the config parser class.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file ConfigParser.hpp
 
 #pragma once
@@ -58,9 +58,8 @@ namespace DiscordCoreLoader {
 		ConfigData getTheData();
 
 	  protected:
-		nlohmann::json configFile{};
 		ConfigData theData{};
 
-		void parseConfigData();
+		void parseConfigData(std::string configFilePath);
 	};
 }// namespace DiscordCoreLoader

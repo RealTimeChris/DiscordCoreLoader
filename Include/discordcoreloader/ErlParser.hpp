@@ -14,12 +14,13 @@
 */
 /// ErlParser.hpp - Header for the erlpacking class.
 /// Nov 8, 2021
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file ErlParser.hpp
 
 #pragma once
 
 #include <discordcoreloader/FoundationEntities.hpp>
+#include <array>
 
 namespace DiscordCoreLoader {
 
@@ -30,11 +31,7 @@ namespace DiscordCoreLoader {
 
 	class ErlParser {
 	  public:
-		ErlParser() noexcept = default;
-
 		std::string& parseEtfToJson(std::string_view dataToParse);
-
-		~ErlParser() noexcept = default;
 
 	  protected:
 		std::array<char, 1024 * 16> stringBuffer{};
@@ -46,9 +43,10 @@ namespace DiscordCoreLoader {
 			if (this->offSet + sizeof(RTy) > this->dataBuffer.size()) {
 				throw ErlParseError{ "ErlParser::readBitsFromBuffer() Error: readBitsFromBuffer() past end of the buffer.\n\n" };
 			}
-			const RTy newValue = *reinterpret_cast<const RTy*>(this->dataBuffer.data() + this->offSet);
+			RTy newValue = *reinterpret_cast<const RTy*>(this->dataBuffer.data() + this->offSet);
 			this->offSet += sizeof(RTy);
-			return reverseByteOrder<const RTy>(newValue);
+			reverseByteOrder<RTy>(newValue);
+			return newValue;
 		}
 
 		void writeCharactersFromBuffer(uint32_t length);
@@ -60,6 +58,8 @@ namespace DiscordCoreLoader {
 		void singleValueETFToJson();
 
 		void parseSmallIntegerExt();
+
+		void parseSmallAtomExt();
 
 		void parseNewFloatExt();
 

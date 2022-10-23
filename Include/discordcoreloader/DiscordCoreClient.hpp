@@ -16,7 +16,7 @@
 */
 /// DiscordCoreClient01.hpp - Header file for the main/exposed DiscordCoreClient class.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file DiscordCoreClient.hpp
 
 #pragma once
@@ -25,10 +25,41 @@
 #include <discordcoreloader/ConfigParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
+#include <source_location>
 
 namespace DiscordCoreLoader {
 
-	extern "C" void signalHandler(int32_t);
+	class SIGTERMError : public std::runtime_error {
+	  public:
+		SIGTERMError(const std::string& string);
+	};
+
+	class SIGSEGVError : public std::runtime_error {
+	  public:
+		SIGSEGVError(const std::string& string);
+	};
+
+	class SIGINTError : public std::runtime_error {
+	  public:
+		SIGINTError(const std::string& string);
+	};
+
+	class SIGILLError : public std::runtime_error {
+	  public:
+		SIGILLError(const std::string& string);
+	};
+
+	class SIGABRTError : public std::runtime_error {
+	  public:
+		SIGABRTError(const std::string& string);
+	};
+
+	class SIGFPEError : public std::runtime_error {
+	  public:
+		SIGFPEError(const std::string& string);
+	};
+
+	extern "C" void signalHandler(int32_t value, std::source_location location = std::source_location::current());
 
 	void atexitHandler();
 
@@ -65,7 +96,7 @@ namespace DiscordCoreLoader {
 		std::mutex coutMutex{};
 		std::mutex theMutex{};
 		JSONIFier jsonifier{};
-		
+
 
 		void connectShard();
 	};

@@ -16,7 +16,7 @@
 */
 /// FoundationEntities.cpp - Source file for the foundation entities.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://discordcoreloader.com
 /// \file FoundationEntities.cpp
 
 #include <discordcoreloader/FoundationEntities.hpp>
@@ -24,7 +24,7 @@
 #include <discordcoreloader/DataParsingFunctions.hpp>
 
 namespace DiscordCoreLoader {
-	
+
 	EnumConverter::operator std::vector<uint64_t>() const noexcept {
 		return this->vector;
 	}
@@ -74,10 +74,6 @@ namespace DiscordCoreLoader {
 		this->string = std::move(data.string);
 		this->type = data.type;
 		return *this;
-	}
-
-	Jsonifier::Jsonifier(Jsonifier&& data) noexcept {
-		*this = std::move(data);
 	}
 
 	Jsonifier& Jsonifier::operator=(const Jsonifier& data) noexcept {
@@ -370,34 +366,6 @@ namespace DiscordCoreLoader {
 		throw std::runtime_error{ "Sorry, but that index could not be produced/accessed." };
 	}
 
-	template<> Jsonifier::ObjectType& Jsonifier::get() {
-		return *this->jsonValue.object;
-	}
-
-	template<> Jsonifier::ArrayType& Jsonifier::get() {
-		return *this->jsonValue.array;
-	}
-
-	template<> Jsonifier::StringType& Jsonifier::get() {
-		return *this->jsonValue.string;
-	}
-
-	template<> Jsonifier::FloatType& Jsonifier::get() {
-		return this->jsonValue.numberDouble;
-	}
-
-	template<> Jsonifier::UintType& Jsonifier::get() {
-		return this->jsonValue.numberUint;
-	}
-
-	template<> Jsonifier::IntType& Jsonifier::get() {
-		return this->jsonValue.numberInt;
-	}
-
-	template<> Jsonifier::BoolType& Jsonifier::get() {
-		return this->jsonValue.boolean;
-	}
-
 	void Jsonifier::emplaceBack(Jsonifier&& other) noexcept {
 		if (this->type == JsonType::Null) {
 			this->setValue(JsonType::Array);
@@ -494,7 +462,7 @@ namespace DiscordCoreLoader {
 			if (index != objectNew.size() - 1) {
 				this->writeCharacter(',');
 			}
-			index++;
+			++index;
 		}
 
 		this->writeCharacter('}');
@@ -514,51 +482,16 @@ namespace DiscordCoreLoader {
 			if (index != arrayNew.size() - 1) {
 				this->writeCharacter(',');
 			}
-			index++;
+			++index;
 		}
 
 		this->writeCharacter(']');
 	}
 
 	void Jsonifier::writeJsonString(const StringType& stringNew) {
-		this->writeCharacter('\"');
-		for (auto& value: stringNew) {
-			switch (static_cast<std::uint8_t>(value)) {
-				case 0x08: {
-					this->writeCharacter('b');
-					break;
-				}
-				case 0x09: {
-					this->writeCharacter('t');
-					break;
-				}
-				case 0x0A: {
-					this->writeCharacter('n');
-					break;
-				}
-				case 0x0C: {
-					this->writeCharacter('f');
-					break;
-				}
-				case 0x0D: {
-					this->writeCharacter('r');
-					break;
-				}
-				case 0x22: {
-					this->writeCharacter('\"');
-					break;
-				}
-				case 0x5C: {
-					this->writeCharacter('\\');
-					break;
-				}
-				default: {
-					this->writeCharacter(value);
-					break;
-				}
-			}
-		}
-		this->writeCharacter('\"');
+		this->writeCharacter('"');
+		this->writeString(stringNew.data(), stringNew.size());
+		this->writeCharacter('"');
 	}
 
 	void Jsonifier::writeJsonFloat(const FloatType x) {
@@ -595,30 +528,26 @@ namespace DiscordCoreLoader {
 	}
 
 	void Jsonifier::writeEtfString(const StringType& jsonData) {
-		if (jsonData.size() < 64 * 1024) {
-			this->appendStringExt(jsonData, static_cast<uint16_t>(jsonData.size()));
-		} else {
-			this->appendBinaryExt(jsonData, static_cast<uint32_t>(jsonData.size()));
-		}
+		this->appendBinaryExt(jsonData, static_cast<uint32_t>(jsonData.size()));
 	}
 
 	void Jsonifier::writeEtfUint(const UintType jsonData) {
-		if (jsonData <= 255) {
-			this->appendSmallIntegerExt(static_cast<uint8_t>(jsonData));
-		} else if (jsonData <= std::numeric_limits<uint32_t>::max()) {
-			this->appendIntegerExt(static_cast<uint32_t>(jsonData));
+		if (jsonData >= std::numeric_limits<uint8_t>::min() && jsonData <= std::numeric_limits<uint8_t>::max()) {
+			this->appendUint8(static_cast<uint8_t>(jsonData));
+		} else if (jsonData >= std::numeric_limits<uint32_t>::min() && jsonData <= std::numeric_limits<uint32_t>::max()) {
+			this->appendUint32(static_cast<uint32_t>(jsonData));
 		} else {
-			this->appendUnsignedLongLong(jsonData);
+			this->appendUint64(jsonData);
 		}
 	}
 
 	void Jsonifier::writeEtfInt(const IntType jsonData) {
-		if (jsonData <= 127 && jsonData >= -127) {
-			this->appendSmallIntegerExt(static_cast<uint8_t>(jsonData));
-		} else if (jsonData <= std::numeric_limits<int32_t>::max() && jsonData >= std::numeric_limits<int32_t>::min()) {
-			this->appendIntegerExt(static_cast<uint32_t>(jsonData));
+		if (jsonData >= std::numeric_limits<int8_t>::min() && jsonData <= std::numeric_limits<int8_t>::max()) {
+			this->appendInt8(static_cast<int8_t>(jsonData));
+		} else if (jsonData >= std::numeric_limits<int32_t>::min() && jsonData <= std::numeric_limits<int32_t>::max()) {
+			this->appendInt32(static_cast<int32_t>(jsonData));
 		} else {
-			this->appendUnsignedLongLong(static_cast<uint64_t>(jsonData));
+			this->appendInt64(jsonData);
 		}
 	}
 
@@ -634,7 +563,7 @@ namespace DiscordCoreLoader {
 		this->appendNil();
 	}
 
-	void Jsonifier::writeString(const char* data, std::size_t length) {
+	void Jsonifier::writeString(const char* data, size_t length) {
 		this->string.append(data, length);
 	}
 
@@ -693,98 +622,98 @@ namespace DiscordCoreLoader {
 		return true;
 	}
 
-	void Jsonifier::appendStringExt(const std::string& stringNew, const uint16_t length) {
-		char bufferNew[3];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::String_Ext);
-		storeBits(bufferNew + 1, length);
-		this->writeString(bufferNew, std::size(bufferNew));
-		this->writeString(stringNew.data(), stringNew.size());
-	}
-
 	void Jsonifier::appendBinaryExt(const std::string& bytes, uint32_t sizeNew) {
-		char bufferNew[5];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Binary_Ext);
-		storeBits(bufferNew + 1, sizeNew);
-		this->writeString(bufferNew, std::size(bufferNew));
+		char newBuffer[5]{ static_cast<int8_t>(EtfType::Binary_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
 		this->writeString(bytes.data(), bytes.size());
 	}
 
-	void Jsonifier::appendUnsignedLongLong(const uint64_t value) {
-		uint64_t jsonValueNew = value;
-		char bufferNew[static_cast<uint64_t>(1) + 2 + sizeof(uint64_t)];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Small_Big_Ext);
-		StopWatch stopWatch{ std::chrono::milliseconds{ 1500 } };
-		uint8_t bytesToEncode = 0;
-		while (jsonValueNew > 0) {
-			if (stopWatch.hasTimePassed()) {
-				break;
-			}
-			bufferNew[static_cast<uint64_t>(3) + bytesToEncode] = jsonValueNew & 0xF;
-			jsonValueNew >>= 8;
-			bytesToEncode++;
+	void Jsonifier::appendUint64(uint64_t value) {
+		char newBuffer[11]{ static_cast<int8_t>(EtfType::Small_Big_Ext) };
+		char encodedBytes{};
+		while (value > 0) {
+			newBuffer[3 + encodedBytes] = value & 0xFF;
+			value >>= 8;
+			++encodedBytes;
 		}
-		bufferNew[1] = bytesToEncode;
-		bufferNew[2] = 0;
-		this->writeString(bufferNew, std::size(bufferNew));
+		newBuffer[1] = encodedBytes;
+		newBuffer[2] = 0;
+		this->writeString(newBuffer, 1 + 2 + static_cast<size_t>(encodedBytes));
+	}
+
+	void Jsonifier::appendInt64(int64_t value) {
+		char newBuffer[11]{ static_cast<int8_t>(EtfType::Small_Big_Ext) };
+		char encodedBytes{};
+		while (value > 0) {
+			newBuffer[3 + encodedBytes] = value & 0xFF;
+			value >>= 8;
+			++encodedBytes;
+		}
+		newBuffer[1] = encodedBytes;
+		if (value >= 0) {
+			newBuffer[2] = 0;
+		} else {
+			newBuffer[2] = 1;
+		}
+		this->writeString(newBuffer, 1 + 2 + static_cast<size_t>(encodedBytes));
 	}
 
 	void Jsonifier::appendNewFloatExt(const double FloatValue) {
-		char bufferNew[9];
-		bufferNew[0] = static_cast<unsigned char>(EtfType::New_Float_Ext);
+		char newBuffer[9]{ static_cast<uint8_t>(EtfType::New_Float_Ext) };
 		const void* punner{ &FloatValue };
-		storeBits(bufferNew + 1, *static_cast<const uint64_t*>(punner));
-		this->writeString(bufferNew, std::size(bufferNew));
+		storeBits(newBuffer + 1, *static_cast<const uint64_t*>(punner));
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
-	void Jsonifier::appendSmallIntegerExt(const uint8_t value) {
-		char bufferNew[2];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Small_Integer_Ext);
-		bufferNew[1] = static_cast<char>(value);
-		this->writeString(bufferNew, std::size(bufferNew));
+	void Jsonifier::appendUint8(const uint8_t value) {
+		char newBuffer[2]{ static_cast<uint8_t>(EtfType::Small_Integer_Ext), static_cast<char>(value) };
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
-	void Jsonifier::appendIntegerExt(const uint32_t value) {
-		char bufferNew[5];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Integer_Ext);
-		storeBits(bufferNew + 1, value);
-		this->writeString(bufferNew, std::size(bufferNew));
+	void Jsonifier::appendInt8(const int8_t value) {
+		char newBuffer[2]{ static_cast<uint8_t>(EtfType::Small_Integer_Ext), static_cast<char>(value) };
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendUint32(const uint32_t value) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Integer_Ext) };
+		storeBits(newBuffer + 1, value);
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendInt32(const int32_t value) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Integer_Ext) };
+		storeBits(newBuffer + 1, value);
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
 	void Jsonifier::appendListHeader(const uint32_t sizeNew) {
-		char bufferNew[5];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::List_Ext);
-		storeBits(bufferNew + 1, sizeNew);
-		this->writeString(bufferNew, std::size(bufferNew));
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::List_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
 	void Jsonifier::appendMapHeader(const uint32_t sizeNew) {
-		char bufferNew[5];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Map_Ext);
-		storeBits(bufferNew + 1, sizeNew);
-		this->writeString(bufferNew, std::size(bufferNew));
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Map_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
 	void Jsonifier::appendBool(bool data) {
 		if (data) {
-			char bufferNew[3];
-			bufferNew[0] = static_cast<uint8_t>(EtfType::Atom_Ext);
-			storeBits(bufferNew + 1, static_cast<uint16_t>(4));
-			this->writeString(bufferNew, std::size(bufferNew));
-			this->writeString("true", 4);
+			char newBuffer[6]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(4), 't', 'r', 'u', 'e' };
+			this->writeString(newBuffer, std::size(newBuffer));
 
 		} else {
-			char bufferNew[3];
-			bufferNew[0] = static_cast<uint8_t>(EtfType::Atom_Ext);
-			storeBits(bufferNew + 1, static_cast<uint16_t>(5));
-			this->writeString(bufferNew, std::size(bufferNew));
-			this->writeString("false", 5);
+			char newBuffer[7]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(5), 'f', 'a', 'l', 's', 'e' };
+			this->writeString(newBuffer, std::size(newBuffer));
 		}
 	}
 
 	void Jsonifier::appendVersion() {
-		char bufferNew[1];
-		bufferNew[0] = static_cast<int8_t>(formatVersion);
-		this->writeString(bufferNew, std::size(bufferNew));
+		char newBuffer[1]{ static_cast<int8_t>(formatVersion) };
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
 	void Jsonifier::appendNilExt() {
@@ -792,11 +721,8 @@ namespace DiscordCoreLoader {
 	}
 
 	void Jsonifier::appendNil() {
-		char bufferNew[3];
-		bufferNew[0] = static_cast<uint8_t>(EtfType::Atom_Ext);
-		storeBits(bufferNew + 1, static_cast<uint16_t>(3));
-		this->writeString(bufferNew, std::size(bufferNew));
-		this->writeString("nil", 3);
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(3), 'n', 'i', 'l' };
+		this->writeString(newBuffer, std::size(newBuffer));
 	}
 
 	void Jsonifier::setValue(JsonType typeNew) {
@@ -850,31 +776,28 @@ namespace DiscordCoreLoader {
 	Jsonifier::~Jsonifier() noexcept {
 		this->destroy();
 	}
-	
-	void reportException(const std::string& stackTrace, UnboundedMessageBlock<std::exception>* sendBuffer, bool rethrow) {
+
+	void reportException(const std::string& currentFunctionName, std::source_location theLocation) {
 		try {
 			auto currentException = std::current_exception();
 			if (currentException) {
 				std::rethrow_exception(currentException);
 			}
-		} catch (std::exception& e) {
-			if (rethrow) {
-				std::rethrow_exception(std::current_exception());
-				return;
-			}
-			if (sendBuffer) {
-				sendBuffer->send(e);
-			} else {
-				if (stackTrace.back() == '\n') {
-					std::cout << shiftToBrightRed() << stackTrace + "Error: " << e.what() << reset() << std::endl << std::endl;
-				} else {
-					std:: cout << shiftToBrightRed() << stackTrace + " Error: " << e.what() << reset() << std::endl << std::endl;
-				}
-			}
+		} catch (const std::exception& e) {
+			std::stringstream theStream{};
+			theStream << shiftToBrightRed() << "Error Report: \n"
+					  << "Caught At: " << currentFunctionName << ", in File: " << theLocation.file_name() << " ("
+					  << std::to_string(theLocation.line()) << ":" << std::to_string(theLocation.column()) << ")"
+					  << "\nThe Error: \n"
+					  << e.what() << reset() << std::endl
+					  << std::endl;
+			auto returnString = theStream.str();
+			std::cout << returnString;
 		}
 	}
 
-	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour, const std::string& minute, const std::string& second) {
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour,
+		const std::string& minute, const std::string& second) {
 		std::string theTimeStamp{};
 		theTimeStamp += year + "-";
 		if (month.size() < 2) {
@@ -985,8 +908,8 @@ namespace DiscordCoreLoader {
 	}
 
 	uint64_t convertTimestampToMsInteger(const std::string& timeStamp) {
-		Time timeValue = Time(stoi(timeStamp.substr(0, 4)), stoi(timeStamp.substr(5, 6)), stoi(timeStamp.substr(8, 9)), stoi(timeStamp.substr(11, 12)),
-			stoi(timeStamp.substr(14, 15)), stoi(timeStamp.substr(17, 18)));
+		Time timeValue = Time(stoi(timeStamp.substr(0, 4)), stoi(timeStamp.substr(5, 6)), stoi(timeStamp.substr(8, 9)),
+			stoi(timeStamp.substr(11, 12)), stoi(timeStamp.substr(14, 15)), stoi(timeStamp.substr(17, 18)));
 		return timeValue.getTime() * 1000;
 	}
 
@@ -1016,10 +939,12 @@ namespace DiscordCoreLoader {
 			returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
 
 			if (static_cast<uint64_t>(pos + 1) < theString.size()) {
-				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) + ((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
+				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) +
+					((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
 
 				if (static_cast<uint64_t>(pos + 2) < theString.size()) {
-					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) + ((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
+					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) +
+						((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
 					returnString.push_back(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
 				} else {
 					returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
@@ -1081,15 +1006,17 @@ namespace DiscordCoreLoader {
 		uint64_t startTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		uint64_t timePassed{ 0 };
 		while (timePassed < timeInNsToSpinLockFor) {
-			timePassed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
+			timePassed =
+				std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
 		}
 	}
 
 	std::string getCurrentISO8601TimeStamp() {
 		std::time_t result = std::time(nullptr);
 		auto resultTwo = std::localtime(&result);
-		std::string resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
-			std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
+		std::string resultString =
+			getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
+				std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		return resultString;
 	}
 
@@ -1171,8 +1098,8 @@ namespace DiscordCoreLoader {
 		int32_t secondsPerMonth{ secondsPerDay * daysPerMonth };
 		int32_t daysPerYear{ 365 };
 		int32_t secondsPerYear{ secondsPerDay * daysPerYear };
-		int32_t secondsToAdd =
-			(yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) + (hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
+		int32_t secondsToAdd = (yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) +
+			(hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
 		result += secondsToAdd;
 		auto resultTwo = std::localtime(&result);
 		std::string resultString{};
@@ -1181,15 +1108,17 @@ namespace DiscordCoreLoader {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1), std::to_string(resultTwo->tm_mday),
-				std::to_string(resultTwo->tm_hour + 4), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
+				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 4), std::to_string(resultTwo->tm_min),
+				std::to_string(resultTwo->tm_sec));
 		} else {
 			if (resultTwo->tm_hour + 5 >= 24) {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1), std::to_string(resultTwo->tm_mday),
-				std::to_string(resultTwo->tm_hour + 5), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
+				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 5), std::to_string(resultTwo->tm_min),
+				std::to_string(resultTwo->tm_sec));
 		}
 		return resultString;
 	}

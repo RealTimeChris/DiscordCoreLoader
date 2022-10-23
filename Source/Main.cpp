@@ -16,7 +16,7 @@
 */
 /// Main.cpp - Defines the entry point for the application.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file Main.cpp
 
 #include <discordcoreloader/DiscordCoreClient.hpp>

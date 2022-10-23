@@ -16,7 +16,7 @@
 */
 /// JSONIfier.cpp - Source file for the Jsonifier stuff.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file JSONIfier.cpp
 
 #include <discordcoreloader/JSONIfier.hpp>
@@ -50,16 +50,13 @@ namespace DiscordCoreLoader {
 		Jsonifier jsonData{};
 		jsonData["id"] = guildOld.id;
 		uint64_t memberCount = guildOld.memberCount;
-		jsonData["channels"];
 		for (auto& value: guildOld.channels) {
 			jsonData["channels"].emplaceBack(this->JSONIFYChannel(std::move(*value)));
 		}
 		jsonData["member_count"] = memberCount;
-		jsonData["members"];
 		for (auto& value: guildOld.members) {
 			jsonData["members"].emplaceBack(this->JSONIFYGuildMember(std::move(*value)));
 		}
-		jsonData["roles"];
 		for (auto& value: guildOld.roles) {
 			jsonData["roles"].emplaceBack(this->JSONIFYRole(std::move(*value)));
 		}

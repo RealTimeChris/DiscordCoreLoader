@@ -16,7 +16,7 @@
 */
 /// ObjectGenerator.hpp - Header file for the ObjectGenerator stuff.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file ObjectGenerator.hpp
 
 #pragma once

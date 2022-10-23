@@ -16,81 +16,55 @@
 */
 /// ConfigParser.cpp - Source file for the config parser class.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file ConfigParser.cpp
 
 #include <discordcoreloader/FoundationEntities.hpp>
 #include <discordcoreloader/ConfigParser.hpp>
+#include <discordcoreloader/DataParsingFunctions.hpp>
 #include <filesystem>
 
 namespace DiscordCoreLoader {
 
 	ConfigParser::ConfigParser(std::string configFilePath) {
-		std::stringstream theStream{};
-		theStream << std::filesystem::current_path();
-		std::string currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
-#ifdef WIN32
-		currentPath += "\\" + configFilePath;
-#else
-		currentPath += "/" + configFilePath;
-#endif
-		this->configFile = nlohmann::json::parse(loadFileContents(currentPath));
-		this->parseConfigData();
+		this->parseConfigData(configFilePath);
 	};
 
 	ConfigData ConfigParser::getTheData() {
 		return this->theData;
 	}
 
-	void ConfigParser::parseConfigData() {
-		if (this->configFile.contains("ConnectionIp") && !this->configFile["ConnectionIp"].is_null()) {
-			this->theData.connectionIp = this->configFile["ConnectionIp"].get<std::string>();
-		}
-		if (this->configFile.contains("ConnectionPort") && !this->configFile["ConnectionPort"].is_null()) {
-			this->theData.connectionPort = this->configFile["ConnectionPort"].get<std::string>();
-		}
-		if (this->configFile.contains("DoWePrintGeneralSuccessMessages") && !this->configFile["DoWePrintGeneralSuccessMessages"].is_null()) {
-			this->theData.doWePrintGeneralSuccessMessages = this->configFile["DoWePrintGeneralSuccessMessages"].get<bool>();
-		}
-		if (this->configFile.contains("DoWePrintGeneralErrorMessages") && !this->configFile["DoWePrintGeneralErrorMessages"].is_null()) {
-			this->theData.doWePrintGeneralErrorMessages = this->configFile["DoWePrintGeneralErrorMessages"].get<bool>();
-		}
-		if (this->configFile.contains("DoWePrintWebSocketSuccessSentMessages") && !this->configFile["DoWePrintWebSocketSuccessSentMessages"].is_null()) {
-			this->theData.doWePrintWebSocketSuccessSentMessages = this->configFile["DoWePrintWebSocketSuccessSentMessages"].get<bool>();
-		}
-		if (this->configFile.contains("DoWePrintWebSocketSuccessReceiveMessages") && !this->configFile["DoWePrintWebSocketSuccessReceiveMessages"].is_null()) {
-			this->theData.doWePrintWebSocketSuccessReceiveMessages = this->configFile["DoWePrintWebSocketSuccessReceiveMessages"].get<bool>();
-		}
-		if (this->configFile.contains("DoWePrintWebSocketErrorMessages") && !this->configFile["DoWePrintWebSocketErrorMessages"].is_null()) {
-			this->theData.doWePrintWebSocketErrorMessages = this->configFile["DoWePrintWebSocketErrorMessages"].get<bool>();
-		}
-		if (this->configFile.contains("GuildQuantity") && !this->configFile["GuildQuantity"].is_null()) {
-			this->theData.guildQuantity = this->configFile["GuildQuantity"].get<uint64_t>();
-		}
-		if (this->configFile.contains("StdDeviationForStringLength") && !this->configFile["StdDeviationForStringLength"].is_null()) {
-			this->theData.stdDeviationForStringLength = this->configFile["StdDeviationForStringLength"].get<uint64_t>();
-		}
-		if (this->configFile.contains("MeanForStringLength") && !this->configFile["MeanForStringLength"].is_null()) {
-			this->theData.meanForStringLength = this->configFile["MeanForStringLength"].get<uint64_t>();
-		}
-		if (this->configFile.contains("StdDeviationForMemberCount") && !this->configFile["StdDeviationForMemberCount"].is_null()) {
-			this->theData.stdDeviationForMemberCount = this->configFile["StdDeviationForMemberCount"].get<uint64_t>();
-		}
-		if (this->configFile.contains("MeanForMemberCount") && !this->configFile["MeanForMemberCount"].is_null()) {
-			this->theData.meanForMemberCount = this->configFile["MeanForMemberCount"].get<uint64_t>();
-		}
-		if (this->configFile.contains("StdDeviationForChannelCount") && !this->configFile["StdDeviationForChannelCount"].is_null()) {
-			this->theData.stdDeviationForChannelCount = this->configFile["StdDeviationForChannelCount"].get<uint64_t>();
-		}
-		if (this->configFile.contains("MeanForChannelCount") && !this->configFile["MeanForChannelCount"].is_null()) {
-			this->theData.meanForChannelCount = this->configFile["MeanForChannelCount"].get<uint64_t>();
-		}
-		if (this->configFile.contains("StdDeviationForRoleCount") && !this->configFile["StdDeviationForRoleCount"].is_null()) {
-			this->theData.stdDeviationForRoleCount = this->configFile["StdDeviationForRoleCount"].get<uint64_t>();
-		}
-		if (this->configFile.contains("MeanForRoleCount") && !this->configFile["MeanForRoleCount"].is_null()) {
-			this->theData.meanForRoleCount = this->configFile["MeanForRoleCount"].get<uint64_t>();
-		}
+	void ConfigParser::parseConfigData(std::string configFilePath) {
+		std::stringstream theStream{};
+		theStream << std::filesystem::current_path();
+		std::string currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
+#ifdef _WIN32
+		currentPath += "\\" + configFilePath;
+#elif __linux__
+		currentPath += "/" + configFilePath;
+#endif
+		simdjson::ondemand::parser parser{};
+		std::string fileContents = loadFileContents(currentPath);
+		fileContents.reserve(fileContents.size() + simdjson::SIMDJSON_PADDING);
+		auto theDocument = parser.iterate(fileContents.data(), fileContents.length(), parser.capacity());
+		this->theData.connectionIp = theDocument["ConnectionIp"].get_string().take_value();
+		this->theData.connectionPort = theDocument["ConnectionPort"].get_string().take_value();
+		this->theData.doWePrintGeneralSuccessMessages = theDocument["DoWePrintGeneralSuccessMessages"].get_bool().take_value();
+		this->theData.doWePrintGeneralErrorMessages = theDocument["DoWePrintGeneralErrorMessages"].get_bool().take_value();
+		this->theData.doWePrintWebSocketSuccessReceiveMessages = theDocument["DoWePrintWebSocketSuccessReceiveMessages"].get_bool().take_value();
+		this->theData.doWePrintWebSocketSuccessSentMessages = theDocument["DoWePrintWebSocketSuccessSentMessages"].get_bool().take_value();
+		this->theData.doWePrintWebSocketErrorMessages = theDocument["DoWePrintWebSocketErrorMessages"].get_bool().take_value();
+		this->theData.guildQuantity = theDocument["GuildQuantity"].get_uint64().take_value();
+		this->theData.stdDeviationForStringLength = theDocument["StdDeviationForStringLength"].get_uint64().take_value();
+		this->theData.meanForStringLength = theDocument["MeanForStringLength"].get_uint64().take_value();
+		this->theData.stdDeviationForRoleCount = theDocument["StdDeviationForRoleCount"].get_uint64().take_value();
+		this->theData.meanForRoleCount = theDocument["MeanForRoleCount"].get_uint64().take_value();
+		this->theData.stdDeviationForChannelCount = theDocument["StdDeviationForChannelCount"].get_uint64().take_value();
+		this->theData.meanForChannelCount = theDocument["MeanForChannelCount"].get_uint64().take_value();
+		this->theData.stdDeviationForMemberCount = theDocument["StdDeviationForMemberCount"].get_uint64().take_value();
+		this->theData.meanForMemberCount = theDocument["MeanForMemberCount"].get_uint64().take_value();
+		this->theData.stdDeviationForRoleCount = theDocument["StdDeviationForRoleCount"].get_uint64().take_value();
+		this->theData.meanForRoleCount = theDocument["MeanForRoleCount"].get_uint64().take_value();
 	}
 
 }// namespace DiscordCoreLoader

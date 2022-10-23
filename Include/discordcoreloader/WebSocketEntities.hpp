@@ -16,7 +16,7 @@
 */
 /// WebSocketEntities.hpp - Header for the webSocket related classes and
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file WebSocketEntities.hpp
 
 #pragma once
@@ -63,7 +63,8 @@ namespace DiscordCoreLoader {
 		Sharding_Required = 4011,///< The session would have handled too many guilds - you are required to shard your connection in order to connect.
 		Invalid_API_Version = 4012,///< You sent an invalid version for the gateway.
 		Invalid_Intent = 4013,///< You sent an invalid intent for a Gateway Intent. You may have incorrectly calculated the bitwise value.
-		Disallowed_Intent = 4014///< You sent a disallowed intent for a Gateway Intent. You may have tried to specify an intent that you have not enabled.
+		Disallowed_Intent =
+			4014///< You sent a disallowed intent for a Gateway Intent. You may have tried to specify an intent that you have not enabled.
 	};
 
 	class BaseSocketAgent : public ErlParser {
@@ -92,12 +93,12 @@ namespace DiscordCoreLoader {
 		simdjson::ondemand::parser theParser{};
 		int32_t heartbeatInterval{ 45000 };
 		std::atomic_bool* doWeQuit{ nullptr };
-		std::atomic_int32_t workerCount{ -1 };	
+		std::atomic_int32_t workerCount{ -1 };
 		int32_t currentClientSize{};
 		uint16_t closeCode{ 0 };
 		JSONIFier jsonifier{};
 		std::string sessionId{};
-		
+
 
 		std::vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
 

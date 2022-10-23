@@ -16,7 +16,7 @@
 */
 /// FoundationEntities.hpp - Header for all of the Discord/Support API data
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file FoundationEntities.hpp
 
 #pragma once
@@ -39,18 +39,9 @@
 		#define WINRT_LEAN_AND_MEAN
 	#endif
 	#include <WinSock2.h>
-#else
+#elif __linux__
 	#include <cstdint>
 	#include <cstring>
-inline uint64_t ntohll(uint64_t x) {
-	uint8_t data[8]{};
-	memcpy(&data, &(x), sizeof(x));
-	uint64_t theValue{};
-	for (uint32_t y = 0; y < sizeof(uint64_t); ++y) {
-		theValue |= data[y] << 8 * (sizeof(uint64_t) - y - 1);
-	}
-	return theValue;
-}
 	#include <arpa/inet.h>
 	#include <pthread.h>
 	#include <sys/time.h>
@@ -59,7 +50,7 @@ inline uint64_t ntohll(uint64_t x) {
 #endif
 
 #include <condition_variable>
-#include <nlohmann/json.hpp>
+#include <source_location>
 #include <unordered_map>
 #include <functional>
 #include <simdjson.h>
@@ -74,6 +65,7 @@ inline uint64_t ntohll(uint64_t x) {
 #include <string>
 #include <vector>
 #include <thread>
+#include <array>
 #include <mutex>
 #include <queue>
 #include <map>
@@ -165,85 +157,82 @@ namespace DiscordCoreLoader {
 
 	enum class WebSocketOpCode : int8_t { Op_Continuation = 0x00, Op_Text = 0x01, Op_Binary = 0x02, Op_Close = 0x08, Op_Ping = 0x09, Op_Pong = 0x0a };
 
-	template<typename TimeType> class StopWatch {
+	template<typename RTy> void reverseByteOrder(RTy& net) {
+		if constexpr (std::endian::native == std::endian::little) {
+			switch (sizeof(RTy)) {
+				case 1: {
+					return;
+				}
+				case 2: {
+					net =
+						_mm256_extract_epi16(_mm256_shuffle_epi8(_mm256_insert_epi16(__m256i{}, net, 0), _mm256_insert_epi16(__m256i{}, 0x01, 0)), 0);
+					return;
+				}
+				case 4: {
+					net = _mm256_extract_epi32(
+						_mm256_shuffle_epi8(_mm256_insert_epi32(__m256i{}, net, 0), _mm256_insert_epi32(__m256i{}, 0x10203, 0)), 0);
+					return;
+				}
+				case 8: {
+					net = _mm256_extract_epi64(
+						_mm256_shuffle_epi8(_mm256_insert_epi64(__m256i{}, net, 0), _mm256_insert_epi64(__m256i{}, 0x102030405060708, 0)), 0);
+					return;
+				}
+			}
+		}
+	}
+
+	template<typename RTy> void storeBits(char* to, RTy num) {
+		const uint8_t byteSize{ 8 };
+		reverseByteOrder<RTy>(num);
+		for (int32_t x = 0; x < sizeof(RTy); ++x) {
+			to[x] = static_cast<uint8_t>(num >> (byteSize * x));
+		}
+	}
+
+	template<typename TTy> class StopWatch {
 	  public:
+		using HRClock = std::chrono::high_resolution_clock;
+
 		StopWatch() = delete;
 
-		StopWatch<TimeType>& operator=(const StopWatch<TimeType>& data) {
-			this->maxNumberOfMs.store(data.maxNumberOfMs.load());
+		StopWatch<TTy>& operator=(StopWatch<TTy>&& data) noexcept {
+			this->maxNumberOfTimeUnits.store(data.maxNumberOfTimeUnits.load());
 			this->startTime.store(data.startTime.load());
 			return *this;
 		}
 
-		StopWatch(const StopWatch<TimeType>& data) {
-			*this = data;
+		StopWatch(TTy maxNumberOfMsNew) {
+			this->maxNumberOfTimeUnits.store(maxNumberOfMsNew);
+			this->startTime.store(std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch()));
 		}
 
-		StopWatch(TimeType maxNumberOfMsNew) {
-			this->maxNumberOfMs.store(maxNumberOfMsNew.count());
-			this->startTime.store(static_cast<uint64_t>(std::chrono::duration_cast<TimeType>(std::chrono::system_clock::now().time_since_epoch()).count()));
-		}
-
-		uint64_t totalTimePassed() {
-			uint64_t currentTime = static_cast<uint64_t>(std::chrono::duration_cast<TimeType>(std::chrono::system_clock::now().time_since_epoch()).count());
-			uint64_t elapsedTime = currentTime - this->startTime.load();
+		TTy totalTimePassed() {
+			TTy currentTime = std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch());
+			TTy elapsedTime = currentTime - this->startTime.load();
 			return elapsedTime;
 		}
 
+		TTy getTotalWaitTime() {
+			return this->maxNumberOfTimeUnits.load();
+		}
+
 		bool hasTimePassed() {
-			uint64_t currentTime = static_cast<uint64_t>(std::chrono::duration_cast<TimeType>(std::chrono::system_clock::now().time_since_epoch()).count());
-			uint64_t elapsedTime = currentTime - this->startTime.load();
-			if (elapsedTime >= this->maxNumberOfMs.load()) {
-				return true;
-			} else {
-				return false;
-			}
+			TTy currentTime = std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch());
+			TTy elapsedTime = currentTime - this->startTime.load();
+			return elapsedTime >= this->maxNumberOfTimeUnits.load();
 		}
 
 		void resetTimer() {
-			this->startTime.store(static_cast<uint64_t>(std::chrono::duration_cast<TimeType>(std::chrono::system_clock::now().time_since_epoch()).count()));
+			this->startTime.store(std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch()));
 		}
 
 	  protected:
-		std::atomic_uint64_t maxNumberOfMs{ 0 };
-		std::atomic_uint64_t startTime{ 0 };
+		std::atomic<TTy> maxNumberOfTimeUnits{ TTy{} };
+		std::atomic<TTy> startTime{ TTy{} };
 	};
 
-	template<typename ReturnType> ReturnType reverseByteOrder(const ReturnType net) {
-		switch (sizeof(ReturnType)) {
-			case 1: {
-				return net;
-			}
-			case 2: {
-				return ntohs(static_cast<int16_t>(net));
-			}
-			case 4: {
-				return ntohl(static_cast<uint32_t>(net));
-			}
-			case 8: {
-				return ntohll(static_cast<uint64_t>(net));
-			}
-		}
-		return ReturnType{};
-	}
-
-	template<typename ReturnType> void storeBits(std::string& to, ReturnType num) {
-		const uint8_t byteSize{ 8 };
-		ReturnType newValue = reverseByteOrder<ReturnType>(num);
-		for (uint32_t x = 0; x < sizeof(ReturnType); ++x) {
-			to.push_back(static_cast<uint8_t>(newValue >> (byteSize * x)));
-		}
-	}
-
-	template<typename ReturnType> void storeBits(char* to, ReturnType num) {
-		const uint8_t byteSize{ 8 };
-		ReturnType newValue = reverseByteOrder<ReturnType>(num);
-		for (uint32_t x = 0; x < sizeof(ReturnType); ++x) {
-			to[sizeof(ReturnType) - x] = static_cast<uint8_t>(newValue >> (byteSize * x));
-		}
-	}
-
-	constexpr uint8_t formatVersion{ 131 };
+	const uint8_t formatVersion{ 131 };
 
 	enum class EtfType : uint8_t {
 		New_Float_Ext = 70,
@@ -255,21 +244,22 @@ namespace DiscordCoreLoader {
 		List_Ext = 108,
 		Binary_Ext = 109,
 		Small_Big_Ext = 110,
+		Small_Atom_Ext = 115,
 		Map_Ext = 116,
 	};
 
-	template<typename T>
-	concept IsEnum = std::is_enum<T>::value;
+	template<typename Ty>
+	concept IsEnum = std::is_enum<Ty>::value;
 
 	struct EnumConverter {
-		template<IsEnum EnumType> EnumConverter& operator=(std::vector<EnumType> data) {
+		template<IsEnum EnumType> EnumConverter& operator=(const std::vector<EnumType>& data) {
 			for (auto& value: data) {
 				this->vector.emplace_back(std::move(static_cast<uint64_t>(value)));
 			}
 			return *this;
 		};
 
-		template<IsEnum EnumType> EnumConverter(std::vector<EnumType> data) {
+		template<IsEnum EnumType> EnumConverter(const std::vector<EnumType>& data) {
 			*this = data;
 		};
 
@@ -290,18 +280,18 @@ namespace DiscordCoreLoader {
 
 	  protected:
 		std::vector<uint64_t> vector{};
-		bool vectorType{ false };
+		bool vectorType{};
 		uint64_t integer{};
 	};
 
-	enum class JsonType : int8_t { Object = 1, Array = 2, String = 3, Float = 4, Uint64 = 5, Int64 = 6, Bool = 7, Null = 8 };
+	enum class JsonType : uint8_t { Object = 1, Array = 2, String = 3, Float = 4, Uint64 = 5, Int64 = 6, Bool = 7, Null = 8 };
 
 	enum class JsonifierSerializeType { Etf = 0, Json = 1 };
 
 	class Jsonifier;
 
-	template<typename T>
-	concept IsConvertibleToJsonifier = std::convertible_to<T, Jsonifier>;
+	template<typename Ty>
+	concept IsConvertibleToJsonifier = std::convertible_to<Ty, Jsonifier>;
 
 	class Jsonifier {
 	  public:
@@ -405,19 +395,17 @@ namespace DiscordCoreLoader {
 			*this = data;
 		};
 
-		template<IsEnum T> Jsonifier& operator=(T data) noexcept {
+		template<IsEnum Ty> Jsonifier& operator=(Ty data) noexcept {
 			this->jsonValue.numberUint = static_cast<uint64_t>(data);
 			this->type = JsonType::Uint64;
 			return *this;
 		}
 
-		template<IsEnum T> Jsonifier(T data) noexcept {
+		template<IsEnum Ty> Jsonifier(Ty data) noexcept {
 			*this = data;
 		}
 
 		Jsonifier& operator=(Jsonifier&& data) noexcept;
-
-		Jsonifier(Jsonifier&& data) noexcept;
 
 		Jsonifier& operator=(const Jsonifier& data) noexcept;
 
@@ -487,7 +475,13 @@ namespace DiscordCoreLoader {
 
 		Jsonifier& operator[](uint64_t index);
 
-		template<typename T> T& get();
+		template<typename Ty> const Ty& getValue() const {
+			return Ty{};
+		}
+
+		template<typename Ty> Ty& getValue() {
+			return Ty{};
+		}
 
 		JsonType getType() noexcept;
 
@@ -496,7 +490,7 @@ namespace DiscordCoreLoader {
 
 		~Jsonifier() noexcept;
 
-	  private:
+	  protected:
 		JsonType type{ JsonType::Null };
 		JsonValue jsonValue{};
 		std::string string{};
@@ -514,7 +508,9 @@ namespace DiscordCoreLoader {
 		void writeJsonFloat(const FloatType x);
 
 		template<typename NumberType,
-			std::enable_if_t<std::is_integral<NumberType>::value || std::is_same<NumberType, uint64_t>::value || std::is_same<NumberType, int64_t>::value, int> = 0>
+			std::enable_if_t<
+				std::is_integral<NumberType>::value || std::is_same<NumberType, uint64_t>::value || std::is_same<NumberType, int64_t>::value, int> =
+				0>
 		void writeJsonInt(NumberType Int) {
 			auto IntNew = std::to_string(Int);
 			this->writeString(IntNew.data(), IntNew.size());
@@ -540,25 +536,29 @@ namespace DiscordCoreLoader {
 
 		void writeEtfNull();
 
-		void writeString(const char* data, std::size_t length);
+		void writeString(const char* data, size_t length);
 
 		void writeCharacter(const char Char);
 
-		void appendStringExt(const std::string& bytes, const uint16_t length);
-
 		void appendBinaryExt(const std::string& bytes, const uint32_t sizeNew);
 
-		void appendUnsignedLongLong(const uint64_t value);
-
 		void appendNewFloatExt(const double FloatValue);
-
-		void appendSmallIntegerExt(const uint8_t value);
 
 		void appendListHeader(const uint32_t sizeNew);
 
 		void appendMapHeader(const uint32_t sizeNew);
 
-		void appendIntegerExt(const uint32_t value);
+		void appendUint64(const uint64_t value);
+
+		void appendUint32(const uint32_t value);
+
+		void appendInt64(const int64_t value);
+
+		void appendInt32(const int32_t value);
+
+		void appendUint8(const uint8_t value);
+
+		void appendInt8(const int8_t value);
 
 		void appendBool(bool data);
 
@@ -575,8 +575,64 @@ namespace DiscordCoreLoader {
 		friend bool operator==(const Jsonifier& lhs, const Jsonifier& rhs);
 	};
 
-	template<typename ReturnType, typename... ArgTypes> class Event;
-	template<typename ReturnType, typename... ArgTypes> class EventDelegate;
+	template<> inline const Jsonifier::ObjectType& Jsonifier::getValue() const {
+		return *this->jsonValue.object;
+	}
+
+	template<> inline const Jsonifier::ArrayType& Jsonifier::getValue() const {
+		return *this->jsonValue.array;
+	}
+
+	template<> inline const Jsonifier::StringType& Jsonifier::getValue() const {
+		return *this->jsonValue.string;
+	}
+
+	template<> inline const Jsonifier::FloatType& Jsonifier::getValue() const {
+		return this->jsonValue.numberDouble;
+	}
+
+	template<> inline const Jsonifier::UintType& Jsonifier::getValue() const {
+		return this->jsonValue.numberUint;
+	}
+
+	template<> inline const Jsonifier::IntType& Jsonifier::getValue() const {
+		return this->jsonValue.numberInt;
+	}
+
+	template<> inline const Jsonifier::BoolType& Jsonifier::getValue() const {
+		return this->jsonValue.boolean;
+	}
+
+	template<> inline Jsonifier::ObjectType& Jsonifier::getValue() {
+		return *this->jsonValue.object;
+	}
+
+	template<> inline Jsonifier::ArrayType& Jsonifier::getValue() {
+		return *this->jsonValue.array;
+	}
+
+	template<> inline Jsonifier::StringType& Jsonifier::getValue() {
+		return *this->jsonValue.string;
+	}
+
+	template<> inline Jsonifier::FloatType& Jsonifier::getValue() {
+		return this->jsonValue.numberDouble;
+	}
+
+	template<> inline Jsonifier::UintType& Jsonifier::getValue() {
+		return this->jsonValue.numberUint;
+	}
+
+	template<> inline Jsonifier::IntType& Jsonifier::getValue() {
+		return this->jsonValue.numberInt;
+	}
+
+	template<> inline Jsonifier::BoolType& Jsonifier::getValue() {
+		return this->jsonValue.boolean;
+	}
+
+	template<typename RTy, typename... ArgTypes> class Event;
+	template<typename RTy, typename... ArgTypes> class EventDelegate;
 
 	template<typename ObjectType> class ReferenceCountingPtr {
 	  public:
@@ -834,12 +890,15 @@ namespace DiscordCoreLoader {
 	/**@}*/
 
 	struct RequestGuildMembersData {
-		std::vector<std::string> userIds{};///< Snowflake or array of snowflakes used to specify which users you wish to fetch one of query or user_ids.
+		std::vector<std::string>
+			userIds{};///< Snowflake or array of snowflakes used to specify which users you wish to fetch one of query or user_ids.
 		bool presences{ false };///< Used to specify if we want the presences of the matched members.
 		std::string guildId{};///< Id of the guild to get members for.
 		std::string nonce{};///< Nonce to identify the Guild Members Chunk response.
 		std::string query{};///< std::string string that username starts with, or an empty string to return all members. one of query or user_ids.
-		int32_t limit{ 0 };///< Maximum number of members to send matching the query; a limit of 0 can be used with an empty string query to return all members.
+		int32_t limit{
+			0
+		};///< Maximum number of members to send matching the query; a limit of 0 can be used with an empty string query to return all members.
 	};
 
 	class Time {
@@ -981,10 +1040,10 @@ namespace DiscordCoreLoader {
 
 	/**@}*/
 
-	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour, const std::string& minute,
-		const std::string& second);
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour,
+		const std::string& minute, const std::string& second);
 
-	void reportException(const std::string& stackTrace, UnboundedMessageBlock<std::exception>* sendBuffer = nullptr, bool rethrow = false);
+	void reportException(const std::string& currentFunctionName, std::source_location theLocation = std::source_location::current());
 
 	std::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat);
 
@@ -1108,7 +1167,8 @@ namespace DiscordCoreLoader {
 	/// \param monthsToAdd An int32_t containing the number of months to increment the timestamp forward for.
 	/// \param yearsToAdd An int32_t containing the number of years to increment the timestamp forward for.
 	/// \returns std::string A string containing the new ISO8601 timestamp.
-	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd = 0, int32_t daysToAdd = 0, int32_t monthsToAdd = 0, int32_t yearsToAdd = 0);
+	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd = 0, int32_t daysToAdd = 0, int32_t monthsToAdd = 0,
+		int32_t yearsToAdd = 0);
 
 	/// Acquires a timestamp with the current time and date - suitable for use in message-embeds. \brief Acquires a timestamp with the current time and date - suitable for use in message-embeds.
 	/// \returns std::string A std::string containing the current date-time stamp.
@@ -1118,8 +1178,8 @@ namespace DiscordCoreLoader {
 		WebSocketMessageReal() noexcept = default;
 		WebSocketMessageReal(simdjson::ondemand::value);
 		uint64_t op{ static_cast<uint64_t>(-1) };
-		template<typename ReturnType> ReturnType processJsonMessage() {
-			return ReturnType{ this->d };
+		template<typename RTy> RTy processJsonMessage() {
+			return RTy{ this->d };
 		}
 		simdjson::ondemand::value d{};
 		std::string t{};
@@ -1208,8 +1268,9 @@ namespace DiscordCoreLoader {
 		Direct_Message_Typing = 1 << 14,///< Intent for receipt of direct message typing notifications.
 		Message_Content = 1 << 15,///< Intent for receipt of message content.
 		Guild_Scheduled_Events = 1 << 16,///< Scheduled events.
-		Default_Intents = Guilds | Guild_Bans | Guild_Emojis | Guild_Integrations | Guild_Webhooks | Guild_Invites | Guild_VoiceStates | Guild_Messages | Guild_Message_Reactions |
-			Guild_Message_Typing | Direct_Messages | Direct_Message_Reactions | Direct_Message_Typing | Guild_Scheduled_Events,///< Default intents (all non-privileged intents).
+		Default_Intents = Guilds | Guild_Bans | Guild_Emojis | Guild_Integrations | Guild_Webhooks | Guild_Invites | Guild_VoiceStates |
+			Guild_Messages | Guild_Message_Reactions | Guild_Message_Typing | Direct_Messages | Direct_Message_Reactions | Direct_Message_Typing |
+			Guild_Scheduled_Events,///< Default intents (all non-privileged intents).
 		Privileged_Intents = Guild_Members | Guild_Presences | Message_Content,///< Privileged intents requiring ID.
 		All_Intents = Default_Intents | Privileged_Intents///< Every single intent.
 	};
@@ -1536,7 +1597,7 @@ namespace DiscordCoreLoader {
 		Guild_Store = 6,///< Guild store.
 		Guild_News_Thread = 10,///< Guild news Thread.
 		Guild_Public_Thread = 11,///< Guild public Thread.
-		Guild_Private_Thread = 12,///< Guild private Thread.
+		Guild_Private_Thread = 12,///< Guild protected Thread.
 		Guild_Stage_Voice = 13,///< Guild stage-voice.
 		Guild_Directory = 14,///< The channel in a hub containing the listed servers.
 		Guild_Forum = 15///< A channel that can only contain threads.
@@ -1565,7 +1626,7 @@ namespace DiscordCoreLoader {
 	enum class ThreadType {
 		Guild_News_Thread = 10,///< Guild news Thread.
 		Guild_Public_Thread = 11,///< Guild public Thread.
-		Guild_Private_Thread = 12///< Guild private Thread.
+		Guild_Private_Thread = 12///< Guild protected Thread.
 	};
 
 	/// Automatic Thread archiving durations. \brief Automatic Thread archiving durations.
@@ -1615,7 +1676,9 @@ namespace DiscordCoreLoader {
 	/// Data structure representing a single GuildMember. \brief Data structure representing a single GuildMember.
 	class GuildMemberData : public DiscordEntity {
 	  public:
-		TimeStamp communicationDisabledUntil{ "" };///< When the user's timeout will expire and the user will be able to communicate in the guild again.
+		TimeStamp communicationDisabledUntil{
+			""
+		};///< When the user's timeout will expire and the user will be able to communicate in the guild again.
 		std::vector<std::string> roles{};///< The Guild roles that they have.
 		std::string premiumSince{};///< If applicable, when they first boosted the server.
 		std::string permissions{};
@@ -1807,13 +1870,16 @@ namespace DiscordCoreLoader {
 	/// Application flags, for the ApplicationData structure.
 	enum class ApplicationFlags {
 		Gateway_Presence = 1 << 12,///< Intent required for bots in 100 or more servers to receive presence_update events.
-		Gateway_Presence_Limited = 1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in Bot Settings.
+		Gateway_Presence_Limited =
+			1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in Bot Settings.
 		Gateway_Guild_Members = 1 << 14,///< Intent required for bots in 100 or more servers to receive member-related events like guild_member_add.
-		Gateway_Guild_Members_Limited = 1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in Bot Settings.
+		Gateway_Guild_Members_Limited =
+			1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in Bot Settings.
 		Verificatino_Pending_Guild_Limit = 1 << 16,///< Indicates unusual growth of an app that prevents verification
 		Embedded = 1 << 17,///< Indicates if an app is embedded within the Discord client (currently unavailable publicly)
 		Gateway_Message_Content = 1 << 18,///< Intent required for bots in 100 or more servers to receive message content
-		Gateway_Message_Content_Limited = 1 << 19///< Intent required for bots in under 100 servers to receive message content, found in Bot Settings};
+		Gateway_Message_Content_Limited =
+			1 << 19///< Intent required for bots in under 100 servers to receive message content, found in Bot Settings};
 	};
 
 	/// Install params data, for application data. \brief Install params data, for application data.
@@ -2469,7 +2535,8 @@ namespace DiscordCoreLoader {
 
 	/// Data structure representing an ApplicationCommand's option choice. \brief Data structure representing an ApplicationCommand's option choice.
 	struct ApplicationCommandOptionChoiceData {
-		std::unordered_map<std::string, std::string> nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for the name field.
+		std::unordered_map<std::string, std::string>
+			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for the name field.
 		std::string value{};///< The value of the option.
 		std::string name{};///< The name of the current choice.
 	};
@@ -2624,7 +2691,8 @@ namespace DiscordCoreLoader {
 		Pong = 1,///< ACK a Ping.
 		Channel_Message_With_Source = 4,///< Respond to an interaction with a message.
 		Deferred_Channel_Message_With_Source = 5,///< ACK an interaction and edit a response later, the user sees a loading state.
-		Deferred_Update_Message = 6,///< For components, ACK an interaction and edit the original message later; the user does not see a loading state.
+		Deferred_Update_Message =
+			6,///< For components, ACK an interaction and edit the original message later; the user does not see a loading state.
 		Update_Message = 7,///< For components, edit the message the component was attached to.
 		Application_Command_Autocomplete_Result = 8,///< Respond to an autocomplete interaction with suggested choices.
 		Modal = 9///< Respond to an interaction with a popup modal.
@@ -2648,8 +2716,10 @@ namespace DiscordCoreLoader {
 	/// Data structure representing an ApplicationCommand. \brief Data structure representing an ApplicationCommand.
 	class ApplicationCommandData : public DiscordEntity {
 	  public:
-		std::unordered_map<std::string, std::string> descriptionLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
-		std::unordered_map<std::string, std::string> nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
+		std::unordered_map<std::string, std::string>
+			descriptionLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
+		std::unordered_map<std::string, std::string>
+			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
 		std::vector<ApplicationCommandOptionData> options{};///< A std::vector of possible options for the current ApplicationCommand.
 		std::string defaultMemberPermissions{};///< Set of permissions represented as a bit set all
 		ApplicationCommandType type{};///< The type of ApplicationCommand.
@@ -2691,7 +2761,8 @@ namespace DiscordCoreLoader {
 	/// Data for when threads are synced. \brief Data for when threads are synced.
 	struct ThreadListSyncData {
 		std::vector<ThreadMemberData> members{};///< Array of members that are a part of the Thread.
-		std::vector<std::string> channelIds{};///< The parent Channel ids whose threads are being synced. If omitted, then threads were synced for entire Guild.
+		std::vector<std::string>
+			channelIds{};///< The parent Channel ids whose threads are being synced. If omitted, then threads were synced for entire Guild.
 		std::vector<ChannelData> threads{};///< All active threads in the given channels that the current User can access.
 		std::string guildId{};///< The id of the Guild for which the threads are being synced.
 	};

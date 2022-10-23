@@ -12,6 +12,10 @@ generate_product_version(
 	VERSION_REVISION "0"
 )
 
+if (UNIX)
+	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast")
+endif()
+
 file(GLOB SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Source/*.cpp")
 
 if (WIN32)
@@ -42,7 +46,6 @@ target_link_libraries(
 	"${PROJECT_NAME}" PUBLIC
 	$<$<TARGET_EXISTS:OpenSSL::Crypto>:OpenSSL::Crypto>
 	$<$<TARGET_EXISTS:OpenSSL::SSL>:OpenSSL::SSL>
-	$<$<TARGET_EXISTS:nlohmann_json::nlohmann_json>:nlohmann_json::nlohmann_json>
 	$<$<TARGET_EXISTS:Threads::Threads>:Threads::Threads>
 	$<$<TARGET_EXISTS:simdjson::simdjson>:simdjson::simdjson>
 )
@@ -67,7 +70,8 @@ target_compile_options(
 	"$<$<PLATFORM_ID:Windows>:/bigobj>"
 	"$<$<PLATFORM_ID:Windows>:/MP>"
 	"$<$<PLATFORM_ID:Windows>:/W4>"
-	"$<$<PLATFORM_ID:Linux>:-O3>"
+	"$<$<PLATFORM_ID:Linux>:-mavx>"
+	"$<$<PLATFORM_ID:Linux>:-mavx2>"
 )
 
 target_link_options(

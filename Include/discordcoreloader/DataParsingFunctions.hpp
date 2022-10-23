@@ -1,85 +1,85 @@
 /*
-	DiscordCoreLoader, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
+*
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
-	Copyright 2021, 2022 Chris M. (RealTimeChris)
+	Copyright 2022 Chris M. (RealTimeChris)
 
-	This library is free software; you can redistribute it and/or
-	modify it under the terms of the GNU Lesser General Public
-	License as published by the Free Software Foundation; either
-	version 2.1 of the License, or (at your option) any later version.
+	This file is part of DiscordCoreLoader.
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	General Public License as published by the Free Software Foundation, either version 3 of the License,
+	or (at your option) any later version.
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
+	If not, see <https://www.gnu.org/licenses/>.
 
-	This library is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	Lesser General Public License for more details.
-
-	You should have received a copy of the GNU Lesser General Public
-	License along with this library; if not, write to the Free Software
-	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
-	USA
 */
 /// DataParsingFunctions.hpp - Header file for the data-parsing functions.
 /// Oct 1, 2021
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file DataParsingFunctions.hpp
 
-#ifndef DATA_PARSING_FUNCTIONS
-#define DATA_PARSING_FUNCTIONS
+#pragma once
 
-#include <discordcoreloader/FoundationEntities.hpp>
-#include <simdjson.h>
-#include <map>
+#ifndef DATA_PARSING_FUNCTIONS
+	#define DATA_PARSING_FUNCTIONS
+	#include <discordcoreloader/FoundationEntities.hpp>
+	#include <simdjson.h>
+	#include <map>
 
 namespace DiscordCoreLoader {
 
-	static std::map<int32_t, std::string> theErrors{ { 0, "SUCCESS" }, { 1, "CAPACITY" }, { 2, "MEMALLOC" }, { 3, "TAPE_ERRPR" }, { 4, "DEPTH_ERROR" }, { 5, "STRING_ERROR" },
-		{ 6, "T_ATOM_ERROR" }, { 7, "F_ATOM_ERROR" }, { 8, "N_ATOM_ERROR" }, { 9, "NUMBER_ERROR" }, { 10, "UTF8_ERROR" }, { 11, "UNINITIALIZED" }, { 12, "EMPTY" },
-		{ 13, "UNESCAPED_CHARS" }, { 14, "UNCLOSED_STRING" }, { 15, "UNSUPPORTED_ARCHITECTURE" }, { 16, "INCORRECT_TYPE" }, { 17, "NUMBER_OUT_OF_RANGE" },
-		{ 18, "INDEX_OUT_OF_BOUNDS" }, { 19, "NO_SUCH_FIELD" }, { 20, "IO_ERROR" }, { 21, "INVALID_JSON_POINTER" }, { 22, "INVALID_URI_FRAGMENT" }, { 23, "UNEXPECTED_ERROR" },
-		{ 24, "PARSER_IN_USE" }, { 25, "OUT_OF_ORDER_ITERATION" }, { 26, "INSUFFICIENT_PADDING" }, { 27, "INCOMPLETE_ARRAY_OR_OBJECT" }, { 28, "SCALAR_DOCUMENT_AS_VALUE" },
-		{ 29, "OUT_OF_BOUNDS" }, { 30, "NUM_ERROR_CODES " } };
-
-	struct JsonParseError : public std::runtime_error {
-		explicit JsonParseError(int32_t theCode);
-	};
-
 	struct ObjectReturnData {
-		simdjson::ondemand::value theObject{};
+		simdjson::ondemand::value object{};
 		bool didItSucceed{ false };
 	};
 
 	struct ArrayReturnData {
-		simdjson::ondemand::array theArray{};
+		simdjson::ondemand::array arrayValue{};
 		bool didItSucceed{ false };
 	};
 
-	uint64_t getId(simdjson::ondemand::value jsonObjectData, const char* theKey);
+	Snowflake getId(simdjson::ondemand::value jsonObjectData, const char* key);
 
-	bool getbool(simdjson::ondemand::value jsonData, const char* theKey);
+	Snowflake getId(simdjson::ondemand::value jsonObjectData);
 
-	uint8_t getUint8(simdjson::ondemand::value jsonData, const char* theKey);
+	int64_t getInt64(simdjson::ondemand::value jsonData, const char* key);
 
-	uint16_t getUint16(simdjson::ondemand::value jsonData, const char* theKey);
+	int32_t getInt32(simdjson::ondemand::value jsonData, const char* key);
 
-	uint32_t getUint32(simdjson::ondemand::value jsonData, const char* theKey);
+	int16_t getInt16(simdjson::ondemand::value jsonData, const char* key);
 
-	float getFloat(simdjson::ondemand::value jsonData, const char* theKey);
+	int8_t getInt8(simdjson::ondemand::value jsonData, const char* key);
 
-	uint64_t getUint64(simdjson::ondemand::value jsonData, const char* theKey);
+	uint64_t getUint64(simdjson::ondemand::value jsonData, const char* key);
 
-	std::string getString(simdjson::ondemand::value jsonData, const char* theKey);
+	uint32_t getUint32(simdjson::ondemand::value jsonData, const char* key);
 
-	std::string getString(ObjectReturnData jsonData, const char* theKey);
+	uint16_t getUint16(simdjson::ondemand::value jsonData, const char* key);
 
-	ObjectReturnData getObject(ArrayReturnData jsonObjectData, uint64_t objectIndex);
+	uint8_t getUint8(simdjson::ondemand::value jsonData, const char* key);
+
+	float getFloat(simdjson::ondemand::value jsonData, const char* key);
+
+	bool getBool(simdjson::ondemand::value jsonData, const char* key);
+
+	std::string getString(simdjson::ondemand::value jsonData, const char* key);
+
+	std::string getString(ObjectReturnData jsonData, const char* key);
+
+	std::string getString(simdjson::ondemand::value jsonData);
+
+	std::string getString(ObjectReturnData jsonData, const char* key);
 
 	ObjectReturnData getObject(simdjson::ondemand::value jsonObjectData, const char* objectName);
 
 	ObjectReturnData getObject(ObjectReturnData jsonObjectData, const char* objectName);
 
-	ArrayReturnData getArray(ObjectReturnData jsonObjectData, const char* arrayName);
+	ObjectReturnData getObject(ArrayReturnData jsonObjectData, uint64_t objectIndex);
 
 	ArrayReturnData getArray(simdjson::ondemand::value jsonObjectData, const char* arrayName);
+
+	ArrayReturnData getArray(ObjectReturnData jsonObjectData, const char* arrayName);
 
 };
 #endif

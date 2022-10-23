@@ -14,7 +14,7 @@
 */
 /// ErlParser.cpp - Source file for the erlpacking class.
 /// Nov 8, 2021
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file ErlParser.cpp
 
 #include <discordcoreloader/ErlParser.hpp>
@@ -35,7 +35,6 @@ namespace DiscordCoreLoader {
 	}
 
 	void ErlParser::writeCharactersFromBuffer(uint32_t length) {
-		std::cout << "THE SIZE: " << this->dataBuffer.size() << ", THE LENGTH: " << +length << std::endl;
 		if (this->offSet + static_cast<uint64_t>(length) > this->dataBuffer.size()) {
 			throw ErlParseError{ "ErlParser::readString() Error: readString() past end of buffer.\n\n" };
 		}
@@ -141,7 +140,6 @@ namespace DiscordCoreLoader {
 			throw ErlParseError{ "ErlParser::singleValueETFToJson() Error: Read past end of ETF buffer.\n\n" };
 		}
 		uint8_t type = this->readBitsFromBuffer<uint8_t>();
-		std::cout << "THE TYPE: " << +type << std::endl;
 		switch (static_cast<EtfType>(type)) {
 			case EtfType::New_Float_Ext: {
 				return this->parseNewFloatExt();
@@ -170,11 +168,13 @@ namespace DiscordCoreLoader {
 			case EtfType::Small_Big_Ext: {
 				return this->parseSmallBigExt();
 			}
+			case EtfType::Small_Atom_Ext: {
+				return this->parseSmallAtomExt();
+			}
 			case EtfType::Map_Ext: {
 				return this->parseMapExt();
 			}
 			default: {
-				std::cout << "THE TYPE: " << +type << std::endl;
 				throw ErlParseError{ "ErlParser::singleValueETFToJson() Error: Unknown data type in ETF.\n\n" };
 			}
 		}
@@ -194,11 +194,10 @@ namespace DiscordCoreLoader {
 		}
 		this->readBitsFromBuffer<uint8_t>();
 		this->writeCharacter(']');
-		return;
 	}
 
 	void ErlParser::parseSmallIntegerExt() {
-		auto string = std::to_string(this->readBitsFromBuffer<uint8_t>());
+		auto string = std::to_string(this->readBitsFromBuffer<int8_t>());
 		this->writeCharacters(string.data(), string.size());
 	}
 
@@ -278,6 +277,11 @@ namespace DiscordCoreLoader {
 
 	void ErlParser::parseNilExt() {
 		this->writeCharacters("null", 4);
+	}
+
+	void ErlParser::parseSmallAtomExt() {
+		uint32_t length = this->readBitsFromBuffer<uint8_t>();
+		this->writeCharactersFromBuffer(length);
 	}
 
 	void ErlParser::parseMapExt() {

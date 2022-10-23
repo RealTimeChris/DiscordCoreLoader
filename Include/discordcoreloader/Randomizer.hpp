@@ -16,7 +16,7 @@
 */
 /// Randomizer.hpp - Header file for the Randomizer stuff.
 /// May 22, 2022
-/// https://discordcoreapi.com
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file Randomizer.hpp
 
 #pragma once
