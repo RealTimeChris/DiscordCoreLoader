@@ -1,11 +1,11 @@
 # DiscordCoreLoader
-![Lines of code](https://img.shields.io/tokei/lines/github/realtimechris/discordcoreloader?&style=plastic&label=Lines%20of%20Code)
-A stress-tester for Discord bot libraries.
+![Lines of code](https://img.shields.io/tokei/lines/github/realtimechris/discordcoreloader?&style=plastic&label=Lines%20of%20Code)   
+### A stress-tester for Discord bot libraries.
 # Quick Start
 ---
 ## Install the Dependencies, which are:  
 ----
-  [Nlohmann-Json](https://github.com/nlohmann/json)  
+  [Simdjson](https://github.com/simdjson/simdjson)  
   [OpenSSL](https://github.com/openssl/openssl)  
   [CMake](https://cmake.org/)
 ----
