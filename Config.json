@@ -1,0 +1,18 @@
+{
+  "ConnectionIp": "192.168.0.28",
+  "ConnectionPort": "443",
+  "DoWePrintGeneralErrorMessages": true,
+  "DoWePrintGeneralSuccessMessages": true,
+  "DoWePrintWebSocketErrorMessages": true,
+  "DoWePrintWebSocketSuccessReceiveMessages": true,
+  "DoWePrintWebSocketSuccessSentMessages": false,
+  "GuildQuantity": 30000,
+  "MeanForChannelCount": 10,
+  "MeanForMemberCount": 200,
+  "MeanForRoleCount": 10,
+  "MeanForStringLength":10,
+  "StdDeviationForChannelCount": 1,
+  "StdDeviationForMemberCount": 1,
+  "StdDeviationForRoleCount": 1,
+  "StdDeviationForStringLength": 1
+}
