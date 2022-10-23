@@ -35,12 +35,12 @@ namespace DiscordCoreLoader {
 	}
 
 	void ErlParser::writeCharactersFromBuffer(uint32_t length) {
+		std::cout << "THE SIZE: " << this->dataBuffer.size() << ", THE LENGTH: " << +length << std::endl;
 		if (this->offSet + static_cast<uint64_t>(length) > this->dataBuffer.size()) {
 			throw ErlParseError{ "ErlParser::readString() Error: readString() past end of buffer.\n\n" };
 		}
 		uint64_t finalSize{};
 		char* stringNew = ( char* )this->dataBuffer.data() + this->offSet;
-		std::string_view theString{ stringNew, length };
 		for (uint32_t x = 0; x < length; ++x) {
 			switch (stringNew[x]) {
 				case 0x00: {
@@ -143,6 +143,9 @@ namespace DiscordCoreLoader {
 		uint8_t type = this->readBitsFromBuffer<uint8_t>();
 		std::cout << "THE TYPE: " << +type << std::endl;
 		switch (static_cast<EtfType>(type)) {
+			case EtfType::New_Float_Ext: {
+				return this->parseNewFloatExt();
+			}
 			case EtfType::Small_Integer_Ext: {
 				return this->parseSmallIntegerExt();
 			}
@@ -152,14 +155,11 @@ namespace DiscordCoreLoader {
 			case EtfType::Atom_Ext: {
 				return this->parseAtomExt();
 			}
-			case EtfType::String_Ext: {
-				return this->parseStringExt();
-			}
-			case EtfType::New_Float_Ext: {
-				return this->parseNewFloatExt();
-			}
 			case EtfType::Nil_Ext: {
 				return this->parseNilExt();
+			}
+			case EtfType::String_Ext: {
+				return this->parseStringExt();
 			}
 			case EtfType::List_Ext: {
 				return this->parseListExt();
@@ -174,6 +174,7 @@ namespace DiscordCoreLoader {
 				return this->parseMapExt();
 			}
 			default: {
+				std::cout << "THE TYPE: " << +type << std::endl;
 				throw ErlParseError{ "ErlParser::singleValueETFToJson() Error: Unknown data type in ETF.\n\n" };
 			}
 		}
@@ -183,7 +184,7 @@ namespace DiscordCoreLoader {
 		uint32_t length = this->readBitsFromBuffer<uint32_t>();
 		this->writeCharacter('[');
 		if (static_cast<uint64_t>(this->offSet) + length > this->dataBuffer.size()) {
-			throw ErlParseError{ "ErlParser::parseStringAsList() Error: List reading past end of buffer.\n\n" };
+			throw ErlParseError{ "ErlPacker::parseStringAsList() Error: List reading past end of buffer.\n\n" };
 		}
 		for (uint16_t x = 0; x < length; ++x) {
 			this->singleValueETFToJson();
@@ -226,6 +227,7 @@ namespace DiscordCoreLoader {
 	}
 
 	void ErlParser::parseSmallBigExt() {
+		this->writeCharacter('\"');
 		auto digits = this->readBitsFromBuffer<uint8_t>();
 		uint8_t sign = this->readBitsFromBuffer<uint8_t>();
 		if (digits > 128) {
@@ -241,26 +243,27 @@ namespace DiscordCoreLoader {
 		}
 		if (digits <= 4) {
 			if (sign == 0) {
-				auto theString = std::to_string(value);
-				this->writeCharacters(theString.data(), theString.size());
+				auto string = std::to_string(value);
+				this->writeCharacters(string.data(), string.size());
 				return;
 			}
 			const bool isSignBitAvailable = (value & 1ull << 31ull) == 0;
 			if (isSignBitAvailable) {
-				auto theString = std::to_string(-static_cast<int32_t>(value));
-				this->writeCharacters(theString.data(), theString.size());
+				auto string = std::to_string(-static_cast<int32_t>(value));
+				this->writeCharacters(string.data(), string.size());
 				return;
 			}
 		}
 		char outBuffer[32] = { 0 };
 		const char* formatString = sign == 0 ? "%llu" : "-%ll";
-		auto theValue = sign == 0 ? static_cast<uint64_t>(value) : static_cast<int64_t>(value);
-		const int32_t res = sprintf(outBuffer, formatString, theValue);
+		auto valueNew = sign == 0 ? static_cast<uint64_t>(value) : static_cast<int64_t>(value);
+		const int32_t res = sprintf(outBuffer, formatString, valueNew);
 		if (res < 0) {
 			throw ErlParseError{ "ErlParser::parseSmallBigExt() Error: Parse big integer failed.\n\n" };
 		}
 		const uint8_t length = static_cast<uint8_t>(res);
 		this->writeCharacters(outBuffer, length);
+		this->writeCharacter('\"');
 	}
 
 	void ErlParser::parseAtomExt() {

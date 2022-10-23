@@ -235,6 +235,14 @@ namespace DiscordCoreLoader {
 		}
 	}
 
+	template<typename ReturnType> void storeBits(char* to, ReturnType num) {
+		const uint8_t byteSize{ 8 };
+		ReturnType newValue = reverseByteOrder<ReturnType>(num);
+		for (uint32_t x = 0; x < sizeof(ReturnType); ++x) {
+			to[sizeof(ReturnType) - x] = static_cast<uint8_t>(newValue >> (byteSize * x));
+		}
+	}
+
 	constexpr uint8_t formatVersion{ 131 };
 
 	enum class EtfType : uint8_t {
