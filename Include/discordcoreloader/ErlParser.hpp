@@ -30,11 +30,11 @@ namespace DiscordCoreLoader {
 
 	class ErlParser {
 	  public:
-		ErlParser() noexcept {};
+		ErlParser() noexcept = default;
 
 		std::string& parseEtfToJson(std::string_view dataToParse);
 
-		~ErlParser(){};
+		~ErlParser() noexcept = default;
 
 	  protected:
 		std::array<char, 1024 * 16> stringBuffer{};

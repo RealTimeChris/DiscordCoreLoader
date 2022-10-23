@@ -595,7 +595,11 @@ namespace DiscordCoreLoader {
 	}
 
 	void Jsonifier::writeEtfString(const StringType& jsonData) {
-		this->appendBinaryExt(jsonData, static_cast<uint32_t>(jsonData.size()));
+		if (jsonData.size() < 64 * 1024) {
+			this->appendStringExt(jsonData, static_cast<uint16_t>(jsonData.size()));
+		} else {
+			this->appendBinaryExt(jsonData, static_cast<uint32_t>(jsonData.size()));
+		}
 	}
 
 	void Jsonifier::writeEtfUint(const UintType jsonData) {
@@ -687,6 +691,13 @@ namespace DiscordCoreLoader {
 			}
 		}
 		return true;
+	}
+
+	void Jsonifier::appendStringExt(const std::string& string, const uint16_t length) {
+		std::string bufferNew{ static_cast<uint8_t>(EtfType::String_Ext) };
+		storeBits(bufferNew, length);
+		this->writeString(bufferNew.data(), bufferNew.size());
+		this->writeString(string.data(), string.size());
 	}
 
 	void Jsonifier::appendBinaryExt(const std::string& bytes, uint32_t sizeNew) {

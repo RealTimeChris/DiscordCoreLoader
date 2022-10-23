@@ -243,6 +243,7 @@ namespace DiscordCoreLoader {
 		Integer_Ext = 98,
 		Atom_Ext = 100,
 		Nil_Ext = 106,
+		String_Ext = 107,
 		List_Ext = 108,
 		Binary_Ext = 109,
 		Small_Big_Ext = 110,
@@ -535,7 +536,9 @@ namespace DiscordCoreLoader {
 
 		void writeCharacter(const char Char);
 
-		void appendBinaryExt(const std::string& bytes, uint32_t sizeNew);
+		void appendStringExt(const std::string& bytes, const uint16_t length);
+
+		void appendBinaryExt(const std::string& bytes, const uint32_t sizeNew);
 
 		void appendUnsignedLongLong(const uint64_t value);
 

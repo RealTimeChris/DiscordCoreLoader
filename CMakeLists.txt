@@ -13,14 +13,10 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
 set(OPENSSL_ROOT_DIR "C:/vcpkg/installed/x64-windows")
 
-set(nlohmann_json_DIR "C:/vcpkg/installed/x64-windows/share/nlohmann_json")
-
 set(simdjson_DIR "C:/vcpkg/installed/x64-windows/share/simdjson")
 
 find_package(OpenSSL REQUIRED)
 
 find_package(simdjson REQUIRED)
-
-find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(Executable)
