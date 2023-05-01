@@ -229,8 +229,6 @@ namespace DiscordCoreLoader {
 		Jsonifier jsonData{};
 		jsonData["op"] = static_cast<int8_t>(10);
 		jsonData["d"]["heartbeat_interval"] = static_cast<uint16_t>(this->heartbeatInterval);
-		jsonData["s"] = 0;
-		jsonData["t"] = "";
 		if (theShard->theMode == WebSocketMode::JSON) {
 			theShard->theOpCode = WebSocketOpCode::Op_Text;
 		} else {
@@ -478,12 +476,12 @@ namespace DiscordCoreLoader {
 						break;
 					}
 				}
-
+				std::cout << shiftToBrightGreen()
+						  << "Message received from WebSocket [" + std::to_string(theShard->shard[0]) + "," + std::to_string(theShard->shard[1]) +
+						"]" + std::string(": ")
+						  << payload << std::endl;
 				if (this->discordCoreClient->configParser.getTheData().doWePrintWebSocketSuccessReceiveMessages) {
-					std::cout << shiftToBrightGreen()
-							  << "Message received from WebSocket [" + std::to_string(theShard->shard[0]) + "," + std::to_string(theShard->shard[1]) +
-							"]" + std::string(": ")
-							  << payload << std::endl;
+					
 				}
 			}
 		} catch (...) {
