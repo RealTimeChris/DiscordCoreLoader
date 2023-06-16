@@ -67,24 +67,7 @@ namespace DiscordCoreLoader {
 	}
 
 	void Randomizer::randomizeId(std::string& theString, uint64_t minValue, uint64_t maxValue) {
-		std::string returnString{};
-		returnString.resize(20);
-		auto theValue = this->randomize64BitUInt(minValue, maxValue);
-		std::to_chars(returnString.data(), returnString.data() + returnString.size(), theValue);
-		if (returnString.size() > 18) {
-			uint64_t length = returnString.size() - 18;
-			theString = std::move(returnString.substr(0, returnString.size() - length));
-			for (int32_t x = 0; x < theString.size(); ++x) {
-				if (static_cast<char>(theString[x]) == static_cast<char>(',') || static_cast<char>(theString[x]) == '\'' ||
-					static_cast<char>(theString[x]) == '/' || static_cast<char>(theString[x]) == '\"' || static_cast<char>(theString[x]) == '\\' ||
-					static_cast<char>(theString[x]) == '`' || static_cast<char>(theString[x]) == '{' || static_cast<char>(theString[x]) == '}' ||
-					static_cast<char>(theString[x]) == '[' || static_cast<char>(theString[x]) == ']' || static_cast<char>(theString[x]) == '(' ||
-					static_cast<char>(theString[x]) == ')' || static_cast<char>(theString[x]) == static_cast<char>(0) ||
-					static_cast<char>(theString[x]) == static_cast<char>(1)) {
-					theString[x] = static_cast<char>(' ');
-				}
-			}
-		}
+		theString = std::to_string(this->randomize64BitUInt(minValue, maxValue));
 	}
 
 	uint64_t Randomizer::randomize64BitUInt(double mean, double stdDeviation) {

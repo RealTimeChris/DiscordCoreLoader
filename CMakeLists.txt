@@ -13,17 +13,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
 set(OPENSSL_ROOT_DIR "C:/vcpkg/installed/x64-windows")
 
-if("${DEV}")
-	include(FetchContent)	
+include(FetchContent)	
 	FetchContent_Declare(
 	   Jsonifier
 	   GIT_REPOSITORY https://github.com/RealTimeChris/Jsonifier.git
 	   GIT_TAG dev
 	)
 	FetchContent_MakeAvailable(Jsonifier)
-else()
-	find_package(Jsonifier CONFIG REQUIRED)
-endif()
 
 find_package(OpenSSL REQUIRED)
 

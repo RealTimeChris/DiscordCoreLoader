@@ -138,6 +138,7 @@ namespace DiscordCoreLoader {
 	class EditMessageData;
 	class ButtonCollector;
 	class ModalCollector;
+	class EtfSerializer;
 	class Interactions;
 	class EventManager;
 	class EventHandler;
@@ -872,22 +873,39 @@ namespace DiscordCoreLoader {
 
 	enum class RoleFlags : int8_t { Mentionable = 1 << 0, Managed = 1 << 1, Hoist = 1 << 2 };
 
-	/// Data structure representing a single Role. \brief Data structure representing a single Role.
+	/// \brief Data structure representing a single Role.
 	class RoleData : public DiscordEntity {
 	  public:
-		std::string unicodeEmoji{};///< Emoji representing the Role.
-		std::string permissions{};
-		int32_t position{ 0 };///< Its position amongst the rest of the Guild's roles.
+		friend class GuildData;
+
 		RoleTagsData tags{};///< Role tags for the Role.
-		bool hoist{ false };///< Is it hoisted?
-		std::string name{};///< The Role's name.
-		int32_t color{ 0 };///< The Role's color.
-		int8_t flags{ 0 };///< Role flags.
 		std::string icon{};///< Icon representing the Role.
+		std::string permissions{};///< The Role's base Guild Permissions.
+		std::string unicodeEmoji{};///< Emoji representing the Role.
+		Snowflake guildId{};///< The id of the Guild that this Role is from.
+		int16_t position{};///< Its position amongst the rest of the Guild's roles.
+		RoleFlags flags{};///< Role flags.
+		int32_t color{};///< The Role's color.
+		std::string name{};///< The Role's name.
 		bool mentionable{};
+		bool hoist{ false };///< Is it hoisted?
 		bool managed{};
 
-		virtual ~RoleData() = default;
+		RoleData() noexcept = default;
+
+		RoleData(uint64_t snowFlake) noexcept {
+			id = snowFlake;
+		}
+
+		RoleData& operator=(RoleData&&) noexcept = default;
+
+		RoleData(RoleData&&) noexcept = default;
+
+		RoleData& operator=(const RoleData&) noexcept = default;
+
+		RoleData(const RoleData&) noexcept = default;
+
+		virtual ~RoleData() noexcept = default;
 	};
 
 	/// User flags. \brief User flags.
@@ -1219,36 +1237,44 @@ namespace DiscordCoreLoader {
 
 	enum class ChannelFlags : int8_t { NSFW = 1 << 0 };
 
-	/// Data structure representing a single Channel. \brief Data structure representing a single Channel.
+	/// \brief A Channel object.
 	class ChannelData : public DiscordEntity {
 	  public:
-		std::vector<OverWriteData> permissionOverwrites{};///< Permission overwrites for the given Channel.
-		std::unordered_map<std::string, UserData> recipients{};///< Recipients, in the case of a group Dm or Dm.
-		int32_t defaultAutoArchiveDuration{ 0 };///< Default time it takes to archive a thread.
+		std::unordered_map<uint64_t, UserData> recipients{};///< Recipients, in the case of a group DM or m.
+		int32_t defaultThreadRateLimitPerUser{};///< The initial rate_limit_per_user to set on newly created threads in a channel.
+		int32_t defaultAutoArchiveDuration{};///< Default time it takes to archive a thread.
+		std::vector<Snowflake> appliedTags{};///< The IDs of the set of tags that have been applied to a thread in a GUILD_FORUM channel.
 		ThreadMetadataData threadMetadata{};///< Metadata in the case that this Channel is a Thread.
-		ChannelType type{ ChannelType::Dm };///< The type of the Channel.
-		TimeStamp lastPinTimestamp{ "" };///< Timestamp of the last pinned Message.
-		int32_t videoQualityMode{ 0 };///< Video quality mode.
-		int32_t rateLimitPerUser{ 0 };///< Amount of seconds a User has to wait before sending another Message.
-		std::string lastMessageId{};///< Id of the last Message.
-		ThreadMemberData member{};///< Thread member object for the current User, if they have joined the Thread.
-		int32_t messageCount{ 0 };///< An approximate count of Messages in a Thread stops counting at 50.
+		std::string lastMessageId{};///< Snowflake of the last Message.
+		std::string lastPinTimestamp{};///< Timestamp of the last pinned Message.
 		std::string permissions{};///< Computed permissions for the invoking user in the channel, including overwrites.
-		std::string applicationId{};///< Application id of the current application.
-		int32_t memberCount{ 0 };///< Count of members active in the Channel.
-		std::string rtcRegion{};///< Real-time clock region.
-		std::string parentId{};///< Id of the Channel's parent Channel/category.
-		int32_t userLimit{ 0 };///< User limit, in the case of voice channels.
-		std::string ownerId{};///< Id of the Channel's owner.
-		int32_t position{ 0 };///< The position of the Channel, in the Guild's Channel list.
-		std::string guildId{};///< Id of the Channel's Guild, if applicable.
-		int32_t bitrate{ 0 };///< Bitrate of the Channel, if it is a voice Channel.
-		std::string topic{};///< The Channel's topic.
-		int8_t flags{ 0 };///< Channel flags combined as a bitfield.
-		std::string icon{};///< Icon for the Channel, if applicable.
+		int32_t videoQualityMode{};///< Video quality mode.
+		std::vector<OverWriteData> permissionOverwrites{};///< Permission overwrites.
+		ChannelType type{ ChannelType::Dm };///< The type of the Channel.
+		int32_t defaultSortOrder{};///< Default sorting order for a forum thread.
+		uint32_t memberCount{};///< Count of members active in the Channel.
+		Snowflake parentId{};///< Snowflake of the Channel's parent Channel/category.
+		ChannelFlags flags{};///< Flags combined as a bitmask.
+		uint16_t position{};///< The position of the Channel, in the Guild's Channel list.
+		Snowflake ownerId{};///< Snowflake of the Channel's owner.
+		Snowflake guildId{};///< Snowflake of the Channel's Guild, if applicable.
+		std::string topic{};///< Channel topic.
 		std::string name{};///< Name of the Channel.
+		int32_t rateLimitPerUser{};///< Amount of seconds a User has to wait before sending another Message.
+		int32_t totalMessageSent{};///< Number of messages ever sent in a thread it's similar to message_count on message creation.
+		Snowflake applicationId{};///< Application id of the current application.
+		std::string rtcRegion{};///< Real-time clock region.
+		ThreadMemberData member{};///< Thread member object for the current User, if they have joined the Thread.
+		int32_t messageCount{};///< An approximate count of Messages in a Thread stops counting at 50.
+		int32_t userLimit{};///< User limit, in the case of voice channels.
+		int32_t bitrate{};///< Bitrate of the Channel, if it is a voice Channel.
+		std::string icon{};///< Icon for the Channel, if applicable.
 
-		virtual ~ChannelData() = default;
+		ChannelData() noexcept = default;
+
+		~ChannelData() noexcept = default;
+
+		std::string getIconUrl() noexcept;
 	};
 
 	enum class GuildMemberFlags : int8_t { Pending = 1 << 0, Deaf = 1 << 1, Mute = 1 << 2 };
@@ -1256,23 +1282,15 @@ namespace DiscordCoreLoader {
 	/// Data structure representing a single GuildMember. \brief Data structure representing a single GuildMember.
 	class GuildMemberData : public DiscordEntity {
 	  public:
-		TimeStamp communicationDisabledUntil{
-			""
-		};///< When the user's timeout will expire and the user will be able to communicate in the guild again.
-		std::vector<std::string> roles{};///< The Guild roles that they have.
+		std::string communicationDisabledUntil{};///< When the user's timeout will expire and the user will be able to communicate in the guild again.
 		std::string premiumSince{};///< If applicable, when they first boosted the server.
-		std::string permissions{};
-		TimeStamp joinedAt{ "" };///< When they joined the Guild.
-		std::string userAvatar{};///< This GuildMember's User Avatar.
-		std::string userName{};///< This GuildMember's UserName.
-		std::string guildId{};///< The current Guild's id.
-		std::string avatar{};///< The member's guild avatar hash.
+		std::vector<Snowflake> roles{};///< The Guild roGuildMemberDatales that they have.
+		std::string permissions{};///< Their base-level Permissions in the Guild.
+		GuildMemberFlags flags{};///< GuildMember flags.
+		std::string joinedAt{};///< When they joined the Guild;
+		Snowflake guildId{};///< The current Guild's id.
 		std::string nick{};///< Their nick/display name.
-		int8_t flags{ 0 };///< GuildMember flags.
 		UserData user{};
-		bool pending{};
-		bool mute{};
-		bool deaf{};
 
 		virtual ~GuildMemberData() = default;
 	};
@@ -1888,59 +1906,6 @@ namespace DiscordCoreLoader {
 		Premium_Progress_Bar_Enabled = 1 << 4///< Premium progress bar enabled
 	};
 
-	/// Data structure representing a single Guild. \brief Data structure representing a single Guild.
-	class GuildData : public DiscordEntity {
-	  public:
-		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
-		std::unordered_map<std::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
-		std::vector<PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
-		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
-		std::vector<ChannelData> channels{};///< Array of Guild channels.
-		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
-		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, y default.
-		std::vector<RoleData> roles{};///< Array of Guild roles.
-		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
-		int32_t premiumSubscriptionCount{ 0 };///< Premium subscription count.
-		int32_t approximatePresenceCount{ 0 };///< Approximate quantity of presences.
-		VerificationLevel verificationLevel{};///< Verification level required.
-		std::string publicUpdatesChannelId{};///< Id of the public updates Channel.
-		std::vector<std::string> features{};///< List of Guild features.
-		int32_t approximateMemberCount{ 0 };///< Approximate member count.
-		WelcomeScreenData welcomeScreen{};///< Welcome screen for the Guild.
-		int32_t maxVideoChannelUsers{ 0 };///< Maximum quantity of users per video Channel.
-		AfkTimeOutDurations afkTimeOut{};///< Time for an individual to time out as afk.
-		std::string discoverySplash{};///< Link to the discovery image's splash.
-		std::string preferredLocale{};///< Preferred locale, for voice chat servers.
-		std::string widgetChannelId{};///< Channel id for the Guild's widget.
-		std::string systemChannelId{};///< Channel id for the Guild's system Channel.
-		std::string rulesChannelId{};///< Channel id for the Guild's rules Channel.
-		std::string applicationId{};///< The current application id.
-		std::string vanityUrlCode{};///< Vanity Url code, if applicable.
-		std::string afkChannelId{};///< Channel if of the "afk" Channel.
-		std::string description{};///< Description of the Guild.
-		std::string permissions{};///< Current Permissions for the bot in the Guild.
-		PremiumTier premiumTier{};///< What is the premium tier?
-		int32_t maxPresences{ 0 };///< Max number of presences allowed.
-		TimeStamp joinedAt{ "" };///< When the bot joined this Guild.
-		int32_t memberCount{ 0 };///< Member count.
-		int32_t maxMembers{ 0 };///< Max quantity of members.
-		std::string iconHash{};///< Url to the Guild's icon.
-		std::string ownerId{};///< User id of the Guild's owner.
-		std::string region{};///< Region of the world where the Guild's servers are.
-		std::string splash{};///< Url to the Guild's splash.
-		std::string banner{};///< Url to the Guild's banner.
-		MFALevel mfaLevel{};///< MFA level.
-		std::string icon{};///< Url to the Guild's icon.
-		std::string name{};///< The Guild's name.
-		int8_t flags{ 0 };///< Guild flags.
-
-		GuildData() = default;
-
-		void initialize(bool doWeShowIt);
-
-		virtual ~GuildData() = default;
-	};
-
 	/// Guild scheduled event privacy levels. \brief Guild scheduled event privacy levels.
 	enum class GuildScheduledEventPrivacyLevel {
 		Public = 1,///< Public.
@@ -1994,6 +1959,20 @@ namespace DiscordCoreLoader {
 		std::string guildScheduledEventId{};///< The scheduled event id which the User subscribed to/
 		GuildMemberData member{};///< Guild member data for this User for the Guild which this event belongs to, if any.
 		UserData user{};///< User which subscribed to an event.
+	};
+
+	/// Data structure representing a single Guild. \brief Data structure representing a single Guild.
+	class GuildData : public DiscordEntity {
+	  public:
+		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
+		std::vector<ChannelData> channels{};///< Array of Guild channels.
+		std::vector<RoleData> roles{};///< Array of Guild roles.
+
+		operator EtfSerializer() noexcept;
+
+		GuildData() = default;
+
+		virtual ~GuildData() = default;
 	};
 
 	/// Invite data. \brief Invite data.

@@ -45,14 +45,10 @@ namespace DiscordCoreLoader {
 		theData.joinedAt = "";
 		int8_t theAmount = this->randomize8BitInt(0, static_cast<uint8_t>(roles.size()));
 		theData.permissions = std::to_string(this->randomize64BitUInt());
-		theData.pending = static_cast<bool>(this->randomize8BitInt(0, 1));
-		theData.deaf = static_cast<bool>(this->randomize8BitInt(0, 1));
-		theData.mute = static_cast<bool>(this->randomize8BitInt(0, 1));
 		for (int32_t x = 0; x < theAmount; x++) {
 			theData.roles.emplace_back(roles[x].id);
 		}
-		theData.flags = this->randomize8BitInt();
-		theData.avatar = this->randomizeIconHash();
+		theData.flags = static_cast<GuildMemberFlags>(this->randomize8BitInt());
 		theData.user = this->generateUser();
 		this->randomizeId(theData.id);
 		theData.guildId = guildId;
@@ -88,7 +84,7 @@ namespace DiscordCoreLoader {
 		theData.threadMetadata.autoArchiveDuration = this->randomize32BitUInt();
 		for (int32_t x = 0; x < this->randomize8BitInt(0, 10); x++) {
 			UserData theDataNew = this->generateUser();
-			theData.recipients[theDataNew.id] = theDataNew;
+			theData.recipients[stoull(theDataNew.id)] = theDataNew;
 		}
 		theData.type = static_cast<ChannelType>(this->randomize8BitInt(0, 24));
 		theData.threadMetadata.archived = static_cast<bool>(this->randomize8BitInt(0, 1));
@@ -104,7 +100,7 @@ namespace DiscordCoreLoader {
 		this->randomizeId(theData.lastMessageId);
 		this->randomizeId(theData.applicationId);
 		this->randomizeId(theData.member.userId);
-		theData.flags = this->randomize16BitUInt();
+		theData.flags = static_cast<ChannelFlags>(this->randomize16BitUInt());
 		this->randomizeId(theData.member.id);
 		this->randomizeId(theData.parentId);
 		this->randomizeId(theData.ownerId);
@@ -119,79 +115,22 @@ namespace DiscordCoreLoader {
 		auto roleCount = this->randomize64BitUInt(static_cast<double>(this->meanForRoleCount), static_cast<double>(this->stdDeviationForRoleCount));
 		std::vector<uint64_t> thePositions{};
 		for (uint32_t x = 0; x < roleCount; x++) {
-			thePositions.emplace_back(x);
+					thePositions.emplace_back(x);
 		}
 		for (uint32_t x = 0; x < roleCount; x++) {
-			theData.roles.emplace_back(this->generateRole(thePositions[x]));
+		theData.roles.emplace_back(this->generateRole(thePositions[x]));
 		}
 		auto channelCount =
 			this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount));
 		for (uint64_t x = 0; x < channelCount; x++) {
-			theData.channels.emplace_back(this->generateChannel(guildId));
-		}
-		theData.memberCount =
+					theData.channels.emplace_back(this->generateChannel(guildId));
+		} 
+		auto memberCount =
 			this->randomize64BitUInt(static_cast<double>(this->meanForMemberCount), static_cast<double>(this->stdDeviationForMemberCount));
-		for (uint64_t x = 0; x < theData.memberCount; x++) {
-			theData.members.emplace_back(this->generateGuildMember(guildId, theData.roles));
+		for (uint64_t x = 0; x < memberCount; x++) {
+					theData.members.emplace_back(this->generateGuildMember(guildId, theData.roles));
 		}
-
-		theData.defaultMessageNotifications = static_cast<DefaultMessageNotificationLevel>(this->randomize8BitInt());
-		theData.afkTimeOut = static_cast<AfkTimeOutDurations>(this->randomize16BitUInt());
-		theData.approximatePresenceCount = this->randomize32BitUInt();
-		theData.approximateMemberCount = this->randomize32BitUInt();
-		theData.banner = this->randomizeIconHash();
-		this->randomizeId(theData.applicationId);
-		this->randomizeId(theData.afkChannelId);
-		theData.description = this->randomizeString(
-			this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		theData.discoverySplash = this->randomizeIconHash();
-		theData.explicitContentFilter = static_cast<ExplicitContentFilterLevel>(this->randomize8BitUInt());
-		for (int32_t x = 0; x < this->randomize8BitUInt() % 25; x++) {
-			theData.features.emplace_back(this->randomizeString(
-				this->randomize64BitUInt(static_cast<double>(this->meanForChannelCount), static_cast<double>(this->stdDeviationForChannelCount))));
-		}
-		theData.flags = this->randomize8BitUInt();
-		theData.icon = this->randomizeIconHash();
-		theData.iconHash = this->randomizeIconHash();
 		theData.id = guildId;
-		theData.joinedAt = "";
-		theData.maxMembers = this->randomize32BitUInt();
-		theData.maxPresences = this->randomize32BitUInt();
-		theData.maxVideoChannelUsers = this->randomize32BitUInt();
-		theData.mfaLevel = static_cast<MFALevel>(this->randomize8BitUInt());
-		theData.name = this->randomizeString(
-			this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		theData.nsfwLevel = GuildNSFWLevel{ this->randomize8BitUInt() };
-		this->randomizeId(theData.ownerId);
-		theData.permissions = std::to_string(this->randomize64BitUInt());
-		theData.preferredLocale = this->randomizeString(4);
-		theData.premiumSubscriptionCount = this->randomize32BitUInt();
-		theData.premiumTier = PremiumTier{ this->randomize8BitUInt() };
-		for (int32_t x = 0; x < theData.memberCount; x++) {
-			PresenceUpdateData theDataNew{};
-			ClientStatusData theDataNewer{};
-			theDataNewer.desktop = this->randomizeString(
-				this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-			theDataNewer.mobile = this->randomizeString(
-				this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-			theDataNewer.web = this->randomizeString(
-				this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-			theDataNew.clientStatus = theDataNewer;
-			theDataNew.guildId = guildId;
-			theDataNew.status = this->randomizeString(
-				this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-			theDataNew.user = this->generateUser();
-			theData.presences.emplace_back(theDataNew);
-		}
-		this->randomizeId(theData.publicUpdatesChannelId);
-		theData.region = this->randomizeString(
-			this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		this->randomizeId(theData.rulesChannelId);
-		theData.splash = this->randomizeIconHash();
-		theData.systemChannelFlags = SystemChannelFlags{ this->randomize8BitUInt() };
-		this->randomizeId(theData.systemChannelId);
-		theData.vanityUrlCode = this->randomizeString(5);
-		theData.verificationLevel = VerificationLevel{ this->randomize8BitUInt() };
 		/*
 		for (int32_t x = 0; x < theData.memberCount; x++) {
 			VoiceStateData theDataNew{};
@@ -210,12 +149,6 @@ namespace DiscordCoreLoader {
 			theData.voiceStates.insert_or_assign(theDataNew.userId, theDataNew);
 		}*/
 
-		WelcomeScreenData theDataNew{};
-		theDataNew.description = this->randomizeString(
-			this->randomize64BitUInt(static_cast<double>(this->meanForStringLength), static_cast<double>(this->stdDeviationForStringLength)));
-		theData.welcomeScreen = theDataNew;
-		this->randomizeId(theData.widgetChannelId);
-
 		return theData;
 	}
 
@@ -232,7 +165,7 @@ namespace DiscordCoreLoader {
 		theData.hoist = static_cast<bool>(this->randomize8BitInt(0, 1));
 		this->randomizeId(theData.tags.integrationId);
 		theData.color = this->randomize8BitInt();
-		theData.flags = this->randomize8BitInt();
+		theData.flags = static_cast<RoleFlags>(this->randomize8BitInt());
 		this->randomizeId(theData.tags.botId);
 		theData.icon = this->randomizeIconHash();
 		this->randomizeId(theData.id);

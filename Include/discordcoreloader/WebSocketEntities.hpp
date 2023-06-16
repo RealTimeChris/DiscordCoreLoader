@@ -67,7 +67,7 @@ namespace DiscordCoreLoader {
 			4014///< You sent a disallowed intent for a Gateway Intent. You may have tried to specify an intent that you have not enabled.
 	};
 
-	class BaseSocketAgent : public EtfParser {
+	class BaseSocketAgent : public EtfParser  {
 	  public:
 		friend class DiscordCoreClient;
 		friend class WebSocketSSLShard;

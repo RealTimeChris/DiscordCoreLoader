@@ -34,6 +34,28 @@ namespace DiscordCoreLoader {
 		*static_cast<std::runtime_error*>(this) = std::runtime_error{ stream.str() };
 	}
 
+	GuildData::operator EtfSerializer() noexcept {
+		EtfSerializer data{};
+		for (auto& value: this->channels) {
+			EtfSerializer channel{};
+			channel["id"] = value.id;
+			data["channels"].emplaceBack(channel);
+		}
+
+		for (auto& value: this->roles) {
+			EtfSerializer role{};
+			role["id"] = value.id;
+			data["roles"].emplaceBack(role);
+		}
+
+		for (auto& value: this->members) {
+			EtfSerializer member{};
+			member["id"] = value.id;
+			data["members"].emplaceBack(member);
+		}
+		return data;
+	}
+
 	void reportException(const std::string& currentFunctionName, std::source_location theLocation) {
 		try {
 			auto currentException = std::current_exception();

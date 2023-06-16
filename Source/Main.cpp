@@ -14,15 +14,16 @@
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
-/// Main.cpp - Defines the entry point for the application.
+/// main.cpp - Defines the entry point for the application.
 /// May 22, 2022
 /// https://github.com/RealTimeChris/DiscordCoreLoader
-/// \file Main.cpp
+/// \file main.cpp
 
 #include <discordcoreloader/DiscordCoreClient.hpp>
 
 int32_t main() {
 	try {
+		std::cout << "WERE HERE THIS IS IT!" << std::endl;
 		DiscordCoreLoader::DiscordCoreClient theClient{ "Config.json" };
 		theClient.runServer();
 	} catch (...) {

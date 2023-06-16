@@ -46,7 +46,7 @@ namespace DiscordCoreLoader {
 #endif
 		Jsonifier::JsonifierCore parser{};
 		std::string fileContents = loadFileContents(currentPath);
-		parser.parseJson(this->theData, fileContents);
+		parser.parseJson<true>(this->theData, fileContents);
 	}
 
 }// namespace DiscordCoreLoader
