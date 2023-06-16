@@ -57,7 +57,7 @@ namespace DiscordCoreLoader {
 	#endif
 		stream << WSAGetLastError() << ", " << string << std::endl;
 #else
-		stream << strerror(errno) << DiscordCoreAPI::reset();
+		stream << strerror(errno) << DiscordCoreLoader::reset();
 #endif
 		return stream.str();
 	}
@@ -463,14 +463,14 @@ namespace DiscordCoreLoader {
 			}
 			return;
 		}
-
+		/*
 		if (!SSL_CTX_set_min_proto_version(this->context, TLS1_2_VERSION)) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_set_min_proto_version() Error: ");
 			}
 			return;
 		}
-
+		*/
 		if (!SSL_CTX_set_ciphersuites(this->context, "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256")) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_set_ciphersuites() Error: ");

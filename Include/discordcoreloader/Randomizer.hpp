@@ -69,8 +69,8 @@ namespace DiscordCoreLoader {
 		int8_t randomize8BitInt();
 
 	  protected:
-		std::random_device randomDevice{};
 		std::mt19937_64 randomEngine{ this->randomDevice() };
+		std::random_device randomDevice{};
 		std::recursive_mutex theMutex{};
 	};
 }

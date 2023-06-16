@@ -21,10 +21,10 @@
 
 #pragma once
 
-#include <discordcoreloader/DataParsingFunctions.hpp>
-#include <discordcoreloader/ErlParser.hpp>
+#include <discordcoreloader/ObjectGenerator.hpp>
 #include <discordcoreloader/SSLClients.hpp>
-#include <discordcoreloader/JSONIfier.hpp>
+#include <discordcoreloader/ErlParser.hpp>
+#include <Jsonifier/Index.hpp>
 
 namespace DiscordCoreLoader {
 
@@ -67,7 +67,7 @@ namespace DiscordCoreLoader {
 			4014///< You sent a disallowed intent for a Gateway Intent. You may have tried to specify an intent that you have not enabled.
 	};
 
-	class BaseSocketAgent : public ErlParser {
+	class BaseSocketAgent : public EtfParser {
 	  public:
 		friend class DiscordCoreClient;
 		friend class WebSocketSSLShard;
@@ -75,7 +75,7 @@ namespace DiscordCoreLoader {
 		BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew,
 			bool doWeInstantiateAThread) noexcept;
 
-		void sendMessage(Jsonifier&& dataToSend, WebSocketOpCode theOpCode, SSLClient* theShard, bool priority) noexcept;
+		void sendMessage(std::string&& dataToSend, WebSocketOpCode theOpCode, SSLClient* theShard, bool priority) noexcept;
 
 		void sendMessage(std::string* dataToSend, SSLClient* theShard, bool priority) noexcept;
 
@@ -90,15 +90,15 @@ namespace DiscordCoreLoader {
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
-		simdjson::ondemand::parser theParser{};
-		int32_t heartbeatInterval{ 45000 };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_int32_t workerCount{ -1 };
+		int32_t heartbeatInterval{ 45000 };
+		Jsonifier::JsonifierCore parser{};
+		ObjectGenerator randomizer{};
 		int32_t currentClientSize{};
+		std::string stringBuffer{};
 		uint16_t closeCode{ 0 };
-		JSONIFier jsonifier{};
 		std::string sessionId{};
-
 
 		std::vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
 

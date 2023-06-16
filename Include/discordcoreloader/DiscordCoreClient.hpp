@@ -89,13 +89,13 @@ namespace DiscordCoreLoader {
 		std::atomic_int32_t workerCount{ -1 };
 		std::atomic_int32_t guildQuantity{};
 		ShardingOptions shardingOptions{};
+		ObjectGenerator randomizer{};
 		ConfigParser configParser{};
 #ifdef _WIN32
 		WSADataWrapper theWSAData{};
 #endif
 		std::mutex coutMutex{};
 		std::mutex theMutex{};
-		JSONIFier jsonifier{};
 
 
 		void connectShard();
