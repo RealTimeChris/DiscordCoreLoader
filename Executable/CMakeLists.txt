@@ -47,7 +47,7 @@ target_link_libraries(
 	$<$<TARGET_EXISTS:OpenSSL::Crypto>:OpenSSL::Crypto>
 	$<$<TARGET_EXISTS:OpenSSL::SSL>:OpenSSL::SSL>
 	$<$<TARGET_EXISTS:Threads::Threads>:Threads::Threads>
-	$<$<TARGET_EXISTS:simdjson::simdjson>:simdjson::simdjson>
+	$<$<TARGET_EXISTS:Jsonifier::Jsonifier>:Jsonifier::Jsonifier>
 )
 
 target_compile_features(

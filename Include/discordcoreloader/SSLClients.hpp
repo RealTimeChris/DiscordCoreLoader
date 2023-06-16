@@ -32,7 +32,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/JSONIfier.hpp>
+#include <discordcoreloader/ConfigParser.hpp>
+
 extern "C" {
 	#undef APPMACROS_ONLY
 	#include <openssl/err.h>
@@ -89,6 +90,7 @@ namespace DiscordCoreLoader {
 		std::vector<uint32_t> theIndices{};
 		std::vector<pollfd> thePolls{};
 	};
+
 	class BaseSocketAgent;
 
 	struct MessagePackage {
@@ -97,9 +99,11 @@ namespace DiscordCoreLoader {
 
 	struct WebSocketMessage {
 		WebSocketMessage& operator=(WebSocketMessage&& other) noexcept {
-			this->stringMsg = std::move(other.stringMsg);
-			this->jsonMsg = std::move(other.jsonMsg);
 			this->theOpCode = other.theOpCode;
+			this->t = std::move(other.t);
+			this->d = std::move(other.d);
+			this->op = other.op;
+			this->s = other.s;
 			return *this;
 		}
 		WebSocketMessage(WebSocketMessage&& other) noexcept {
@@ -107,8 +111,10 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage& operator=(const WebSocketMessage& other) noexcept {
 			this->theOpCode = other.theOpCode;
-			this->stringMsg = other.stringMsg;
-			this->jsonMsg = other.jsonMsg;
+			this->op = other.op;
+			this->t = other.t;
+			this->d = other.d;
+			this->s = other.s;
 			return *this;
 		}
 		WebSocketMessage(const WebSocketMessage& other) noexcept {
@@ -116,8 +122,10 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage() = default;
 		WebSocketOpCode theOpCode{};
-		Jsonifier jsonMsg{};
-		std::string stringMsg{};
+		Jsonifier::RawJsonData d{};
+		std::string t{};
+		int32_t op{};
+		int32_t s{};
 	};
 
 	std::string reportError(const char* errorPosition, int32_t errorValue) noexcept;
@@ -284,8 +292,7 @@ namespace DiscordCoreLoader {
 		std::string serverToClientBuffer{};
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
-		Jsonifier theGuildHolder{};
-		SSLWrapper ssl{};
+		GuildData theGuildHolder{};
 		int64_t currentGuildCount{};
 		WebSocketState theState{};
 		bool sendGuilds{ false };
@@ -297,6 +304,7 @@ namespace DiscordCoreLoader {
 		std::string inputBuffer{};
 		uint32_t shard[2]{};
 		std::string authKey{};
+		SSLWrapper ssl{};
 	};
 
 	struct ReconnectionPackage {
@@ -333,4 +341,4 @@ namespace DiscordCoreLoader {
 		std::string port{};
 	};
 
-}// namespace
+}// 

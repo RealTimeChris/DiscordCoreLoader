@@ -21,7 +21,7 @@
 
 #include <discordcoreloader/FoundationEntities.hpp>
 #include <discordcoreloader/ConfigParser.hpp>
-#include <discordcoreloader/DataParsingFunctions.hpp>
+#include <discordcoreloader/JsonSpecializations.hpp>
 #include <filesystem>
 
 namespace DiscordCoreLoader {
@@ -38,33 +38,15 @@ namespace DiscordCoreLoader {
 		std::stringstream theStream{};
 		theStream << std::filesystem::current_path();
 		std::string currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
+		
 #ifdef _WIN32
 		currentPath += "\\" + configFilePath;
 #elif __linux__
 		currentPath += "/" + configFilePath;
 #endif
-		simdjson::ondemand::parser parser{};
+		Jsonifier::JsonifierCore parser{};
 		std::string fileContents = loadFileContents(currentPath);
-		fileContents.reserve(fileContents.size() + simdjson::SIMDJSON_PADDING);
-		auto theDocument = parser.iterate(fileContents.data(), fileContents.length(), parser.capacity());
-		this->theData.connectionIp = theDocument["ConnectionIp"].get_string().take_value();
-		this->theData.connectionPort = theDocument["ConnectionPort"].get_string().take_value();
-		this->theData.doWePrintGeneralSuccessMessages = theDocument["DoWePrintGeneralSuccessMessages"].get_bool().take_value();
-		this->theData.doWePrintGeneralErrorMessages = theDocument["DoWePrintGeneralErrorMessages"].get_bool().take_value();
-		this->theData.doWePrintWebSocketSuccessReceiveMessages = theDocument["DoWePrintWebSocketSuccessReceiveMessages"].get_bool().take_value();
-		this->theData.doWePrintWebSocketSuccessSentMessages = theDocument["DoWePrintWebSocketSuccessSentMessages"].get_bool().take_value();
-		this->theData.doWePrintWebSocketErrorMessages = theDocument["DoWePrintWebSocketErrorMessages"].get_bool().take_value();
-		this->theData.guildQuantity = theDocument["GuildQuantity"].get_uint64().take_value();
-		this->theData.stdDeviationForStringLength = theDocument["StdDeviationForStringLength"].get_uint64().take_value();
-		this->theData.meanForStringLength = theDocument["MeanForStringLength"].get_uint64().take_value();
-		this->theData.stdDeviationForRoleCount = theDocument["StdDeviationForRoleCount"].get_uint64().take_value();
-		this->theData.meanForRoleCount = theDocument["MeanForRoleCount"].get_uint64().take_value();
-		this->theData.stdDeviationForChannelCount = theDocument["StdDeviationForChannelCount"].get_uint64().take_value();
-		this->theData.meanForChannelCount = theDocument["MeanForChannelCount"].get_uint64().take_value();
-		this->theData.stdDeviationForMemberCount = theDocument["StdDeviationForMemberCount"].get_uint64().take_value();
-		this->theData.meanForMemberCount = theDocument["MeanForMemberCount"].get_uint64().take_value();
-		this->theData.stdDeviationForRoleCount = theDocument["StdDeviationForRoleCount"].get_uint64().take_value();
-		this->theData.meanForRoleCount = theDocument["MeanForRoleCount"].get_uint64().take_value();
+		parser.parseJson(this->theData, fileContents);
 	}
 
 }// namespace DiscordCoreLoader

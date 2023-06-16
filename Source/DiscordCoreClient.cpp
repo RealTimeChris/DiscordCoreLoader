@@ -96,7 +96,7 @@ namespace DiscordCoreLoader {
 		std::signal(SIGFPE, errorLambda);
 		this->configParser = ConfigParser{ configFilePath };
 		this->guildQuantity.store(this->configParser.getTheData().guildQuantity);
-		this->jsonifier = this->configParser.getTheData();
+		this->randomizer = this->configParser.getTheData();
 	}
 
 	void DiscordCoreClient::connectShard() {

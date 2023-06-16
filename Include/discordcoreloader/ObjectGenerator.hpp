@@ -22,24 +22,27 @@
 #pragma once
 
 #include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/Randomizer.hpp>
 #include <discordcoreloader/ConfigParser.hpp>
+#include <discordcoreloader/Randomizer.hpp>
 
 namespace DiscordCoreLoader {
 
 	class ObjectGenerator : public Randomizer {
 	  public:
-		std::unique_ptr<GuildMemberData> generateGuildMember(const std::string& guildId, const std::vector<std::unique_ptr<RoleData>>& roles);
+
+		ObjectGenerator& operator=(ConfigData&& configData);
+
+		GuildMemberData generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 
-		std::unique_ptr<ChannelData> generateChannel(std::string guildId);
+		ChannelData generateChannel(std::string guildId);
 
-		std::unique_ptr<GuildData> generateGuild(std::string guildId);
+		GuildData generateGuild(std::string guildId);
 
-		std::unique_ptr<RoleData> generateRole(uint64_t position);
+		RoleData generateRole(uint64_t position);
 
-		std::unique_ptr<UserData> generateUser();
+		UserData generateUser();
 
 	  protected:
 		uint64_t stdDeviationForStringLength{};
