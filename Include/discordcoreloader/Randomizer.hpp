@@ -42,7 +42,7 @@ namespace DiscordCoreLoader {
 
 		int8_t randomize8BitInt(uint8_t minValue, uint8_t maxValue);
 
-		uint64_t drawRandomValue(std::vector<uint64_t>&);
+		uint64_t drawRandomValue(Jsonifier::Vector<uint64_t>&);
 
 		std::string randomizeString(int64_t length);
 

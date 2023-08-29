@@ -168,35 +168,34 @@ namespace DiscordCoreLoader {
 
 	/// Gateway intents. \brief Gateway intents.
 	enum class GatewayIntents : int32_t {
-		Guilds = 1 << 0,///< Intent for receipt of Guild information.
-		Guild_Members = 1 << 1,///< Intent for receipt of Guild members.
-		Guild_Bans = 1 << 2,///< Intent for receipt of Guild bans.
-		Guild_Emojis = 1 << 3,///< Intent for receipt of Guild emojis.
-		Guild_Integrations = 1 << 4,///< Intent for receipt of Guild integrations.
-		Guild_Webhooks = 1 << 5,///< Intent for receipt of Guild webhooks.
-		Guild_Invites = 1 << 6,///< Intent for receipt of Guild invites.
-		Guild_VoiceStates = 1 << 7,///< Intent for receipt of Guild voice states.
-		Guild_Presences = 1 << 8,///< Intent for receipt of Guild presences.
-		Guild_Messages = 1 << 9,///< Intent for receipt of Guild messages.
-		Guild_Message_Reactions = 1 << 10,///< Intent for receipt of Guild message reactions.
-		Guild_Message_Typing = 1 << 11,///< Intent for receipt of Guild message typing notifications.
-		Direct_Messages = 1 << 12,///< Intent for receipt of direct messages (DMs).
+		Guilds					 = 1 << 0,///< Intent for receipt of Guild information.
+		Guild_Members			 = 1 << 1,///< Intent for receipt of Guild members.
+		Guild_Bans				 = 1 << 2,///< Intent for receipt of Guild bans.
+		Guild_Emojis			 = 1 << 3,///< Intent for receipt of Guild emojis.
+		Guild_Integrations		 = 1 << 4,///< Intent for receipt of Guild integrations.
+		Guild_Webhooks			 = 1 << 5,///< Intent for receipt of Guild webhooks.
+		Guild_Invites			 = 1 << 6,///< Intent for receipt of Guild invites.
+		Guild_VoiceStates		 = 1 << 7,///< Intent for receipt of Guild voice states.
+		Guild_Presences			 = 1 << 8,///< Intent for receipt of Guild presences.
+		Guild_Messages			 = 1 << 9,///< Intent for receipt of Guild messages.
+		Guild_Message_Reactions	 = 1 << 10,///< Intent for receipt of Guild message reactions.
+		Guild_Message_Typing	 = 1 << 11,///< Intent for receipt of Guild message typing notifications.
+		Direct_Messages			 = 1 << 12,///< Intent for receipt of direct messages (DMs).
 		Direct_Message_Reactions = 1 << 13,///< Intent for receipt of direct message reactions.
-		Direct_Message_Typing = 1 << 14,///< Intent for receipt of direct message typing notifications.
-		Message_Content = 1 << 15,///< Intent for receipt of message content.
-		Guild_Scheduled_Events = 1 << 16,///< Scheduled events.
-		Default_Intents = Guilds | Guild_Bans | Guild_Emojis | Guild_Integrations | Guild_Webhooks | Guild_Invites | Guild_VoiceStates |
-			Guild_Messages | Guild_Message_Reactions | Guild_Message_Typing | Direct_Messages | Direct_Message_Reactions | Direct_Message_Typing |
-			Guild_Scheduled_Events,///< Default intents (all non-privileged intents).
+		Direct_Message_Typing	 = 1 << 14,///< Intent for receipt of direct message typing notifications.
+		Message_Content			 = 1 << 15,///< Intent for receipt of message content.
+		Guild_Scheduled_Events	 = 1 << 16,///< Scheduled events.
+		Default_Intents = Guilds | Guild_Bans | Guild_Emojis | Guild_Integrations | Guild_Webhooks | Guild_Invites | Guild_VoiceStates | Guild_Messages | Guild_Message_Reactions |
+			Guild_Message_Typing | Direct_Messages | Direct_Message_Reactions | Direct_Message_Typing | Guild_Scheduled_Events,///< Default intents (all non-privileged intents).
 		Privileged_Intents = Guild_Members | Guild_Presences | Message_Content,///< Privileged intents requiring ID.
-		All_Intents = Default_Intents | Privileged_Intents///< Every single intent.
+		All_Intents		   = Default_Intents | Privileged_Intents///< Every single intent.
 	};
-	
+
 	struct WebSocketIdentifyData {
-		std::vector<uint32_t> shard{};
+		Jsonifier::Vector<uint32_t> shard{};
 		GatewayIntents intents{};
 	};
-		
+
 	struct HelloData {
 		int32_t heartBeatInterval{};
 	};
@@ -502,15 +501,12 @@ namespace DiscordCoreLoader {
 	/**@}*/
 
 	struct RequestGuildMembersData {
-		std::vector<std::string>
-			userIds{};///< Snowflake or array of snowflakes used to specify which users you wish to fetch one of query or user_ids.
+		Jsonifier::Vector<std::string> userIds{};///< Snowflake or array of snowflakes used to specify which users you wish to fetch one of query or user_ids.
 		bool presences{ false };///< Used to specify if we want the presences of the matched members.
 		std::string guildId{};///< Id of the guild to get members for.
 		std::string nonce{};///< Nonce to identify the Guild Members Chunk response.
 		std::string query{};///< std::string string that username starts with, or an empty string to return all members. one of query or user_ids.
-		int32_t limit{
-			0
-		};///< Maximum number of members to send matching the query; a limit of 0 can be used with an empty string query to return all members.
+		int32_t limit{ 0 };///< Maximum number of members to send matching the query; a limit of 0 can be used with an empty string query to return all members.
 	};
 
 	class Time {
@@ -518,10 +514,10 @@ namespace DiscordCoreLoader {
 		Time(int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second) {
 			this->second = second;
 			this->minute = minute;
-			this->month = month;
-			this->year = year;
-			this->hour = hour;
-			this->day = day;
+			this->month	 = month;
+			this->year	 = year;
+			this->hour	 = hour;
+			this->day	 = day;
 		};
 
 		uint64_t getTime() {
@@ -642,18 +638,18 @@ namespace DiscordCoreLoader {
 
 	/// Time formatting methods. \brief Time formatting methods.
 	enum class TimeFormat {
-		LongDate = 'D',///< "20 April 2021" - Long Date
-		LongDateTime = 'F',///< "Tuesday, 20 April 2021 16:20" - Long Date/Time
-		LongTime = 'T',///< "16:20:30" - Long Time
-		ShortDate = 'd',///< "20/04/2021" - Short Date
+		LongDate	  = 'D',///< "20 April 2021" - Long Date
+		LongDateTime  = 'F',///< "Tuesday, 20 April 2021 16:20" - Long Date/Time
+		LongTime	  = 'T',///< "16:20:30" - Long Time
+		ShortDate	  = 'd',///< "20/04/2021" - Short Date
 		ShortDateTime = 'f',///< "20 April 2021 16:20" - Short Date/Time
-		ShortTime = 't',///< "16:20" - Short Time
+		ShortTime	  = 't',///< "16:20" - Short Time
 	};
 
 	/**@}*/
 
-	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour,
-		const std::string& minute, const std::string& second);
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour, const std::string& minute,
+		const std::string& second);
 
 	void reportException(const std::string& currentFunctionName, std::source_location theLocation = std::source_location::current());
 
@@ -698,47 +694,47 @@ namespace DiscordCoreLoader {
 
 	/// Permission values, for a given Channel, by Role or GuildMember. \brief Permission values, for a given Channel, by Role or GuildMember.
 	enum class Permission : uint64_t {
-		Create_Instant_Invite = 1ull << 0,///< Create Instant Invite.
-		Kick_Members = 1ull << 1ull,///< Kick Members.
-		Ban_Members = 1ull << 2,///< Ban Members.
-		Administrator = 1ull << 3,///< Administrator.
-		Manage_Channels = 1ull << 4,///< Manage Channels.
-		Manage_Guild = 1ull << 5,///< Manage Guild.
-		Add_Reactions = 1ull << 6,///< Add Reactions.
-		View_Audit_Log = 1ull << 7,///< View Audit Log.
-		Priority_Speaker = 1ull << 8,///< Priority Speaker.
-		Stream = 1ull << 9,///< Stream.
-		View_Channel = 1ull << 10,///< View Channel.
-		Send_Messages = 1ull << 11,///< Send Messages.
-		Send_Tts_Messages = 1ull << 12,///< Send TTS Messages.
-		Manage_Messages = 1ull << 13,///< Manage Messages.
-		Embed_Links = 1ull << 14,///< Embed Links.
-		Attach_Files = 1ull << 15,///< Attach Files.
-		Read_Message_History = 1ull << 16,///< Read Message History.
-		Mention_Everyone = 1ull << 17,///< Mention Everyone.
-		Use_External_Emojis = 1ull << 18,///< Use External Emoji.
-		View_Guild_Insights = 1ull << 19,///< View Guild Insights.
-		Connect = 1ull << 20,///< Connect.
-		Speak = 1ull << 21,///< Speak.
-		Mute_Members = 1ull << 22,///< Mute Members.
-		Deafen_Members = 1ull << 23,///< Deafen Members.
-		Move_Members = 1ull << 24,///< Move Members.
-		Use_Vad = 1ull << 25,///< Use VAD.
-		Change_Nickname = 1ull << 26,///< Change Nickname.
-		Manage_Nicknames = 1ull << 27,///< Manage Nicknames.
-		Manage_Roles = 1ull << 28,///< Manage Roles.
-		Manage_Webhooks = 1ull << 29,///< Manage Webhooks.
+		Create_Instant_Invite	   = 1ull << 0,///< Create Instant Invite.
+		Kick_Members			   = 1ull << 1ull,///< Kick Members.
+		Ban_Members				   = 1ull << 2,///< Ban Members.
+		Administrator			   = 1ull << 3,///< Administrator.
+		Manage_Channels			   = 1ull << 4,///< Manage Channels.
+		Manage_Guild			   = 1ull << 5,///< Manage Guild.
+		Add_Reactions			   = 1ull << 6,///< Add Reactions.
+		View_Audit_Log			   = 1ull << 7,///< View Audit Log.
+		Priority_Speaker		   = 1ull << 8,///< Priority Speaker.
+		Stream					   = 1ull << 9,///< Stream.
+		View_Channel			   = 1ull << 10,///< View Channel.
+		Send_Messages			   = 1ull << 11,///< Send Messages.
+		Send_Tts_Messages		   = 1ull << 12,///< Send TTS Messages.
+		Manage_Messages			   = 1ull << 13,///< Manage Messages.
+		Embed_Links				   = 1ull << 14,///< Embed Links.
+		Attach_Files			   = 1ull << 15,///< Attach Files.
+		Read_Message_History	   = 1ull << 16,///< Read Message History.
+		Mention_Everyone		   = 1ull << 17,///< Mention Everyone.
+		Use_External_Emojis		   = 1ull << 18,///< Use External Emoji.
+		View_Guild_Insights		   = 1ull << 19,///< View Guild Insights.
+		Connect					   = 1ull << 20,///< Connect.
+		Speak					   = 1ull << 21,///< Speak.
+		Mute_Members			   = 1ull << 22,///< Mute Members.
+		Deafen_Members			   = 1ull << 23,///< Deafen Members.
+		Move_Members			   = 1ull << 24,///< Move Members.
+		Use_Vad					   = 1ull << 25,///< Use VAD.
+		Change_Nickname			   = 1ull << 26,///< Change Nickname.
+		Manage_Nicknames		   = 1ull << 27,///< Manage Nicknames.
+		Manage_Roles			   = 1ull << 28,///< Manage Roles.
+		Manage_Webhooks			   = 1ull << 29,///< Manage Webhooks.
 		Manage_Emojis_And_Stickers = 1ull << 30,///< Manage Emojis And Stickers.
-		Use_Application_Commands = 1ull << 31,///< Use Application Commands.
-		Request_To_Speak = 1ull << 32,///< Request To Speak.
-		Manage_Events = 1ull << 33,///< Manage Events.
-		Manage_Threads = 1ull << 34,///< Manage Threads.
-		Create_Public_Threads = 1ull << 35,///< Create Public Threads.
-		Create_Private_Threads = 1ull << 36,///< Create Private Threads.
-		Use_External_Stickers = 1ull << 37,///< Use External Stickers.
-		Send_Messages_In_Threads = 1ull << 38,///< Send Messages In Threads.
-		Start_Embedded_Activities = 1ull << 39,///< Start Embedded Activities.
-		Moderate_Members = 1ull << 40///< Moderate Members.
+		Use_Application_Commands   = 1ull << 31,///< Use Application Commands.
+		Request_To_Speak		   = 1ull << 32,///< Request To Speak.
+		Manage_Events			   = 1ull << 33,///< Manage Events.
+		Manage_Threads			   = 1ull << 34,///< Manage Threads.
+		Create_Public_Threads	   = 1ull << 35,///< Create Public Threads.
+		Create_Private_Threads	   = 1ull << 36,///< Create Private Threads.
+		Use_External_Stickers	   = 1ull << 37,///< Use External Stickers.
+		Send_Messages_In_Threads   = 1ull << 38,///< Send Messages In Threads.
+		Start_Embedded_Activities  = 1ull << 39,///< Start Embedded Activities.
+		Moderate_Members		   = 1ull << 40///< Moderate Members.
 	};
 
 	/**@}*/
@@ -779,8 +775,7 @@ namespace DiscordCoreLoader {
 	/// \param monthsToAdd An int32_t containing the number of months to increment the timestamp forward for.
 	/// \param yearsToAdd An int32_t containing the number of years to increment the timestamp forward for.
 	/// \returns std::string A string containing the new ISO8601 timestamp.
-	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd = 0, int32_t daysToAdd = 0, int32_t monthsToAdd = 0,
-		int32_t yearsToAdd = 0);
+	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd = 0, int32_t daysToAdd = 0, int32_t monthsToAdd = 0, int32_t yearsToAdd = 0);
 
 	/// Acquires a timestamp with the current time and date - suitable for use in message-embeds. \brief Acquires a timestamp with the current time and date - suitable for use in message-embeds.
 	/// \returns std::string A std::string containing the current date-time stamp.
@@ -815,7 +810,7 @@ namespace DiscordCoreLoader {
 		/// \param timeFormat A TimeFormat value, for selecting the output type.
 		/// \returns string A string containing the returned timestamp.
 		std::string getDateTimeStamp(TimeFormat timeFormat) {
-			this->timeStampInMs = convertTimestampToMsInteger(this->originalTimeStamp);
+			this->timeStampInMs	  = convertTimestampToMsInteger(this->originalTimeStamp);
 			std::string newString = convertTimeInMsToDateTimeString(this->timeStampInMs, timeFormat);
 			return newString;
 		}
@@ -840,13 +835,13 @@ namespace DiscordCoreLoader {
 
 	/// Timeout durations for the timeout command. \brief Timeout durations for the timeout command.
 	enum class TimeoutDurations {
-		None = 0,///< None - remove timeout.
-		Minute = 1,///< 1 Minute timeout.
+		None		 = 0,///< None - remove timeout.
+		Minute		 = 1,///< 1 Minute timeout.
 		Five_Minutes = 5,///< 5 Minute timeout.
-		Ten_Minutes = 10,///< 10 Minute timeout.
-		Hour = 60,///< 1 Hour timeout.
-		Day = 1440,///< 1 Day timeout.
-		Week = 10080///< 1 Week timeout.
+		Ten_Minutes	 = 10,///< 10 Minute timeout.
+		Hour		 = 60,///< 1 Hour timeout.
+		Day			 = 1440,///< 1 Day timeout.
+		Week		 = 10080///< 1 Week timeout.
 	};
 
 	/// For ids of DiscordEntities. \brief For ids of DiscordEntities.
@@ -915,31 +910,31 @@ namespace DiscordCoreLoader {
 
 	/// User flags. \brief User flags.
 	enum class UserFlags : int32_t {
-		Staff = 1 << 0,///< Discord Employee.
-		Partner = 1 << 1,///< Partnered Server Owner.
-		Hypesquad = 1 << 2,///< HypeSquad Events Member.
-		Bug_Hunter_Level_1 = 1 << 3,///< Bug Hunter Level 1.
+		Staff					 = 1 << 0,///< Discord Employee.
+		Partner					 = 1 << 1,///< Partnered Server Owner.
+		Hypesquad				 = 1 << 2,///< HypeSquad Events Member.
+		Bug_Hunter_Level_1		 = 1 << 3,///< Bug Hunter Level 1.
 		Hypesquad_Online_House_1 = 1 << 6,///< House Bravery Member.
 		Hypesquad_Online_House_2 = 1 << 7,///< House Brilliance Member.
 		Hypesquad_Online_House_3 = 1 << 8,///< House Balance Member.
 		Premium_Early_Suppoerter = 1 << 9,///< Early Nitro Supporter.
-		Team_Pseudo_User = 1 << 10,///< User is a team.
-		Bug_Hunter_Level_2 = 1 << 14,///< Bug Hunter Level 2.
-		Verified_Bot = 1 << 16,///< Verified Bot.
-		Verified_Developer = 1 << 17,///< Early Verified Bot Developer.
-		Certified_Moderator = 1 << 18,///< Discord Certified Moderator.
-		Bot_Http_Interactions = 1 << 19,///< Bot uses only HTTP interactions and is shown in the online member list.
-		Bot = 1 << 20,///< Is it a bot?
-		MFAEnabled = 1 << 21,///< Is MFA enabled?
-		System = 1 << 22,///< Is it a system integration?
-		Verified = 1 << 23///< Is it verified?
+		Team_Pseudo_User		 = 1 << 10,///< User is a team.
+		Bug_Hunter_Level_2		 = 1 << 14,///< Bug Hunter Level 2.
+		Verified_Bot			 = 1 << 16,///< Verified Bot.
+		Verified_Developer		 = 1 << 17,///< Early Verified Bot Developer.
+		Certified_Moderator		 = 1 << 18,///< Discord Certified Moderator.
+		Bot_Http_Interactions	 = 1 << 19,///< Bot uses only HTTP interactions and is shown in the online member list.
+		Bot						 = 1 << 20,///< Is it a bot?
+		MFAEnabled				 = 1 << 21,///< Is MFA enabled?
+		System					 = 1 << 22,///< Is it a system integration?
+		Verified				 = 1 << 23///< Is it verified?
 	};
 
 	/// Premium types denote the level of premium a user has. \brief Premium types denote the level of premium a user has.
 	enum class PremiumType : int8_t {
-		None = 0,///< None.
+		None		  = 0,///< None.
 		Nitro_Classic = 1,///< Nitro classic.
-		Nitro = 2///< Nitro.
+		Nitro		  = 2///< Nitro.
 	};
 
 	/// Data structure representing a single User. \brief Data structure representing a single User.
@@ -990,8 +985,8 @@ namespace DiscordCoreLoader {
 
 	/// Sticker format types. \brief Sticker format types.
 	enum class StickerFormatType {
-		Png = 1,///< Png.
-		Apng = 2,///< Apng.
+		Png	   = 1,///< Png.
+		Apng   = 2,///< Apng.
 		Lottie = 3///< Lottie
 	};
 
@@ -1049,19 +1044,19 @@ namespace DiscordCoreLoader {
 
 	/// Embed types. \brief Embed types.
 	enum class EmbedType {
-		Rich = 0,///< Rich.
-		Image = 1,///< Image.
-		Video = 2,///< Video.
-		Gifv = 3,///< Gifv.
+		Rich	= 0,///< Rich.
+		Image	= 1,///< Image.
+		Video	= 2,///< Video.
+		Gifv	= 3,///< Gifv.
 		Article = 4,///< Article.
-		link = 5///< Link.
+		link	= 5///< Link.
 	};
 
 	/// Embed data. \brief Embed data.
 	class EmbedData {
 	  public:
 		std::string hexColorValue{ "000000" };///< Hex color value of the embed.
-		std::vector<EmbedFieldData> fields{};///< Array of embed fields.
+		Jsonifier::Vector<EmbedFieldData> fields{};///< Array of embed fields.
 		EmbedThumbnailData thumbnail{};///< Embed thumbnail data.
 		EmbedProviderData provider{};///< Embed provider data.
 		std::string description{};///< Description of the embed.
@@ -1079,7 +1074,7 @@ namespace DiscordCoreLoader {
 		/// \param authorAvatarUrl The url to their avatar.
 		/// \returns EmbedData& A reference to this embed.
 		EmbedData& setAuthor(const std::string& authorName, const std::string& authorAvatarUrl = "") {
-			this->author.name = authorName;
+			this->author.name	 = authorName;
 			this->author.iconUrl = authorAvatarUrl;
 			return *this;
 		}
@@ -1089,7 +1084,7 @@ namespace DiscordCoreLoader {
 		/// \param footerIconUrlText Url to the footer's icon.
 		/// \returns EmbedData& A reference to this embed.
 		EmbedData& setFooter(const std::string& footerText, const std::string& footerIconUrlText = "") {
-			this->footer.text = footerText;
+			this->footer.text	 = footerText;
 			this->footer.iconUrl = footerIconUrlText;
 			return *this;
 		}
@@ -1186,19 +1181,19 @@ namespace DiscordCoreLoader {
 
 	/// Channel types. \brief Channel types.
 	enum class ChannelType : int8_t {
-		Guild_Text = 0,///< Guild text.
-		Dm = 1,///< Direct-Message.
-		Guild_Voice = 2,/// Guild voice.
-		Group_Dm = 3,///< Group direct-Message.
-		Guild_Category = 4,///< Guild category.
-		Guild_News = 5,///< Guild news.
-		Guild_Store = 6,///< Guild store.
-		Guild_News_Thread = 10,///< Guild news Thread.
-		Guild_Public_Thread = 11,///< Guild public Thread.
+		Guild_Text			 = 0,///< Guild text.
+		Dm					 = 1,///< Direct-Message.
+		Guild_Voice			 = 2,/// Guild voice.
+		Group_Dm			 = 3,///< Group direct-Message.
+		Guild_Category		 = 4,///< Guild category.
+		Guild_News			 = 5,///< Guild news.
+		Guild_Store			 = 6,///< Guild store.
+		Guild_News_Thread	 = 10,///< Guild news Thread.
+		Guild_Public_Thread	 = 11,///< Guild public Thread.
 		Guild_Private_Thread = 12,///< Guild protected Thread.
-		Guild_Stage_Voice = 13,///< Guild stage-voice.
-		Guild_Directory = 14,///< The channel in a hub containing the listed servers.
-		Guild_Forum = 15///< A channel that can only contain threads.
+		Guild_Stage_Voice	 = 13,///< Guild stage-voice.
+		Guild_Directory		 = 14,///< The channel in a hub containing the listed servers.
+		Guild_Forum			 = 15///< A channel that can only contain threads.
 	};
 
 	/// Meta data for a Thread type of Channel. \brief Meta data for a Thread type of Channel.
@@ -1222,17 +1217,17 @@ namespace DiscordCoreLoader {
 
 	/// Thread types. \brief Thread types.
 	enum class ThreadType {
-		Guild_News_Thread = 10,///< Guild news Thread.
-		Guild_Public_Thread = 11,///< Guild public Thread.
+		Guild_News_Thread	 = 10,///< Guild news Thread.
+		Guild_Public_Thread	 = 11,///< Guild public Thread.
 		Guild_Private_Thread = 12///< Guild protected Thread.
 	};
 
 	/// Automatic Thread archiving durations. \brief Automatic Thread archiving durations.
 	enum class ThreadAutoArchiveDuration : int32_t {
 		Shortest = 60,///< Shortest.
-		Short = 1440,///< Short.
-		Long = 4320,///< Long.
-		Longest = 10080///< Longest.
+		Short	 = 1440,///< Short.
+		Long	 = 4320,///< Long.
+		Longest	 = 10080///< Longest.
 	};
 
 	enum class ChannelFlags : int8_t { NSFW = 1 << 0 };
@@ -1243,13 +1238,13 @@ namespace DiscordCoreLoader {
 		std::unordered_map<uint64_t, UserData> recipients{};///< Recipients, in the case of a group DM or m.
 		int32_t defaultThreadRateLimitPerUser{};///< The initial rate_limit_per_user to set on newly created threads in a channel.
 		int32_t defaultAutoArchiveDuration{};///< Default time it takes to archive a thread.
-		std::vector<Snowflake> appliedTags{};///< The IDs of the set of tags that have been applied to a thread in a GUILD_FORUM channel.
+		Jsonifier::Vector<Snowflake> appliedTags{};///< The IDs of the set of tags that have been applied to a thread in a GUILD_FORUM channel.
 		ThreadMetadataData threadMetadata{};///< Metadata in the case that this Channel is a Thread.
 		std::string lastMessageId{};///< Snowflake of the last Message.
 		std::string lastPinTimestamp{};///< Timestamp of the last pinned Message.
 		std::string permissions{};///< Computed permissions for the invoking user in the channel, including overwrites.
 		int32_t videoQualityMode{};///< Video quality mode.
-		std::vector<OverWriteData> permissionOverwrites{};///< Permission overwrites.
+		Jsonifier::Vector<OverWriteData> permissionOverwrites{};///< Permission overwrites.
 		ChannelType type{ ChannelType::Dm };///< The type of the Channel.
 		int32_t defaultSortOrder{};///< Default sorting order for a forum thread.
 		uint32_t memberCount{};///< Count of members active in the Channel.
@@ -1284,7 +1279,7 @@ namespace DiscordCoreLoader {
 	  public:
 		std::string communicationDisabledUntil{};///< When the user's timeout will expire and the user will be able to communicate in the guild again.
 		std::string premiumSince{};///< If applicable, when they first boosted the server.
-		std::vector<Snowflake> roles{};///< The Guild roGuildMemberDatales that they have.
+		Jsonifier::Vector<Snowflake> roles{};///< The Guild roGuildMemberDatales that they have.
 		std::string permissions{};///< Their base-level Permissions in the Guild.
 		GuildMemberFlags flags{};///< GuildMember flags.
 		std::string joinedAt{};///< When they joined the Guild;
@@ -1314,8 +1309,8 @@ namespace DiscordCoreLoader {
 
 	/// Data representing an active Thread. \brief Data representing an active Thread.
 	struct ActiveThreadsData {
-		std::vector<ThreadMemberData> members{};
-		std::vector<ChannelData> threads{};
+		Jsonifier::Vector<ThreadMemberData> members{};
+		Jsonifier::Vector<ChannelData> threads{};
 		bool hasMore{ false };
 	};
 
@@ -1324,23 +1319,23 @@ namespace DiscordCoreLoader {
 
 	/// Application command-option types. \brief Application command-option types.
 	enum class ApplicationCommandOptionType {
-		Sub_Command = 1,///< Sub-command.
+		Sub_Command		  = 1,///< Sub-command.
 		Sub_Command_Group = 2,///< Sub-command group.
-		String = 3,///< std::string.
-		Integer = 4,///< Integer.
-		boolean = 5,///< boolean.
-		User = 6,///< User.
-		Channel = 7,///< Channel.
-		Role = 8,///< Role.
-		Mentionable = 9,///< Mentionable.
-		Number = 10,///< Number.
-		Attachment = 11///< Attachment.
+		String			  = 3,///< std::string.
+		Integer			  = 4,///< Integer.
+		boolean			  = 5,///< boolean.
+		User			  = 6,///< User.
+		Channel			  = 7,///< Channel.
+		Role			  = 8,///< Role.
+		Mentionable		  = 9,///< Mentionable.
+		Number			  = 10,///< Number.
+		Attachment		  = 11///< Attachment.
 	};
 
 	/// Application command permission-types. \brief Application command permission-types.
 	enum class ApplicationCommandPermissionType {
-		Role = 1,///< Role.
-		User = 2,///< User.
+		Role	= 1,///< Role.
+		User	= 2,///< User.
 		Channel = 3///< Channel.
 	};
 
@@ -1356,7 +1351,7 @@ namespace DiscordCoreLoader {
 	/// Represents the Permissions for accessing an ApplicationCommand from within a Guild. \brief Represents the Permissions for accessing an ApplicationCommand from within a Guild.
 	class GuildApplicationCommandPermissionsData : public DiscordEntity {
 	  public:
-		std::vector<ApplicationCommandPermissionData> permissions{};///< The Permissions.
+		Jsonifier::Vector<ApplicationCommandPermissionData> permissions{};///< The Permissions.
 		std::string applicationId{};///< The application's id.
 		std::string guildId{};///< The Guild's id.
 
@@ -1367,7 +1362,7 @@ namespace DiscordCoreLoader {
 	class EmojiData : public DiscordEntity {
 	  public:
 		std::wstring unicodeName{ L"" };///< What is its unicode name?
-		std::vector<RoleData> roles{};///< Roles that are allowed to use this emoji.
+		Jsonifier::Vector<RoleData> roles{};///< Roles that are allowed to use this emoji.
 		bool requireColons{ false };///< Require colons to render it?
 		bool available{ true };///< Is it available to be used?
 		bool animated{ false };///< Is it animated?
@@ -1421,9 +1416,9 @@ namespace DiscordCoreLoader {
 
 	/// Message activity types. \brief Message activity types.
 	enum class MessageActivityType {
-		Join = 1,///< Join.
-		Spectate = 2,///< Spectate.
-		Listen = 3,///< Listen.
+		Join		 = 1,///< Join.
+		Spectate	 = 2,///< Spectate.
+		Listen		 = 3,///< Listen.
 		Join_Request = 5///< Join-request.
 	};
 
@@ -1458,7 +1453,7 @@ namespace DiscordCoreLoader {
 	/// Team object data. \brief Team object data.
 	class TeamObjectData : public DiscordEntity {
 	  public:
-		std::vector<TeamMembersObjectData> members{};///< Array of team members object data.
+		Jsonifier::Vector<TeamMembersObjectData> members{};///< Array of team members object data.
 		std::string ownerUserId{};///< User id of the team owner.
 		std::string icon{};///< Icon for the team.
 
@@ -1467,31 +1462,28 @@ namespace DiscordCoreLoader {
 
 	/// Application flags, for the ApplicationData structure.
 	enum class ApplicationFlags {
-		Gateway_Presence = 1 << 12,///< Intent required for bots in 100 or more servers to receive presence_update events.
-		Gateway_Presence_Limited =
-			1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in Bot Settings.
-		Gateway_Guild_Members = 1 << 14,///< Intent required for bots in 100 or more servers to receive member-related events like guild_member_add.
-		Gateway_Guild_Members_Limited =
-			1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in Bot Settings.
+		Gateway_Presence				 = 1 << 12,///< Intent required for bots in 100 or more servers to receive presence_update events.
+		Gateway_Presence_Limited		 = 1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in Bot Settings.
+		Gateway_Guild_Members			 = 1 << 14,///< Intent required for bots in 100 or more servers to receive member-related events like guild_member_add.
+		Gateway_Guild_Members_Limited	 = 1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in Bot Settings.
 		Verificatino_Pending_Guild_Limit = 1 << 16,///< Indicates unusual growth of an app that prevents verification
-		Embedded = 1 << 17,///< Indicates if an app is embedded within the Discord client (currently unavailable publicly)
-		Gateway_Message_Content = 1 << 18,///< Intent required for bots in 100 or more servers to receive message content
-		Gateway_Message_Content_Limited =
-			1 << 19///< Intent required for bots in under 100 servers to receive message content, found in Bot Settings};
+		Embedded						 = 1 << 17,///< Indicates if an app is embedded within the Discord client (currently unavailable publicly)
+		Gateway_Message_Content			 = 1 << 18,///< Intent required for bots in 100 or more servers to receive message content
+		Gateway_Message_Content_Limited	 = 1 << 19///< Intent required for bots in under 100 servers to receive message content, found in Bot Settings};
 	};
 
 	/// Install params data, for application data. \brief Install params data, for application data.
 	struct InstallParamsData {
-		std::vector<std::string> scopes{};///< The scopes to add the application to the server with.
+		Jsonifier::Vector<std::string> scopes{};///< The scopes to add the application to the server with.
 		std::string permissions{};///< The permissions to request for the bot role.
 	};
 
 	/// Application data. \brief Application data.
 	class ApplicationData : public DiscordEntity {
 	  public:
-		std::vector<std::string> rpcOrigins{};///< Array of RPC origin strings.
+		Jsonifier::Vector<std::string> rpcOrigins{};///< Array of RPC origin strings.
 		bool botRequireCodeGrant{ false };///< Does the bot require a code grant?
-		std::vector<std::string> tags{};///< Up to 5 tags describing the content and functionality of the application install_params.
+		Jsonifier::Vector<std::string> tags{};///< Up to 5 tags describing the content and functionality of the application install_params.
 		std::string termsOfServiceUrl{};///< Terms of service Url.
 		std::string privacyPolicyUrl{};///< Privacy policy Url.
 		ApplicationFlags flags{ 0 };///< Application flags.
@@ -1514,7 +1506,7 @@ namespace DiscordCoreLoader {
 
 	/// Authorization info structure. \brief Authorization info structure.
 	struct AuthorizationInfoData {
-		std::vector<std::string> scopes{};///< Array of strings - the scopes the User has authorized the application for.
+		Jsonifier::Vector<std::string> scopes{};///< Array of strings - the scopes the User has authorized the application for.
 		ApplicationData application{};///< Partial application object the current application.
 		std::string expires{};///< When the access token expires.
 		UserData user{};/// The User who has authorized, if the User has authorized with the identify scope.
@@ -1534,8 +1526,8 @@ namespace DiscordCoreLoader {
 
 	/// Get Guild Widget Data. \brief Get Guild Widget Data.
 	struct GetGuildWidgetObjectData : public DiscordEntity {
-		std::vector<ChannelData> channels{};///< Voice and stage channels which are accessible by everyone.
-		std::vector<UserData> members{};///< Special widget user objects that includes users presence (Limit 100).
+		Jsonifier::Vector<ChannelData> channels{};///< Voice and stage channels which are accessible by everyone.
+		Jsonifier::Vector<UserData> members{};///< Special widget user objects that includes users presence (Limit 100).
 		std::string instantInvite{};///< Instant invite for the guilds specified widget invite channel.
 		int32_t presence_count{ 0 };///< Number of online members in this guild.
 		std::string name{};///< Guild name (2-100 characters).
@@ -1543,7 +1535,7 @@ namespace DiscordCoreLoader {
 
 	/// Widget style options. \brief Widget style options.
 	enum class WidgetStyleOptions {
-		Shield = 0,///< Shield
+		Shield	= 0,///< Shield
 		Banner1 = 1,///< Banner1
 		Banner2 = 2,///< Banner2
 		Banner3 = 3,///< Banner3
@@ -1578,53 +1570,53 @@ namespace DiscordCoreLoader {
 
 	/// Audit log events. \brief Audit log events.
 	enum class AuditLogEvent {
-		Guild_Update = 1,///< Guild update.
-		Channel_Create = 10,///< Channel create.
-		Channel_Update = 11,///< Channel update.
-		Channel_Delete = 12,///< Channel delete.
-		Channel_Overwrite_Create = 13,///< Channel overwrite create.
-		Channel_Overwrite_Update = 14,///< Channel overwrite update.
-		Channel_Overwrite_Delete = 15,///< Channel overwrite delete.
-		Member_Kick = 20,///< Member kick.
-		Member_Prune = 21,///< Member prune.
-		Member_Ban_Add = 22,///< Member ban add.
-		Member_Ban_Remove = 23,///< Member ban remove.
-		Member_Update = 24,///< Member update.
-		Member_Role_Update = 25,///< Member role update.
-		Member_Move = 26,///< Member move.
-		Member_Disconnect = 27,///< Member disconnect.
-		Bot_Add = 28,///< Bot add.
-		Role_Create = 30,///< Role create.
-		Role_Update = 31,///< Role update.
-		Role_Delete = 32,///< Role delete.
-		Invite_Create = 40,///< Invite create.
-		Invite_Update = 41,///< Invite update.
-		Invite_Delete = 42,///< Invite delete.
-		Webhook_Create = 50,///< Webhook create.
-		Webhook_Update = 51,///< Webhook update.
-		Webhook_Delete = 52,///< Webhook delete.
-		Emoji_Create = 60,///< Emoji create.
-		Emoji_Update = 61,///< Emoji update.
-		Emoji_Delete = 62,///< Emoji delete.
-		Message_Delete = 72,///< Message delete.
-		Message_Bulk_Delete = 73,///< Message bulk delete.
-		Message_Pin = 74,///< Message pin.
-		Message_Unpin = 75,///< Message unpin.
-		Integration_Create = 80,///< Integration create.
-		Integration_Update = 81,///< Integration update.
-		Integration_Delete = 82,///< Integration delete.
-		Stage_Instance_Create = 83,///< Stage-Instance create.
-		Stage_Instance_Update = 84,///< Stage-Instance update.
-		Stage_Instance_Delete = 85,///< Stage-Instance delete.
-		Sticker_Create = 90,///< Sticker create.
-		Sticker_Update = 91,///< Sticker update.
-		Sticker_Delete = 92,///< Sticker delete.
-		Guild_Scheduled_Event_Create = 100,///< Guild-scheduled-event create.
-		Guild_Scheduled_Event_Update = 101,///< Guild-scheduled-event update.
-		Guild_Scheduled_Event_Delete = 102,///< Guild-scheduled-event delete.
-		Thread_Create = 110,///< Thread create.
-		Thread_Update = 111,///< Thread update.
-		Thread_Delete = 112,///< Thread delete.
+		Guild_Update						  = 1,///< Guild update.
+		Channel_Create						  = 10,///< Channel create.
+		Channel_Update						  = 11,///< Channel update.
+		Channel_Delete						  = 12,///< Channel delete.
+		Channel_Overwrite_Create			  = 13,///< Channel overwrite create.
+		Channel_Overwrite_Update			  = 14,///< Channel overwrite update.
+		Channel_Overwrite_Delete			  = 15,///< Channel overwrite delete.
+		Member_Kick							  = 20,///< Member kick.
+		Member_Prune						  = 21,///< Member prune.
+		Member_Ban_Add						  = 22,///< Member ban add.
+		Member_Ban_Remove					  = 23,///< Member ban remove.
+		Member_Update						  = 24,///< Member update.
+		Member_Role_Update					  = 25,///< Member role update.
+		Member_Move							  = 26,///< Member move.
+		Member_Disconnect					  = 27,///< Member disconnect.
+		Bot_Add								  = 28,///< Bot add.
+		Role_Create							  = 30,///< Role create.
+		Role_Update							  = 31,///< Role update.
+		Role_Delete							  = 32,///< Role delete.
+		Invite_Create						  = 40,///< Invite create.
+		Invite_Update						  = 41,///< Invite update.
+		Invite_Delete						  = 42,///< Invite delete.
+		Webhook_Create						  = 50,///< Webhook create.
+		Webhook_Update						  = 51,///< Webhook update.
+		Webhook_Delete						  = 52,///< Webhook delete.
+		Emoji_Create						  = 60,///< Emoji create.
+		Emoji_Update						  = 61,///< Emoji update.
+		Emoji_Delete						  = 62,///< Emoji delete.
+		Message_Delete						  = 72,///< Message delete.
+		Message_Bulk_Delete					  = 73,///< Message bulk delete.
+		Message_Pin							  = 74,///< Message pin.
+		Message_Unpin						  = 75,///< Message unpin.
+		Integration_Create					  = 80,///< Integration create.
+		Integration_Update					  = 81,///< Integration update.
+		Integration_Delete					  = 82,///< Integration delete.
+		Stage_Instance_Create				  = 83,///< Stage-Instance create.
+		Stage_Instance_Update				  = 84,///< Stage-Instance update.
+		Stage_Instance_Delete				  = 85,///< Stage-Instance delete.
+		Sticker_Create						  = 90,///< Sticker create.
+		Sticker_Update						  = 91,///< Sticker update.
+		Sticker_Delete						  = 92,///< Sticker delete.
+		Guild_Scheduled_Event_Create		  = 100,///< Guild-scheduled-event create.
+		Guild_Scheduled_Event_Update		  = 101,///< Guild-scheduled-event update.
+		Guild_Scheduled_Event_Delete		  = 102,///< Guild-scheduled-event delete.
+		Thread_Create						  = 110,///< Thread create.
+		Thread_Update						  = 111,///< Thread update.
+		Thread_Delete						  = 112,///< Thread delete.
 		Application_Command_Permission_Update = 121///< Permissions were updated for a command.
 	};
 
@@ -1658,7 +1650,7 @@ namespace DiscordCoreLoader {
 	/// Audit log entry data. \brief Audit log entry data.
 	class AuditLogEntryData : public DiscordEntity {
 	  public:
-		std::vector<AuditLogChangeData> changes{};///< Array of audit log change data.
+		Jsonifier::Vector<AuditLogChangeData> changes{};///< Array of audit log change data.
 		OptionalAuditEntryInfoData options{};///< Audit log entry info data.
 		std::string createdTimeStamp{};///< Time at which this entry was created.
 		AuditLogEvent actionType{};///< Audit log action type.
@@ -1672,7 +1664,7 @@ namespace DiscordCoreLoader {
 	/// Party data. \brief Party data.
 	class PartyData : public DiscordEntity {
 	  public:
-		std::vector<int32_t> size{ 0, 0 };///< The size of the party.
+		Jsonifier::Vector<int32_t> size{ 0, 0 };///< The size of the party.
 
 		virtual ~PartyData() = default;
 	};
@@ -1706,11 +1698,11 @@ namespace DiscordCoreLoader {
 
 	/// Activity types. \brief Activity types.
 	enum class ActivityType {
-		Game = 0,///< Game.
+		Game	  = 0,///< Game.
 		Streaming = 1,///< Streaming.
 		Listening = 2,///< Listening.
-		Watching = 3,///< Watching.
-		Custom = 4,///< Custom.
+		Watching  = 3,///< Watching.
+		Custom	  = 4,///< Custom.
 		Competing = 5///< Competing.
 	};
 
@@ -1742,7 +1734,7 @@ namespace DiscordCoreLoader {
 
 	/// Premium tier levels. \brief Premium tier levels.
 	enum class PremiumTier {
-		None = 0,///< None.
+		None   = 0,///< None.
 		Tier_1 = 1,///< Tier 1.
 		Tier_2 = 2,///< Tier 2.
 		Tier_3 = 3///< Tier 3.
@@ -1751,29 +1743,29 @@ namespace DiscordCoreLoader {
 	/// Default Message notification levels. \brief Default Message notification
 	/// levels.
 	enum class DefaultMessageNotificationLevel {
-		All_Messages = 0,///< All messages.
+		All_Messages  = 0,///< All messages.
 		Only_Mentions = 1///< Only mentions.
 	};
 
 	/// Explicit content filter levels. \brief Explicit content filter levels.
 	enum class ExplicitContentFilterLevel {
-		Disabled = 0,///< Disabled.
+		Disabled			  = 0,///< Disabled.
 		Members_Without_Roles = 1,///< Members without roles.
-		All_Members = 2///< All members.
+		All_Members			  = 2///< All members.
 	};
 
 	/// MFA levels. \brief MFA levels.
 	enum class MFALevel {
-		None = 0,///< None.
+		None	 = 0,///< None.
 		Elevated = 1///< Elevated.
 	};
 
 	/// Verification levels. \brief/// Verification levels.
 	enum class VerificationLevel {
-		None = 0,///< None.
-		Low = 1,///< Low.
-		Medium = 2,///< Medium.
-		High = 3,///< High.
+		None	  = 0,///< None.
+		Low		  = 1,///< Low.
+		Medium	  = 2,///< Medium.
+		High	  = 3,///< High.
 		Very_High = 4///< Very high.
 	};
 
@@ -1787,13 +1779,13 @@ namespace DiscordCoreLoader {
 
 	/// Welcome screen data. \brief Welcome screen data.
 	struct WelcomeScreenData {
-		std::vector<WelcomeScreenChannelData> welcomeChannels{};///< Welcome screen Channel data.
+		Jsonifier::Vector<WelcomeScreenChannelData> welcomeChannels{};///< Welcome screen Channel data.
 		std::string description{};///< Description of the welcome screen.
 	};
 
 	/// Presence update data. \brief Presence update data.
 	struct PresenceUpdateData {
-		std::vector<ActivityData> activities{};///< Array of activities.
+		Jsonifier::Vector<ActivityData> activities{};///< Array of activities.
 		ClientStatusData clientStatus{};///< Current client status.
 		std::string status{};///< Status of the current presence.
 		std::string guildId{};///< Guild id for the current presence.
@@ -1802,7 +1794,7 @@ namespace DiscordCoreLoader {
 
 	/// Stage instance privacy levels. \brief Stage instance privacy levels.
 	enum class StageInstancePrivacyLevel {
-		Public = 1,///< Public.
+		Public	   = 1,///< Public.
 		Guild_Only = 2///< Guild only.
 	};
 
@@ -1821,7 +1813,7 @@ namespace DiscordCoreLoader {
 	/// Sticker types. \brief Sticker types.
 	enum class StickerType {
 		Standard = 1,///< Standard.
-		Guild = 2///< Guild.
+		Guild	 = 2///< Guild.
 	};
 
 	enum class StickerFlags { Available = 1 << 0 };
@@ -1860,10 +1852,10 @@ namespace DiscordCoreLoader {
 	/// Data representing a single Guild preview. \brief Data representing a single Guild preview.
 	struct GuildPreviewData {
 		int32_t approximatePresenceCount{ 0 };
-		std::vector<std::string> features{};
-		std::vector<StickerData> stickers{};
+		Jsonifier::Vector<std::string> features{};
+		Jsonifier::Vector<StickerData> stickers{};
 		int32_t approximateMemberCount{ 0 };
-		std::vector<EmojiData> emojis{};
+		Jsonifier::Vector<EmojiData> emojis{};
 		std::string discoverySplash{};
 		std::string description{};
 		std::string splash{};
@@ -1875,57 +1867,57 @@ namespace DiscordCoreLoader {
 	/// Afk timeout durations. \brief Afk timeout durations.
 	enum class AfkTimeOutDurations {
 		Shortest = 60,///< Shortest.
-		Short = 300,///< Short.
-		Medium = 900,///< Medium.
-		Long = 1800,///< Long.
-		Longest = 3600///< Longest.
+		Short	 = 300,///< Short.
+		Medium	 = 900,///< Medium.
+		Long	 = 1800,///< Long.
+		Longest	 = 3600///< Longest.
 	};
 
 	/// Guild NSFW level. \brief Guild NSFW level.
 	enum class GuildNSFWLevel {
-		Default = 0,///< Default.
-		Explicit = 1,///< Explicit.
-		Safe = 2,///< Safe.
+		Default		   = 0,///< Default.
+		Explicit	   = 1,///< Explicit.
+		Safe		   = 2,///< Safe.
 		Age_Restricted = 3///< Age restricted.
 	};
 
 	/// System channel flags. \brief System channel flags.
 	enum class SystemChannelFlags {
-		Suppress_Join_Notifications = 1 << 0,///< Suppress member join notifications.
-		Suppress_Premium_Subscriptions = 1 << 1,///< Suppress server boost notifications.
+		Suppress_Join_Notifications			  = 1 << 0,///< Suppress member join notifications.
+		Suppress_Premium_Subscriptions		  = 1 << 1,///< Suppress server boost notifications.
 		Suppress_Guild_Reminder_Notifications = 1 << 2,///< Suppress server setup tips.
-		Suppress_Join_Notification_Replies = 1 << 3///< Hide member join sticker reply buttons.
+		Suppress_Join_Notification_Replies	  = 1 << 3///< Hide member join sticker reply buttons.
 	};
 
 	/// Guild flags. \brief Guild flags.
 	enum class GuildFlags : int8_t {
-		WidgetEnabled = 1 << 0,///< Widget enabled.
-		Unavailable = 1 << 1,///< Unavailable.
-		Owner = 1 << 2,///< Owner.
-		Large = 1 << 3,///< Large.
+		WidgetEnabled				 = 1 << 0,///< Widget enabled.
+		Unavailable					 = 1 << 1,///< Unavailable.
+		Owner						 = 1 << 2,///< Owner.
+		Large						 = 1 << 3,///< Large.
 		Premium_Progress_Bar_Enabled = 1 << 4///< Premium progress bar enabled
 	};
 
 	/// Guild scheduled event privacy levels. \brief Guild scheduled event privacy levels.
 	enum class GuildScheduledEventPrivacyLevel {
-		Public = 1,///< Public.
+		Public	   = 1,///< Public.
 		Guild_Only = 2///< Guild only.
 	};
 
 	/// GuildScheduledEventStatus. \brief GuildScheduledEventStatus.
 	enum class GuildScheduledEventStatus {
 		Scheduled = 1,///< Scheduled.
-		Active = 2,///< Active.
+		Active	  = 2,///< Active.
 		Completed = 3,///< Completed.
-		Canceled = 4///< Cancelled.
+		Canceled  = 4///< Cancelled.
 	};
 
 	/// Guild scheduled event entity types. \brief Guild scheduled event entity types.
 	enum class GuildScheduledEventEntityType {
-		None = 0,///< None.
+		None		   = 0,///< None.
 		State_Instance = 1,///< Stage instance.
-		Voice = 2,///< Voice.
-		External = 3///< External.
+		Voice		   = 2,///< Voice.
+		External	   = 3///< External.
 	};
 
 	/// Guild scheduled event entity metadata. \brief Guild scheduled event entity metadata.
@@ -1964,9 +1956,9 @@ namespace DiscordCoreLoader {
 	/// Data structure representing a single Guild. \brief Data structure representing a single Guild.
 	class GuildData : public DiscordEntity {
 	  public:
-		std::vector<GuildMemberData> members{};///< Array of GuildMembers.
-		std::vector<ChannelData> channels{};///< Array of Guild channels.
-		std::vector<RoleData> roles{};///< Array of Guild roles.
+		Jsonifier::Vector<GuildMemberData> members{};///< Array of GuildMembers.
+		Jsonifier::Vector<ChannelData> channels{};///< Array of Guild channels.
+		Jsonifier::Vector<RoleData> roles{};///< Array of Guild roles.
 
 		operator EtfSerializer() noexcept;
 
@@ -2014,15 +2006,15 @@ namespace DiscordCoreLoader {
 
 	/// Invite target types. \brief Invite target types.
 	enum class InviteTargetTypes {
-		Stream = 1,///< Stream.
+		Stream				 = 1,///< Stream.
 		Embedded_Application = 2///< Embedded application.
 	};
 
 	/// WebHook types. \brief WebHook types.
 	enum class WebHookType {
-		Incoming = 1,///< Incoming.
+		Incoming		 = 1,///< Incoming.
 		Channel_Follower = 2,///< Channel follower.
-		Application = 3///< Application.
+		Application		 = 3///< Application.
 	};
 
 	/// WebHook data. \brief WebHook data.
@@ -2062,12 +2054,12 @@ namespace DiscordCoreLoader {
 			}
 			return AuditLogEntryData();
 		}
-		std::vector<GuildScheduledEventData> guildScheduledEvents{};///< Array of guild scheduled event objects.
-		std::vector<AuditLogEntryData> auditLogEntries{};///< Array of audit log entry objects.
-		std::vector<IntegrationData> integrations{};///< Array of partial integration objects.
-		std::vector<WebHookData> webhooks{};///< Array of webhook objects.
-		std::vector<ChannelData> threads{};///< Array of thread-specific channel objects.
-		std::vector<UserData> users{};///< Array of user objects.
+		Jsonifier::Vector<GuildScheduledEventData> guildScheduledEvents{};///< Array of guild scheduled event objects.
+		Jsonifier::Vector<AuditLogEntryData> auditLogEntries{};///< Array of audit log entry objects.
+		Jsonifier::Vector<IntegrationData> integrations{};///< Array of partial integration objects.
+		Jsonifier::Vector<WebHookData> webhooks{};///< Array of webhook objects.
+		Jsonifier::Vector<ChannelData> threads{};///< Array of thread-specific channel objects.
+		Jsonifier::Vector<UserData> users{};///< Array of user objects.
 	};
 
 	/// For removing a reaction. \brief For removing a reaction.
@@ -2094,8 +2086,7 @@ namespace DiscordCoreLoader {
 
 	/// Data structure representing an ApplicationCommand's option choice. \brief Data structure representing an ApplicationCommand's option choice.
 	struct ApplicationCommandOptionChoiceData {
-		std::unordered_map<std::string, std::string>
-			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for the name field.
+		std::unordered_map<std::string, std::string> nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for the name field.
 		std::string value{};///< The value of the option.
 		std::string name{};///< The name of the current choice.
 	};
@@ -2104,9 +2095,9 @@ namespace DiscordCoreLoader {
 	struct ApplicationCommandOptionData {
 		std::unordered_map<std::string, std::string> descriptionLocalizations{};///< Dictionary for the description localizations field.
 		std::unordered_map<std::string, std::string> nameLocalizations{};///< Dictionary for the name localizations field.
-		std::vector<ApplicationCommandOptionChoiceData> choices{};///< A std::vector of possible choices for the current ApplicationCommand option.
-		std::vector<ApplicationCommandOptionData> options{};///< A std::vector of possible options for the current ApplicationCommand option.
-		std::vector<ChannelType> channelTypes{};///< Set when the ApplicationCommand option type is set to Channel.
+		Jsonifier::Vector<ApplicationCommandOptionChoiceData> choices{};///< A Jsonifier::Vector of possible choices for the current ApplicationCommand option.
+		Jsonifier::Vector<ApplicationCommandOptionData> options{};///< A Jsonifier::Vector of possible options for the current ApplicationCommand option.
+		Jsonifier::Vector<ChannelType> channelTypes{};///< Set when the ApplicationCommand option type is set to Channel.
 		ApplicationCommandOptionType type{};///< The type of command option.
 		bool autocomplete{ false };///< If autocomplete interactions are enabled for this STRING, INTEGER, or NUMBER type option.
 		std::string description{};///< A description of the current ApplicationCommand option.
@@ -2149,8 +2140,8 @@ namespace DiscordCoreLoader {
 	/// Application command types. \brief Application command types.
 	enum class ApplicationCommandType {
 		Chat_Input = 1,///< Chat input.
-		User = 2,///< User.
-		Message = 3///< Message.
+		User	   = 2,///< User.
+		Message	   = 3///< Message.
 	};
 
 	/// User command Interaction data. \brief User command Interaction data.
@@ -2165,15 +2156,15 @@ namespace DiscordCoreLoader {
 
 	/// Component types. \brief Component types.
 	enum class ComponentType {
-		ActionRow = 1,///< A container for other components.
-		Button = 2,///< A button object.
+		ActionRow  = 1,///< A container for other components.
+		Button	   = 2,///< A button object.
 		SelectMenu = 3,///< A select menu for picking from choices.
-		TextInput = 4///< A text input object
+		TextInput  = 4///< A text input object
 	};
 
 	/// Component Interaction data. \brief Component Interaction data.
 	struct ComponentInteractionData {
-		std::vector<std::string> values{};///< The values of the components.
+		Jsonifier::Vector<std::string> values{};///< The values of the components.
 		ComponentType componentType{};///< The type of component.
 		std::string customId{};///< The custom id of the Interaction entity.
 	};
@@ -2187,19 +2178,19 @@ namespace DiscordCoreLoader {
 
 	/// Allowable mentions for a Message. \brief Allowable mentions for a Message.
 	struct AllowedMentionsData {
-		std::vector<std::string> parse{};///< A std::vector of allowed mention types to parse from the content.
-		std::vector<std::string> roles{};///< Array of role_ids to mention (Max size of 100)
-		std::vector<std::string> users{};///< Array of user_ids to mention (Max size of 100)
+		Jsonifier::Vector<std::string> parse{};///< A Jsonifier::Vector of allowed mention types to parse from the content.
+		Jsonifier::Vector<std::string> roles{};///< Array of role_ids to mention (Max size of 100)
+		Jsonifier::Vector<std::string> users{};///< Array of user_ids to mention (Max size of 100)
 		bool repliedUser{ false };///< For replies, whether to mention the author of the Message being replied to (default false).
 	};
 
 	/// Interaction types. \brief Interaction types.
 	enum class InteractionType {
-		Ping = 1,///< Ping.
-		Application_Command = 2,///< Application command.
-		Message_Component = 3,///< Message component.
+		Ping							 = 1,///< Ping.
+		Application_Command				 = 2,///< Application command.
+		Message_Component				 = 3,///< Message component.
 		Application_Command_Autocomplete = 4,///< Application command autocomplete.
-		Modal_Submit = 5///< Modal submission.
+		Modal_Submit					 = 5///< Modal submission.
 	};
 
 	/// Represents a single selection from a select-menu. \brief Represents a single selection from a select-menu.
@@ -2213,16 +2204,16 @@ namespace DiscordCoreLoader {
 
 	/// Button styles. \brief Button styles.
 	enum class ButtonStyle {
-		Primary = 1,///< Primary.
-		Success = 3,///< Success.
+		Primary	  = 1,///< Primary.
+		Success	  = 3,///< Success.
 		Secondary = 2,///< Secondary.
-		Danger = 4,///< Danger.
-		Link = 5///< Link.
+		Danger	  = 4,///< Danger.
+		Link	  = 5///< Link.
 	};
 
 	/// Represents a single Message-component. \brief Represents a single Message-component.
 	struct ComponentData {
-		std::vector<SelectOptionData> options{};///< Aray of select options the choices in the select, max 25.
+		Jsonifier::Vector<SelectOptionData> options{};///< Aray of select options the choices in the select, max 25.
 		std::string placeholder{};///< Custom placeholder text if nothing is selected, max 100 characters.
 		std::string customId{};///< A developer-defined identifier for the component, max 100 characters.
 		int32_t minValues{ 0 };///< The minimum number of items that must be chosen; default 1, min 0, max 25.
@@ -2242,29 +2233,28 @@ namespace DiscordCoreLoader {
 
 	/// Action row data of Message components. \brief Action row data of Message components.
 	struct ActionRowData {
-		std::vector<ComponentData> components{};///< Array of components to make up the action-row.
+		Jsonifier::Vector<ComponentData> components{};///< Array of components to make up the action-row.
 	};
 
 	/// Interaction callback types. \brief Interaction callback types.
 	enum class InteractionCallbackType {
-		Pong = 1,///< ACK a Ping.
-		Channel_Message_With_Source = 4,///< Respond to an interaction with a message.
-		Deferred_Channel_Message_With_Source = 5,///< ACK an interaction and edit a response later, the user sees a loading state.
-		Deferred_Update_Message =
-			6,///< For components, ACK an interaction and edit the original message later; the user does not see a loading state.
-		Update_Message = 7,///< For components, edit the message the component was attached to.
+		Pong									= 1,///< ACK a Ping.
+		Channel_Message_With_Source				= 4,///< Respond to an interaction with a message.
+		Deferred_Channel_Message_With_Source	= 5,///< ACK an interaction and edit a response later, the user sees a loading state.
+		Deferred_Update_Message					= 6,///< For components, ACK an interaction and edit the original message later; the user does not see a loading state.
+		Update_Message							= 7,///< For components, edit the message the component was attached to.
 		Application_Command_Autocomplete_Result = 8,///< Respond to an autocomplete interaction with suggested choices.
-		Modal = 9///< Respond to an interaction with a popup modal.
+		Modal									= 9///< Respond to an interaction with a popup modal.
 	};
 
 	/// Interaction ApplicationCommand callback data. \brief Interaction ApplicationCommand callback data.
 	struct InteractionCallbackData {
-		std::vector<ApplicationCommandOptionChoiceData> choices{};///< Autocomplete choices(max of 25 choices).
-		std::vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename and description.
-		std::vector<ActionRowData> components{};///< Message components.
+		Jsonifier::Vector<ApplicationCommandOptionChoiceData> choices{};///< Autocomplete choices(max of 25 choices).
+		Jsonifier::Vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename and description.
+		Jsonifier::Vector<ActionRowData> components{};///< Message components.
 		AllowedMentionsData allowedMentions{};///< Allowed mentions data.
-		std::vector<EmbedData> embeds{};///< Message embeds.
-		std::vector<File> files{};///< Files for uploading.
+		Jsonifier::Vector<EmbedData> embeds{};///< Message embeds.
+		Jsonifier::Vector<File> files{};///< Files for uploading.
 		std::string customId{};///< A developer-defined identifier for the component, max 100 characters.
 		std::string content{};///< Message content.
 		std::string title{};///< The title of the popup modal.
@@ -2275,11 +2265,9 @@ namespace DiscordCoreLoader {
 	/// Data structure representing an ApplicationCommand. \brief Data structure representing an ApplicationCommand.
 	class ApplicationCommandData : public DiscordEntity {
 	  public:
-		std::unordered_map<std::string, std::string>
-			descriptionLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
-		std::unordered_map<std::string, std::string>
-			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
-		std::vector<ApplicationCommandOptionData> options{};///< A std::vector of possible options for the current ApplicationCommand.
+		std::unordered_map<std::string, std::string> descriptionLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
+		std::unordered_map<std::string, std::string> nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
+		Jsonifier::Vector<ApplicationCommandOptionData> options{};///< A Jsonifier::Vector of possible options for the current ApplicationCommand.
 		std::string defaultMemberPermissions{};///< Set of permissions represented as a bit set all
 		ApplicationCommandType type{};///< The type of ApplicationCommand.
 		std::string applicationId{};///< The current application id.
@@ -2319,18 +2307,17 @@ namespace DiscordCoreLoader {
 
 	/// Data for when threads are synced. \brief Data for when threads are synced.
 	struct ThreadListSyncData {
-		std::vector<ThreadMemberData> members{};///< Array of members that are a part of the Thread.
-		std::vector<std::string>
-			channelIds{};///< The parent Channel ids whose threads are being synced. If omitted, then threads were synced for entire Guild.
-		std::vector<ChannelData> threads{};///< All active threads in the given channels that the current User can access.
+		Jsonifier::Vector<ThreadMemberData> members{};///< Array of members that are a part of the Thread.
+		Jsonifier::Vector<std::string> channelIds{};///< The parent Channel ids whose threads are being synced. If omitted, then threads were synced for entire Guild.
+		Jsonifier::Vector<ChannelData> threads{};///< All active threads in the given channels that the current User can access.
 		std::string guildId{};///< The id of the Guild for which the threads are being synced.
 	};
 
 	/// Represents a Thread-members-update. \brief Represents a Thread-members-update.
 	class ThreadMembersUpdateData : public DiscordEntity {
 	  public:
-		std::vector<ThreadMemberData> addedMembers{};///< New members added to the Thread.
-		std::vector<std::string> removedMemberIds{};///< Members who have been removed.
+		Jsonifier::Vector<ThreadMemberData> addedMembers{};///< New members added to the Thread.
+		Jsonifier::Vector<std::string> removedMemberIds{};///< Members who have been removed.
 		int32_t memberCount{ 0 };///< Number of Guild-members in the Thread.
 		std::string guildId{};///< Guild id of the Thread.
 
@@ -2350,58 +2337,58 @@ namespace DiscordCoreLoader {
 
 	/// Message types. \brief Message types.
 	enum class MessageType {
-		Default = 0,///< Default.
-		Recipient_Add = 1,///< Recipient add.
-		Recipient_Remove = 2,///< Recipient remove.
-		Call = 3,///< Call.
-		Channel_Name_Change = 4,///< Channel name change.
-		Channel_Icon_Change = 5,///< Channel icon change.
-		Channel_Pinned_Message = 6,///< Channel pinned Message.
-		Guild_Member_Join = 7,///< Guild memeber join.
-		User_Premium_Guild_Subscription = 8,///< User premium Guild subscription.
-		User_Premium_Guild_Subscription_Tier_1 = 9,///< User premium Guild subscription tier 1.
-		User_Premium_Guild_Subscription_Tier_2 = 10,///< User premium Guild subscription tier 2.
-		User_Premium_Guild_Subscription_Tier_3 = 11,///< User premium Guild subscription tier 3.
-		Channel_Follow_Add = 12,///< Channel follow add.
-		Guild_Discovery_Disqualified = 14,///< Guild discovery disqualified.
-		Guild_Discovery_Requalified = 15,///< Guild discovery requalified.
+		Default										 = 0,///< Default.
+		Recipient_Add								 = 1,///< Recipient add.
+		Recipient_Remove							 = 2,///< Recipient remove.
+		Call										 = 3,///< Call.
+		Channel_Name_Change							 = 4,///< Channel name change.
+		Channel_Icon_Change							 = 5,///< Channel icon change.
+		Channel_Pinned_Message						 = 6,///< Channel pinned Message.
+		Guild_Member_Join							 = 7,///< Guild memeber join.
+		User_Premium_Guild_Subscription				 = 8,///< User premium Guild subscription.
+		User_Premium_Guild_Subscription_Tier_1		 = 9,///< User premium Guild subscription tier 1.
+		User_Premium_Guild_Subscription_Tier_2		 = 10,///< User premium Guild subscription tier 2.
+		User_Premium_Guild_Subscription_Tier_3		 = 11,///< User premium Guild subscription tier 3.
+		Channel_Follow_Add							 = 12,///< Channel follow add.
+		Guild_Discovery_Disqualified				 = 14,///< Guild discovery disqualified.
+		Guild_Discovery_Requalified					 = 15,///< Guild discovery requalified.
 		Guild_Discovery_Grace_Period_Initial_Warning = 16,///< Guild discovery grade period initial warning.
-		Guild_Discovery_Grace_Period_Final_Warning = 17,///< Guild discovery grade period final warning.
-		Thread_Created = 18,///< Thread created.
-		Reply = 19,///< Reply.
-		Chat_Input_Command = 20,///< Chat input command.
-		Thread_Starter_Message = 21,///< Thread starter Message.
-		Guild_Invite_Reminder = 22,///< Guild invite reminder.
-		Context_Menu_Command = 23///< Context menu command.
+		Guild_Discovery_Grace_Period_Final_Warning	 = 17,///< Guild discovery grade period final warning.
+		Thread_Created								 = 18,///< Thread created.
+		Reply										 = 19,///< Reply.
+		Chat_Input_Command							 = 20,///< Chat input command.
+		Thread_Starter_Message						 = 21,///< Thread starter Message.
+		Guild_Invite_Reminder						 = 22,///< Guild invite reminder.
+		Context_Menu_Command						 = 23///< Context menu command.
 	};
 
 	/// Message flags. \brief Message flags.
 	enum class MessageFlags {
-		Crossposted = 1ull << 0,///< Crossposted.
-		Is_Crosspost = 1ull << 1,///< Is crosspost.
-		Suppress_Embeds = 1ull << 2,///< Supress embeds.
+		Crossposted			   = 1ull << 0,///< Crossposted.
+		Is_Crosspost		   = 1ull << 1,///< Is crosspost.
+		Suppress_Embeds		   = 1ull << 2,///< Supress embeds.
 		Source_Message_Deleted = 1ull << 3,///< Source Message deleted.
-		Urgent = 1ull << 4,///< Urgent.
-		Has_Thread = 1ull << 5,///< Has Thread.
-		Ephemeral = 1ull << 6,///< Ephemeral.
-		Loading = 1ull << 7///< Loading.
+		Urgent				   = 1ull << 4,///< Urgent.
+		Has_Thread			   = 1ull << 5,///< Has Thread.
+		Ephemeral			   = 1ull << 6,///< Ephemeral.
+		Loading				   = 1ull << 7///< Loading.
 	};
 
 	/// Sticker item types. \brief Sticker item types.
 	enum class StickerItemType {
-		Png = 1,///< Png.
-		Apng = 2,///< Apng.
+		Png	   = 1,///< Png.
+		Apng   = 2,///< Apng.
 		Lottie = 3///< Lottie.
 	};
 
 	/// Represents a forum thread message. \brief Represents a forum thread message.
 	struct ForumThreadMessageData {
-		std::vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename.
-		std::vector<ActionRowData> components{};///< Array of message component objects the components to include with the message.
+		Jsonifier::Vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename.
+		Jsonifier::Vector<ActionRowData> components{};///< Array of message component objects the components to include with the message.
 		AllowedMentionsData allowedMentions{};///< Allowed mention object allowed mentions for the message.
-		std::vector<std::string> stickerIds{};///< Array of snowflakes IDs of up to 3 stickers in the server to send in the message.
-		std::vector<EmbedData> embeds{};///< Array of embed objects	embedded rich content (up to 6000 characters).
-		std::vector<File> files{};///< File contents the contents of the file being sent one of content, file, embed(s), sticker_ids.
+		Jsonifier::Vector<std::string> stickerIds{};///< Array of snowflakes IDs of up to 3 stickers in the server to send in the message.
+		Jsonifier::Vector<EmbedData> embeds{};///< Array of embed objects	embedded rich content (up to 6000 characters).
+		Jsonifier::Vector<File> files{};///< File contents the contents of the file being sent one of content, file, embed(s), sticker_ids.
 		std::string content{};///< The message contents (up to 2000 characters).
 		int32_t flags{ 0 };///< Flags to be set for the message.
 	};
@@ -2418,17 +2405,17 @@ namespace DiscordCoreLoader {
 	/// The core of a Message's data structure. \brief The core of a Message's data structure.
 	class MessageDataOld : public DiscordEntity {
 	  public:
-		std::vector<ChannelMentionData> mentionChannels{};///< array of Channel mention data.
-		std::vector<StickerItemData> stickerItems{};///< Array of Message Sticker item data.
-		std::vector<AttachmentData> attachments{};///< Array of attachment data.
+		Jsonifier::Vector<ChannelMentionData> mentionChannels{};///< array of Channel mention data.
+		Jsonifier::Vector<StickerItemData> stickerItems{};///< Array of Message Sticker item data.
+		Jsonifier::Vector<AttachmentData> attachments{};///< Array of attachment data.
 		MessageReferenceData messageReference{};///< Message reference data.
-		std::vector<std::string> mentionRoles{};///< std::vector of "mention roles" ids.
-		std::vector<ActionRowData> components{};///< Array of action row data.
-		std::vector<ReactionData> reactions{};//< Array of reaction data.
+		Jsonifier::Vector<std::string> mentionRoles{};///< Jsonifier::Vector of "mention roles" ids.
+		Jsonifier::Vector<ActionRowData> components{};///< Array of action row data.
+		Jsonifier::Vector<ReactionData> reactions{};//< Array of reaction data.
 		MessageInteractionData interaction{};///< Message Interaction data.
-		std::vector<StickerData> stickers{};///< Array of Message Sticker data.
-		std::vector<UserData> mentions{};///< Array of User data, for individual's that were mentioned.
-		std::vector<EmbedData> embeds{};///< Array of Message embeds.
+		Jsonifier::Vector<StickerData> stickers{};///< Array of Message Sticker data.
+		Jsonifier::Vector<UserData> mentions{};///< Array of User data, for individual's that were mentioned.
+		Jsonifier::Vector<EmbedData> embeds{};///< Array of Message embeds.
 		TimeStamp editedTimestamp{ "" };///< The time at which it was edited.
 		MessageActivityData activity{};///< Message activity data.
 		bool mentionEveryone{ false };///< Does the Message mention everyone?
@@ -2460,36 +2447,36 @@ namespace DiscordCoreLoader {
 
 		MessageData& operator=(const MessageData& other) {
 			*this->referencedMessage = *other.referencedMessage;
-			this->messageReference = other.messageReference;
-			this->mentionEveryone = other.mentionEveryone;
-			this->mentionChannels = other.mentionChannels;
-			this->editedTimestamp = other.editedTimestamp;
-			this->applicationId = other.applicationId;
-			this->stickerItems = other.stickerItems;
-			this->mentionRoles = other.mentionRoles;
-			this->application = other.application;
-			this->interaction = other.interaction;
-			this->attachments = other.attachments;
-			this->components = other.components;
-			this->timestamp = other.timestamp;
-			this->channelId = other.channelId;
-			this->webhookId = other.webhookId;
-			this->reactions = other.reactions;
-			this->activity = other.activity;
-			this->mentions = other.mentions;
-			this->stickers = other.stickers;
-			this->content = other.content;
-			this->guildId = other.guildId;
-			this->member = other.member;
-			this->thread = other.thread;
-			this->pinned = other.pinned;
-			this->author = other.author;
-			this->embeds = other.embeds;
-			this->nonce = other.nonce;
-			this->flags = other.flags;
-			this->type = other.type;
-			this->tts = other.tts;
-			this->id = other.id;
+			this->messageReference	 = other.messageReference;
+			this->mentionEveryone	 = other.mentionEveryone;
+			this->mentionChannels	 = other.mentionChannels;
+			this->editedTimestamp	 = other.editedTimestamp;
+			this->applicationId		 = other.applicationId;
+			this->stickerItems		 = other.stickerItems;
+			this->mentionRoles		 = other.mentionRoles;
+			this->application		 = other.application;
+			this->interaction		 = other.interaction;
+			this->attachments		 = other.attachments;
+			this->components		 = other.components;
+			this->timestamp			 = other.timestamp;
+			this->channelId			 = other.channelId;
+			this->webhookId			 = other.webhookId;
+			this->reactions			 = other.reactions;
+			this->activity			 = other.activity;
+			this->mentions			 = other.mentions;
+			this->stickers			 = other.stickers;
+			this->content			 = other.content;
+			this->guildId			 = other.guildId;
+			this->member			 = other.member;
+			this->thread			 = other.thread;
+			this->pinned			 = other.pinned;
+			this->author			 = other.author;
+			this->embeds			 = other.embeds;
+			this->nonce				 = other.nonce;
+			this->flags				 = other.flags;
+			this->type				 = other.type;
+			this->tts				 = other.tts;
+			this->id				 = other.id;
 			return *this;
 		}
 
@@ -2514,7 +2501,7 @@ namespace DiscordCoreLoader {
 
 	/// Represents a Sticker pack. \brief Represents a Sticker pack.
 	struct StickerPackData {
-		std::vector<StickerData> stickers{};///< Array of Sticker objects	the stickers in the pack.
+		Jsonifier::Vector<StickerData> stickers{};///< Array of Sticker objects	the stickers in the pack.
 		std::string coverStickerId{};///< Id of a Sticker in the pack which is shown as the pack's icon.
 		std::string bannerAssetId{};///< Id of the Sticker pack's banner image.
 		std::string description{};///< Description of the Sticker pack.
@@ -2525,13 +2512,13 @@ namespace DiscordCoreLoader {
 
 	/// Connection visibility types. \brief Connection visibility types.
 	enum class ConnectionVisibilityTypes {
-		None = 0,///< None.
+		None	 = 0,///< None.
 		Everyone = 1///< Everyone.
 	};
 
 	/// Represents a single User Connection. \brief Represents a single User Connection.
 	struct ConnectionData {
-		std::vector<IntegrationData> integrations{};///< An array of partial server integrations.
+		Jsonifier::Vector<IntegrationData> integrations{};///< An array of partial server integrations.
 		ConnectionVisibilityTypes visibility{};///< Visibility of this connection.
 		bool showActivity{ false };///< Whether activities related to this connection will be shown in presence updates.
 		bool friendSync{ false };///< Whether friend sync is enabled for this connection.
@@ -2544,7 +2531,7 @@ namespace DiscordCoreLoader {
 
 	/// ApplicationCommand Interaction data option. \brief ApplicationCommand Interaction data option.
 	struct ApplicationCommandInteractionDataOption {
-		std::vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
+		Jsonifier::Vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
 		ApplicationCommandOptionType type{};///< The type of ApplicationCommand options.
 		std::string valueString{};///< The value if it's a std::string.
 		bool valuebool{ false };///< the value if it's a bool.
@@ -2556,7 +2543,7 @@ namespace DiscordCoreLoader {
 	/// ApplicationCommand Interaction data. \brief ApplicationCommand Interaction data.
 	class ApplicationCommandInteractionData : public DiscordEntity {
 	  public:
-		std::vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
+		Jsonifier::Vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
 		ApplicationCommandType type{};///< The type of ApplicationCommand.
 		ResolvedData resolved{};///< Resolved data.
 		std::string guildId{};///< The guild that the command took place in.
@@ -2613,41 +2600,41 @@ namespace DiscordCoreLoader {
 
 	/// Text input style for modals. \brief Text input style for modals.
 	enum class TextInputStyle {
-		Short = 1,///< A single-line input.
+		Short	  = 1,///< A single-line input.
 		Paragraph = 2///< A multi-line input.
 	};
 
 	/// Input event response types. \brief Input event response types.
 	enum class InputEventResponseType {
-		Unset = 0,///< Unset.
-		Deferred_Response = 1,
-		Ephemeral_Deferred_Response = 2,///< Deferred ephemeral response.
-		Interaction_Response = 3,///< Interaction response.
-		Ephemeral_Interaction_Response = 4,///< Ephemeral Interaction response.
-		Edit_Interaction_Response = 5,///< Interaction response edit.
-		Follow_Up_Message = 6,///< Follow-up Message.
-		Ephemeral_Follow_Up_Message = 7,///< Ephemeral follow-up Message.
-		Edit_Follow_Up_Message = 8,///< Follow-up Message edit.
+		Unset									= 0,///< Unset.
+		Deferred_Response						= 1,
+		Ephemeral_Deferred_Response				= 2,///< Deferred ephemeral response.
+		Interaction_Response					= 3,///< Interaction response.
+		Ephemeral_Interaction_Response			= 4,///< Ephemeral Interaction response.
+		Edit_Interaction_Response				= 5,///< Interaction response edit.
+		Follow_Up_Message						= 6,///< Follow-up Message.
+		Ephemeral_Follow_Up_Message				= 7,///< Ephemeral follow-up Message.
+		Edit_Follow_Up_Message					= 8,///< Follow-up Message edit.
 		Application_Command_AutoComplete_Result = 9,///< Respond to an autocomplete interaction with suggested choices.
-		Modal_Interaction_Response = 10,///< Respond to an interaction with a popup modal.
+		Modal_Interaction_Response				= 10,///< Respond to an interaction with a popup modal.
 	};
 
 	/// Data representing a Guild Emoji Update event. \brief Data representing a Guild Emoji Update event.
 	struct GuildEmojisUpdateEventData {
-		std::vector<EmojiData> emojis{};
+		Jsonifier::Vector<EmojiData> emojis{};
 		std::string guildId{};
 	};
 
 	/// Data representing a Guild Sticker Update event. \brief Data representing a Guild Stickers Update event.
 	struct GuildStickersUpdateEventData {
-		std::vector<StickerData> stickers{};
+		Jsonifier::Vector<StickerData> stickers{};
 		std::string guildId{};
 	};
 
 	struct GuildMembersChunkEventData {
-		std::vector<PresenceUpdateData> presences{};
-		std::vector<GuildMemberData> members{};
-		std::vector<std::string> notFound{};
+		Jsonifier::Vector<PresenceUpdateData> presences{};
+		Jsonifier::Vector<GuildMemberData> members{};
+		Jsonifier::Vector<std::string> notFound{};
 		int32_t chunkIndex{ 0 };
 		int32_t chunkCount{ 0 };
 		std::string guildId{};
@@ -2691,7 +2678,7 @@ namespace DiscordCoreLoader {
 	/// Guild application command permissions data. \brief Guild application command permissions data.
 	class GuildApplicationCommandPermissionData : public DiscordEntity {
 	  public:
-		std::vector<ApplicationCommandPermissionData> permissions{};
+		Jsonifier::Vector<ApplicationCommandPermissionData> permissions{};
 		std::string applicationId{};
 		std::string guildId{};
 
@@ -2702,7 +2689,7 @@ namespace DiscordCoreLoader {
 
 	/// Song types. \brief Song types.
 	enum class SongType {
-		YouTube = 0,///< YouTube.
+		YouTube	   = 0,///< YouTube.
 		SoundCloud = 1///< SoundCloud.
 	};
 
@@ -2719,22 +2706,22 @@ namespace DiscordCoreLoader {
 
 	/// Represents a single frame of raw audio data. \brief Represents a single frame of raw audio data.
 	struct RawFrameData {
-		std::vector<int8_t> data{};///< The audio data.
+		Jsonifier::Vector<int8_t> data{};///< The audio data.
 		int32_t sampleCount{ -1 };///< The number of samples per this frame.
 	};
 
 	/// Represents a single frame of encoded audio data. \brief Represents a single frame of encoded audio data.
 	struct EncodedFrameData {
-		std::vector<int8_t> data{};///< The audio data.
+		Jsonifier::Vector<int8_t> data{};///< The audio data.
 		int32_t sampleCount{ -1 };///< The number of samples per this frame.
 	};
 
 	/// Audio frame types. \brief Audio frame types.
 	enum class AudioFrameType {
-		Unset = 0,///< Unset.
+		Unset	= 0,///< Unset.
 		Encoded = 1,///< Encoded.
-		RawPCM = 2,///< Raw PCM.
-		Skip = 3///< Skip.
+		RawPCM	= 2,///< Raw PCM.
+		Skip	= 3///< Skip.
 	};
 
 	/// Represents a single frame of audio data. \brief Represents a single frame of audio data.
@@ -2756,7 +2743,7 @@ namespace DiscordCoreLoader {
 
 		SongType type{ SongType::SoundCloud };///< The type of song.
 
-		std::vector<DownloadUrl> finalDownloadUrls{};
+		Jsonifier::Vector<DownloadUrl> finalDownloadUrls{};
 		std::string secondDownloadUrl{};
 		std::string firstDownloadUrl{};
 		std::string html5PlayerFile{};
@@ -2792,7 +2779,7 @@ namespace DiscordCoreLoader {
 	struct Playlist {
 		bool isLoopSongEnabled{ false };///< Is looping of Songs currently enabled?
 		bool isLoopAllEnabled{ false };///< Is looping of the entire Playlist currently enabled?
-		std::vector<Song> songQueue{};///< The list of Songs that are stored to be played.
+		Jsonifier::Vector<Song> songQueue{};///< The list of Songs that are stored to be played.
 		Song currentSong{};///< The current Song that is playing.
 	};
 

@@ -47,6 +47,7 @@ namespace DiscordCoreLoader {
 		uint64_t meanForChannelCount{};
 		uint64_t stdDeviationForRoleCount{};
 		uint64_t meanForRoleCount{};
+		std::string format{};
 	};
 
 	class ConfigParser {

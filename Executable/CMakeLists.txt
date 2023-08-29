@@ -70,15 +70,17 @@ target_compile_options(
 	"$<$<PLATFORM_ID:Windows>:/bigobj>"
 	"$<$<PLATFORM_ID:Windows>:/MP>"
 	"$<$<PLATFORM_ID:Windows>:/W4>"
+	"$<$<PLATFORM_ID:Windows>:/Zi>"
 	"$<$<PLATFORM_ID:Linux>:-mavx>"
 	"$<$<PLATFORM_ID:Linux>:-mavx2>"
 )
 
 target_link_options(
-	"${PROJECT_NAME}"  PUBLIC
-	"$<$<PLATFORM_ID:Windows>:/DEBUG>"
+	"${PROJECT_NAME}" PUBLIC
+	"$<$<CXX_COMPILER_ID:GNU>:$<$<STREQUAL:${ASAN_ENABLED},TRUE>:-fsanitize=address>>"
+	"$<$<CXX_COMPILER_ID:MSVC>:/INCREMENTAL:NO>"
+	"$<$<CXX_COMPILER_ID:MSVC>:/DEBUG>"
 )
-
 install(
 	FILES
 	"${CMAKE_SOURCE_DIR}/Config.json"
@@ -91,3 +93,12 @@ install(
 	TARGETS "${PROJECT_NAME}" 
 	RUNTIME DESTINATION "${CMAKE_SOURCE_DIR}/Output Files/$<CONFIG>"
 )
+
+if (WIN32)
+	install(
+		FILES 
+		"$<TARGET_PDB_FILE:${PROJECT_NAME}>"
+		DESTINATION "$<IF:$<CONFIG:Debug>,${DEBUG_PREFIX}bin,bin>"
+		OPTIONAL
+	)
+endif()

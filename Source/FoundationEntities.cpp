@@ -27,8 +27,7 @@ namespace DiscordCoreLoader {
 
 	DCAException::DCAException(const std::string& error, std::source_location location) noexcept : std::runtime_error(error) {
 		std::stringstream stream{};
-		stream << shiftToBrightRed() << "Thrown From: " << location.file_name() << " (" << std::to_string(location.line()) << ":"
-			   << std::to_string(location.column()) << ")\n"
+		stream << shiftToBrightRed() << "Thrown From: " << location.file_name() << " (" << std::to_string(location.line()) << ":" << std::to_string(location.column()) << ")\n"
 			   << error << reset() << std::endl
 			   << std::endl;
 		*static_cast<std::runtime_error*>(this) = std::runtime_error{ stream.str() };
@@ -36,22 +35,22 @@ namespace DiscordCoreLoader {
 
 	GuildData::operator EtfSerializer() noexcept {
 		EtfSerializer data{};
-		for (auto& value: this->channels) {
+		for (auto& valueNew: this->channels) {
 			EtfSerializer channel{};
-			channel["id"] = value.id;
-			data["channels"].emplaceBack(channel);
+			channel["id"] = valueNew.id;
+			data["channels"].emplaceBack(std::move(channel));
 		}
 
-		for (auto& value: this->roles) {
+		for (auto& valueNew: this->roles) {
 			EtfSerializer role{};
-			role["id"] = value.id;
-			data["roles"].emplaceBack(role);
+			role["id"] = valueNew.id;
+			data["roles"].emplaceBack(std::move(role));
 		}
 
-		for (auto& value: this->members) {
+		for (auto& valueNew: this->members) {
 			EtfSerializer member{};
-			member["id"] = value.id;
-			data["members"].emplaceBack(member);
+			member["user"]["id"] = valueNew.user.id;
+			data["members"].emplaceBack(std::move(member));
 		}
 		return data;
 	}
@@ -65,8 +64,8 @@ namespace DiscordCoreLoader {
 		} catch (const std::exception& e) {
 			std::stringstream theStream{};
 			theStream << shiftToBrightRed() << "Error Report: \n"
-					  << "Caught At: " << currentFunctionName << ", in File: " << theLocation.file_name() << " ("
-					  << std::to_string(theLocation.line()) << ":" << std::to_string(theLocation.column()) << ")"
+					  << "Caught At: " << currentFunctionName << ", in File: " << theLocation.file_name() << " (" << std::to_string(theLocation.line()) << ":"
+					  << std::to_string(theLocation.column()) << ")"
 					  << "\nThe Error: \n"
 					  << e.what() << reset() << std::endl
 					  << std::endl;
@@ -75,8 +74,8 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour,
-		const std::string& minute, const std::string& second) {
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour, const std::string& minute,
+		const std::string& second) {
 		std::string theTimeStamp{};
 		theTimeStamp += year + "-";
 		if (month.size() < 2) {
@@ -158,7 +157,7 @@ namespace DiscordCoreLoader {
 		int32_t minutesPerHour{ 60 };
 		int32_t msPerMinute{ msPerSecond * secondsPerMinute };
 		int32_t msPerHour{ msPerMinute * minutesPerHour };
-		int32_t hoursLeft = static_cast<int32_t>(trunc(durationInMs / msPerHour));
+		int32_t hoursLeft	= static_cast<int32_t>(trunc(durationInMs / msPerHour));
 		int32_t minutesLeft = static_cast<int32_t>(trunc((durationInMs % msPerHour) / msPerMinute));
 		int32_t secondsLeft = static_cast<int32_t>(trunc(((durationInMs % msPerHour) % msPerMinute) / msPerSecond));
 		if (hoursLeft >= 1) {
@@ -187,8 +186,8 @@ namespace DiscordCoreLoader {
 	}
 
 	uint64_t convertTimestampToMsInteger(const std::string& timeStamp) {
-		Time timeValue = Time(stoi(timeStamp.substr(0, 4)), stoi(timeStamp.substr(5, 6)), stoi(timeStamp.substr(8, 9)),
-			stoi(timeStamp.substr(11, 12)), stoi(timeStamp.substr(14, 15)), stoi(timeStamp.substr(17, 18)));
+		Time timeValue = Time(stoi(timeStamp.substr(0, 4)), stoi(timeStamp.substr(5, 6)), stoi(timeStamp.substr(8, 9)), stoi(timeStamp.substr(11, 12)),
+			stoi(timeStamp.substr(14, 15)), stoi(timeStamp.substr(17, 18)));
 		return timeValue.getTime() * 1000;
 	}
 
@@ -218,12 +217,10 @@ namespace DiscordCoreLoader {
 			returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
 
 			if (static_cast<uint64_t>(pos + 1) < theString.size()) {
-				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) +
-					((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
+				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) + ((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
 
 				if (static_cast<uint64_t>(pos + 2) < theString.size()) {
-					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) +
-						((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
+					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) + ((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
 					returnString.push_back(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
 				} else {
 					returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
@@ -285,17 +282,15 @@ namespace DiscordCoreLoader {
 		uint64_t startTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		uint64_t timePassed{ 0 };
 		while (timePassed < timeInNsToSpinLockFor) {
-			timePassed =
-				std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
+			timePassed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTime;
 		}
 	}
 
 	std::string getCurrentISO8601TimeStamp() {
-		std::time_t result = std::time(nullptr);
-		auto resultTwo = std::localtime(&result);
-		std::string resultString =
-			getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
-				std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
+		std::time_t result		 = std::time(nullptr);
+		auto resultTwo			 = std::localtime(&result);
+		std::string resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
+			std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		return resultString;
 	}
 
@@ -352,13 +347,13 @@ namespace DiscordCoreLoader {
 	}
 
 	bool hasTimeElapsed(const std::string& timeStamp, uint64_t days, uint64_t hours, uint64_t minutes) {
-		uint64_t startTimeRaw = convertTimestampToMsInteger(timeStamp);
-		auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		uint64_t startTimeRaw	  = convertTimestampToMsInteger(timeStamp);
+		auto currentTime		  = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		uint64_t secondsPerMinute = 60;
-		uint64_t secondsPerHour = secondsPerMinute * 60;
-		uint64_t secondsPerDay = secondsPerHour * 24;
-		auto targetElapsedTime = ((days * secondsPerDay) + (hours * secondsPerHour) + (minutes * secondsPerMinute)) * 1000;
-		auto actualElapsedTime = currentTime - startTimeRaw;
+		uint64_t secondsPerHour	  = secondsPerMinute * 60;
+		uint64_t secondsPerDay	  = secondsPerHour * 24;
+		auto targetElapsedTime	  = ((days * secondsPerDay) + (hours * secondsPerHour) + (minutes * secondsPerMinute)) * 1000;
+		auto actualElapsedTime	  = currentTime - startTimeRaw;
 		if (actualElapsedTime >= targetElapsedTime) {
 			return true;
 		} else {
@@ -377,8 +372,8 @@ namespace DiscordCoreLoader {
 		int32_t secondsPerMonth{ secondsPerDay * daysPerMonth };
 		int32_t daysPerYear{ 365 };
 		int32_t secondsPerYear{ secondsPerDay * daysPerYear };
-		int32_t secondsToAdd = (yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) +
-			(hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
+		int32_t secondsToAdd =
+			(yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) + (hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
 		result += secondsToAdd;
 		auto resultTwo = std::localtime(&result);
 		std::string resultString{};
@@ -387,24 +382,22 @@ namespace DiscordCoreLoader {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
-				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 4), std::to_string(resultTwo->tm_min),
-				std::to_string(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1), std::to_string(resultTwo->tm_mday),
+				std::to_string(resultTwo->tm_hour + 4), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		} else {
 			if (resultTwo->tm_hour + 5 >= 24) {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
-				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 5), std::to_string(resultTwo->tm_min),
-				std::to_string(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1), std::to_string(resultTwo->tm_mday),
+				std::to_string(resultTwo->tm_hour + 5), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		}
 		return resultString;
 	}
 
 	std::string getTimeAndDate() {
 		const time_t now = std::time(nullptr);
-		tm time = *std::localtime(&now);
+		tm time			 = *std::localtime(&now);
 		std::string timeStamp{};
 		timeStamp.resize(48);
 		if (time.tm_isdst) {
@@ -429,7 +422,7 @@ namespace DiscordCoreLoader {
 	std::string DiscordEntity::getCreatedAtTimestamp(TimeFormat timeFormat) {
 		std::string returnString{};
 		uint64_t timeInMs = (stoull(this->id) >> 22) + 1420070400000;
-		returnString = convertTimeInMsToDateTimeString(timeInMs, timeFormat);
+		returnString	  = convertTimeInMsToDateTimeString(timeInMs, timeFormat);
 		return returnString;
 	}
 };

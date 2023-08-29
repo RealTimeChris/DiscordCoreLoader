@@ -29,10 +29,13 @@ namespace DiscordCoreLoader {
 
 	class ObjectGenerator : public Randomizer {
 	  public:
+		ObjectGenerator() noexcept = default;
 
-		ObjectGenerator& operator=(ConfigData&& configData);
+		ObjectGenerator& operator=(const ConfigData& configData);
 
-		GuildMemberData generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles);
+		ObjectGenerator(const ConfigData& configData);
+
+		GuildMemberData generateGuildMember(const std::string& guildId, const Jsonifier::Vector<RoleData>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 
@@ -45,13 +48,6 @@ namespace DiscordCoreLoader {
 		UserData generateUser();
 
 	  protected:
-		uint64_t stdDeviationForStringLength{};
-		uint64_t meanForStringLength{};
-		uint64_t stdDeviationForMemberCount{};
-		uint64_t meanForMemberCount{};
-		uint64_t stdDeviationForChannelCount{};
-		uint64_t meanForChannelCount{};
-		uint64_t stdDeviationForRoleCount{};
-		uint64_t meanForRoleCount{};
+		ConfigData configData{};
 	};
 }

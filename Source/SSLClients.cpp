@@ -49,11 +49,9 @@ namespace DiscordCoreLoader {
 #ifdef _WIN32
 		char string[1024]{};
 	#ifdef UWP
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			( LPWSTR )string, 1024, NULL);
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), ( LPWSTR )string, 1024, NULL);
 	#else
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			string, 1024, NULL);
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), string, 1024, NULL);
 	#endif
 		stream << WSAGetLastError() << ", " << string << std::endl;
 #else
@@ -130,7 +128,7 @@ namespace DiscordCoreLoader {
 
 	SOCKETWrapper& SOCKETWrapper::operator=(SOCKETWrapper&& other) noexcept {
 		this->ptr.reset(nullptr);
-		this->ptr = std::unique_ptr<SOCKET, SOCKETDeleter>(new SOCKET{}, SOCKETDeleter{});
+		this->ptr  = std::unique_ptr<SOCKET, SOCKETDeleter>(new SOCKET{}, SOCKETDeleter{});
 		*this->ptr = *other.ptr;
 		*other.ptr = SOCKET_ERROR;
 		return *this;
@@ -142,7 +140,7 @@ namespace DiscordCoreLoader {
 
 	SOCKETWrapper& SOCKETWrapper::operator=(SOCKET other) noexcept {
 		this->ptr.reset(nullptr);
-		this->ptr = std::unique_ptr<SOCKET, SOCKETDeleter>(new SOCKET{}, SOCKETDeleter{});
+		this->ptr  = std::unique_ptr<SOCKET, SOCKETDeleter>(new SOCKET{}, SOCKETDeleter{});
 		*this->ptr = other;
 		return *this;
 	}
@@ -194,29 +192,29 @@ namespace DiscordCoreLoader {
 
 	SSLClient& SSLClient::operator=(SSLClient&& other) noexcept {
 		if (this != &other) {
-			this->serverToClientBuffer = std::move(other.serverToClientBuffer);
-			this->theCurrentMessage = std::move(other.theCurrentMessage);
+			this->serverToClientBuffer	= std::move(other.serverToClientBuffer);
+			this->theCurrentMessage		= std::move(other.theCurrentMessage);
 			this->currentReconnectTries = other.currentReconnectTries;
-			this->theMessageQueue = std::move(other.theMessageQueue);
-			this->currentSocketIndex = other.currentSocketIndex;
-			this->outputBuffers = std::move(other.outputBuffers);
-			this->clientSocket = std::move(other.clientSocket);
-			this->currentGuildCount = other.currentGuildCount;
-			this->inputBuffer = std::move(other.inputBuffer);
-			this->theContext = std::move(other.theContext);
-			this->totalGuildCount = other.totalGuildCount;
-			this->areWeConnected = other.areWeConnected;
-			this->doWePrintError = other.doWePrintError;
-			this->lastNumberSent = other.lastNumberSent;
-			this->authKey = std::move(other.authKey);
-			this->bytesWritten = other.bytesWritten;
-			this->theOpCode = other.theOpCode;
-			this->sendGuilds = other.sendGuilds;
-			this->bytesRead = other.bytesRead;
-			this->ssl = std::move(other.ssl);
-			this->theState = other.theState;
-			this->shard[0] = other.shard[0];
-			this->shard[1] = other.shard[1];
+			this->theMessageQueue		= std::move(other.theMessageQueue);
+			this->currentSocketIndex	= other.currentSocketIndex;
+			this->outputBuffers			= std::move(other.outputBuffers);
+			this->clientSocket			= std::move(other.clientSocket);
+			this->currentGuildCount		= other.currentGuildCount;
+			this->inputBuffer			= std::move(other.inputBuffer);
+			this->theContext			= std::move(other.theContext);
+			this->totalGuildCount		= other.totalGuildCount;
+			this->areWeConnected		= other.areWeConnected;
+			this->doWePrintError		= other.doWePrintError;
+			this->lastNumberSent		= other.lastNumberSent;
+			this->authKey				= std::move(other.authKey);
+			this->bytesWritten			= other.bytesWritten;
+			this->theOpCode				= other.theOpCode;
+			this->sendGuilds			= other.sendGuilds;
+			this->bytesRead				= other.bytesRead;
+			this->ssl					= std::move(other.ssl);
+			this->theState				= other.theState;
+			this->shard[0]				= other.shard[0];
+			this->shard[1]				= other.shard[1];
 		}
 		return *this;
 	}
@@ -228,8 +226,8 @@ namespace DiscordCoreLoader {
 	SSLClient::SSLClient(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
 		this->serverToClientBuffer.resize(this->maxBufferSize);
 		this->doWePrintError = doWePrintErrorsNew;
-		this->theContext = theContextNew;
-		this->clientSocket = theSocket;
+		this->theContext	 = theContextNew;
+		this->clientSocket	 = theSocket;
 
 		if (this->clientSocket != SOCKET_ERROR) {
 			if (this->ssl = SSL_new(this->theContext); this->ssl == nullptr) {
@@ -265,7 +263,7 @@ namespace DiscordCoreLoader {
 		if (dataToWrite.size() > 0 && this->ssl) {
 			if (priority && dataToWrite.size() < static_cast<size_t>(16 * 1024)) {
 				pollfd readWriteSet{};
-				readWriteSet.fd = this->clientSocket;
+				readWriteSet.fd		= this->clientSocket;
 				readWriteSet.events = POLLOUT;
 				if (auto returnValue = poll(&readWriteSet, 1, 1); returnValue == SOCKET_ERROR) {
 					this->disconnect();
@@ -398,13 +396,13 @@ namespace DiscordCoreLoader {
 		this->areWeConnected = false;
 	}
 
-	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew,
-		std::atomic_bool* doWeQuitNew, ConfigParser* theData) {
-		this->doWePrintError = doWePrintErrorNew;
+	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew,
+		ConfigParser* theData) {
+		this->doWePrintError  = doWePrintErrorNew;
 		this->theConfigParser = theData;
-		this->doWeQuit = doWeQuitNew;
-		this->baseUrl = baseUrlNew;
-		this->port = portNew;
+		this->doWeQuit		  = doWeQuitNew;
+		this->baseUrl		  = baseUrlNew;
+		this->port			  = portNew;
 
 #ifdef _WIN32
 		std::string certPath{ getCurrentPath() + "\\Cert.pem" };
@@ -415,7 +413,7 @@ namespace DiscordCoreLoader {
 #endif
 
 		addrinfoWrapper hints{};
-		hints->ai_family = AF_INET;
+		hints->ai_family   = AF_INET;
 		hints->ai_socktype = SOCK_STREAM;
 		hints->ai_protocol = IPPROTO_TCP;
 
@@ -426,8 +424,7 @@ namespace DiscordCoreLoader {
 			return;
 		}
 
-		if (this->theServerSocket = socket(this->addrInfo->ai_family, this->addrInfo->ai_socktype, this->addrInfo->ai_protocol);
-			this->theServerSocket == SOCKET_ERROR) {
+		if (this->theServerSocket = socket(this->addrInfo->ai_family, this->addrInfo->ai_socktype, this->addrInfo->ai_protocol); this->theServerSocket == SOCKET_ERROR) {
 			if (this->doWePrintError) {
 				reportError("socket() Error: ", this->theServerSocket);
 			}
@@ -442,8 +439,7 @@ namespace DiscordCoreLoader {
 			return;
 		}
 
-		if (auto returnValue = bind(this->theServerSocket, this->addrInfo->ai_addr, static_cast<int32_t>(this->addrInfo->ai_addrlen));
-			returnValue != 0) {
+		if (auto returnValue = bind(this->theServerSocket, this->addrInfo->ai_addr, static_cast<int32_t>(this->addrInfo->ai_addrlen)); returnValue != 0) {
 			if (this->doWePrintError) {
 				reportError("bind() Error: ", returnValue);
 			}
@@ -501,7 +497,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	std::vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(std::vector<WebSocketSSLShard*>& theVector) noexcept {
+	Jsonifier::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(Jsonifier::Vector<WebSocketSSLShard*>& theVector) noexcept {
 		PollFDWrapper readWriteSet{};
 		for (uint32_t x = 0; x < theVector.size(); ++x) {
 			pollfd theWrapper{};
@@ -515,16 +511,14 @@ namespace DiscordCoreLoader {
 			readWriteSet.thePolls.emplace_back(theWrapper);
 		}
 
-		std::vector<WebSocketSSLShard*> returnValue02{};
+		Jsonifier::Vector<WebSocketSSLShard*> returnValue02{};
 		if (readWriteSet.theIndices.size() == 0) {
 			return returnValue02;
 		}
 
-		if (auto returnValue = poll(readWriteSet.thePolls.data(), static_cast<unsigned long>(readWriteSet.theIndices.size()), 1);
-			returnValue == SOCKET_ERROR) {
+		if (auto returnValue = poll(readWriteSet.thePolls.data(), static_cast<unsigned long>(readWriteSet.theIndices.size()), 1); returnValue == SOCKET_ERROR) {
 			for (uint32_t x = 0; x < readWriteSet.thePolls.size(); ++x) {
-				if (readWriteSet.thePolls[x].revents & POLLERR || readWriteSet.thePolls[x].revents & POLLHUP ||
-					readWriteSet.thePolls[x].revents & POLLNVAL) {
+				if (readWriteSet.thePolls[x].revents & POLLERR || readWriteSet.thePolls[x].revents & POLLHUP || readWriteSet.thePolls[x].revents & POLLNVAL) {
 					returnValue02.emplace_back(theVector[readWriteSet.theIndices[x]]);
 				}
 			}

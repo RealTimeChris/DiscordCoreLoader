@@ -20,6 +20,7 @@
 /// \file DiscordCoreClient.cpp
 
 #include <discordcoreloader/DiscordCoreClient.hpp>
+#include <discordcoreloader/MessageHolder.hpp>
 #include <csignal>
 #include <atomic>
 
@@ -77,7 +78,7 @@ namespace DiscordCoreLoader {
 		std::exit(EXIT_FAILURE);
 	}
 
-	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) {
+	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) : configParser{ configFilePath } {
 #ifdef _WIN32
 		_crt_signal_t errorLambda = [](int32_t integer) -> void {
 			signalHandler(integer);
@@ -97,6 +98,10 @@ namespace DiscordCoreLoader {
 		this->configParser = ConfigParser{ configFilePath };
 		this->guildQuantity.store(this->configParser.getTheData().guildQuantity);
 		this->randomizer = this->configParser.getTheData();
+		messageHolder	 = configParser.getTheData();
+		std::cout << "Generating guild data..." << std::endl;
+		messageHolder.generateGuildMessages(configParser.getTheData().guildQuantity);
+		std::cout << "Done generating guild data - You can now attempt to connect your bot." << std::endl;
 	}
 
 	void DiscordCoreClient::connectShard() {
@@ -111,15 +116,14 @@ namespace DiscordCoreLoader {
 			auto newShard = std::make_unique<WebSocketSSLShard>(this->webSocketSSLServerMain->getNewSocket(), this->webSocketSSLServerMain->context,
 				this->configParser.getTheData().doWePrintWebSocketErrorMessages, this->baseSocketAgentMap[0].get());
 
-			std::vector<WebSocketSSLShard*> theVector{};
+			Jsonifier::Vector<WebSocketSSLShard*> theVector{};
 			theVector.emplace_back(newShard.get());
 			while (newShard->authKey == "") {
 				this->webSocketSSLServerMain->processIO(theVector);
 				this->baseSocketAgentMap[0]->handleBuffer(newShard.get());
 			}
 			newShard->shard[0] = -1;
-			std::string sendString{ "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " +
-				newShard->authKey + "\r\n\r\n" };
+			std::string sendString{ "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + newShard->authKey + "\r\n\r\n" };
 			this->baseSocketAgentMap[0]->sendMessage(&sendString, newShard.get(), false);
 			auto returnValue = this->webSocketSSLServerMain->processIO(theVector);
 			this->baseSocketAgentMap[0]->sendHelloMessage(newShard.get());
@@ -130,26 +134,22 @@ namespace DiscordCoreLoader {
 				returnValue = this->webSocketSSLServerMain->processIO(theVector);
 				this->baseSocketAgentMap[0]->handleBuffer(newShard.get());
 			}
-			auto theCurrentShard = newShard->shard[0];
+			auto theCurrentShard		   = newShard->shard[0];
 			auto theCurrentBaseSocketAgent = newShard->shard[0] % this->workerCount;
 			if (!this->baseSocketAgentMap.contains(theCurrentBaseSocketAgent)) {
-				this->baseSocketAgentMap[theCurrentBaseSocketAgent] =
-					std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit, true);
+				this->baseSocketAgentMap[theCurrentBaseSocketAgent] = std::make_unique<BaseSocketAgent>(this->webSocketSSLServerMain.get(), this, &Globals::doWeQuit, true);
 			}
 			if (this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients.contains(theCurrentShard)) {
 				this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->disconnect();
 			}
 			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard] = std::move(newShard);
 
-			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->sendFinalMessage(
-				this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard].get());
+			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->sendFinalMessage(this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard].get());
 			while (!this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->areWeConnected) {
 				returnValue = this->webSocketSSLServerMain->processIO(theVector);
-				this->baseSocketAgentMap[theCurrentBaseSocketAgent]->handleBuffer(
-					this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard].get());
+				this->baseSocketAgentMap[theCurrentBaseSocketAgent]->handleBuffer(this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard].get());
 			}
-			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->theAgent =
-				this->baseSocketAgentMap[theCurrentBaseSocketAgent].get();
+			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->theAgent	 = this->baseSocketAgentMap[theCurrentBaseSocketAgent].get();
 			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->sendGuilds = true;
 			if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
 				std::cout << shiftToBrightGreen()
@@ -174,8 +174,8 @@ namespace DiscordCoreLoader {
 	}
 
 	void DiscordCoreClient::runServer() {
-		this->webSocketSSLServerMain = std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp,
-			this->configParser.getTheData().connectionPort, true, &Globals::doWeQuit, &this->configParser);
+		this->webSocketSSLServerMain = std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true,
+			&Globals::doWeQuit, &this->configParser);
 		while (!Globals::doWeQuit.load()) {
 			this->connectShard();
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });

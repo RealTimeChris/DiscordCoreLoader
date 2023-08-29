@@ -1,5 +1,5 @@
 {
-  "ConnectionIp": "192.168.0.15",
+  "ConnectionIp": "127.0.0.1",
   "ConnectionPort": "443",
   "DoWePrintGeneralErrorMessages": true,
   "DoWePrintGeneralSuccessMessages": true,
@@ -7,12 +7,13 @@
   "DoWePrintWebSocketSuccessReceiveMessages": true,
   "DoWePrintWebSocketSuccessSentMessages": false,
   "GuildQuantity": 30000,
-  "MeanForChannelCount": 10,
+  "MeanForChannelCount": 35,
   "MeanForMemberCount": 200,
-  "MeanForRoleCount": 10,
-  "MeanForStringLength": 10,
+  "MeanForRoleCount": 40,
+  "MeanForStringLength": 5,
   "StdDeviationForChannelCount": 1,
   "StdDeviationForMemberCount": 1,
   "StdDeviationForRoleCount": 1,
-  "StdDeviationForStringLength": 1
+  "StdDeviationForStringLength": 3,
+  "TextFormat": "Json"
 }

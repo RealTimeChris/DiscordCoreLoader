@@ -35,9 +35,9 @@
 #include <discordcoreloader/ConfigParser.hpp>
 
 extern "C" {
-	#undef APPMACROS_ONLY
-	#include <openssl/err.h>
-	#include <openssl/ssl.h>
+#undef APPMACROS_ONLY
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 }
 
 #ifdef max
@@ -87,23 +87,23 @@ namespace DiscordCoreLoader {
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
 	struct PollFDWrapper {
-		std::vector<uint32_t> theIndices{};
-		std::vector<pollfd> thePolls{};
+		Jsonifier::Vector<uint32_t> theIndices{};
+		Jsonifier::Vector<pollfd> thePolls{};
 	};
 
 	class BaseSocketAgent;
 
 	struct MessagePackage {
-		std::vector<std::string> theStrings{};
+		Jsonifier::Vector<std::string> theStrings{};
 	};
 
 	struct WebSocketMessage {
 		WebSocketMessage& operator=(WebSocketMessage&& other) noexcept {
 			this->theOpCode = other.theOpCode;
-			this->t = std::move(other.t);
-			this->d = std::move(other.d);
-			this->op = other.op;
-			this->s = other.s;
+			this->t			= std::move(other.t);
+			this->d			= std::move(other.d);
+			this->op		= other.op;
+			this->s			= other.s;
 			return *this;
 		}
 		WebSocketMessage(WebSocketMessage&& other) noexcept {
@@ -111,10 +111,10 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage& operator=(const WebSocketMessage& other) noexcept {
 			this->theOpCode = other.theOpCode;
-			this->op = other.op;
-			this->t = other.t;
-			this->d = other.d;
-			this->s = other.s;
+			this->op		= other.op;
+			this->t			= other.t;
+			this->d			= other.d;
+			this->s			= other.s;
 			return *this;
 		}
 		WebSocketMessage(const WebSocketMessage& other) noexcept {
@@ -230,7 +230,7 @@ namespace DiscordCoreLoader {
 	};
 
 	enum class ProcessIOReturnCode : int32_t {
-		Error = -1,///< Error occurred.
+		Error	= -1,///< Error occurred.
 		Success = 0,///< Succesful read or write occurred.
 	};
 
@@ -320,10 +320,9 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain() = default;
 
-		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit,
-			ConfigParser* theData);
+		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
 
-		std::vector<WebSocketSSLShard*> processIO(std::vector<WebSocketSSLShard*>& theMap) noexcept;
+		Jsonifier::Vector<WebSocketSSLShard*> processIO(Jsonifier::Vector<WebSocketSSLShard*>& theMap) noexcept;
 
 		SOCKET getNewSocket();
 
@@ -341,4 +340,4 @@ namespace DiscordCoreLoader {
 		std::string port{};
 	};
 
-}// 
+}//

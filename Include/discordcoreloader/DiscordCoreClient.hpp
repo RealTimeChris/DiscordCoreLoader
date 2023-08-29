@@ -25,6 +25,7 @@
 #include <discordcoreloader/ConfigParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
+#include <discordcoreloader/MessageHolder.hpp>
 #include <source_location>
 
 namespace DiscordCoreLoader {
@@ -89,6 +90,7 @@ namespace DiscordCoreLoader {
 		std::atomic_int32_t workerCount{ -1 };
 		std::atomic_int32_t guildQuantity{};
 		ShardingOptions shardingOptions{};
+		MessageHolder messageHolder;
 		ObjectGenerator randomizer{};
 		ConfigParser configParser{};
 #ifdef _WIN32
