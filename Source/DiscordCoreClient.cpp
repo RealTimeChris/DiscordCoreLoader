@@ -116,7 +116,7 @@ namespace DiscordCoreLoader {
 			auto newShard = std::make_unique<WebSocketSSLShard>(this->webSocketSSLServerMain->getNewSocket(), this->webSocketSSLServerMain->context,
 				this->configParser.getTheData().doWePrintWebSocketErrorMessages, this->baseSocketAgentMap[0].get());
 
-			Jsonifier::Vector<WebSocketSSLShard*> theVector{};
+			ContIterator::Vector<WebSocketSSLShard*> theVector{};
 			theVector.emplace_back(newShard.get());
 			while (newShard->authKey == "") {
 				this->webSocketSSLServerMain->processIO(theVector);

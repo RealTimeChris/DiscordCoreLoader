@@ -497,7 +497,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	Jsonifier::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(Jsonifier::Vector<WebSocketSSLShard*>& theVector) noexcept {
+	ContIterator::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(ContIterator::Vector<WebSocketSSLShard*>& theVector) noexcept {
 		PollFDWrapper readWriteSet{};
 		for (uint32_t x = 0; x < theVector.size(); ++x) {
 			pollfd theWrapper{};
@@ -511,7 +511,7 @@ namespace DiscordCoreLoader {
 			readWriteSet.thePolls.emplace_back(theWrapper);
 		}
 
-		Jsonifier::Vector<WebSocketSSLShard*> returnValue02{};
+		ContIterator::Vector<WebSocketSSLShard*> returnValue02{};
 		if (readWriteSet.theIndices.size() == 0) {
 			return returnValue02;
 		}

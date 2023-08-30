@@ -107,7 +107,7 @@ namespace DiscordCoreLoader {
 		return theValue;
 	}
 
-	uint64_t Randomizer::drawRandomValue(Jsonifier::Vector<uint64_t>& theValues) {
+	uint64_t Randomizer::drawRandomValue(ContIterator::Vector<uint64_t>& theValues) {
 		if (theValues.size() == 0) {
 			return 0;
 		}

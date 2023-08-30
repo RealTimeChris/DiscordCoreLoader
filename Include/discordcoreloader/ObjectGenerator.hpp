@@ -35,7 +35,7 @@ namespace DiscordCoreLoader {
 
 		ObjectGenerator(const ConfigData& configData);
 
-		GuildMemberData generateGuildMember(const std::string& guildId, const Jsonifier::Vector<RoleData>& roles);
+		GuildMemberData generateGuildMember(const std::string& guildId, const ContIterator::Vector<RoleData>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 

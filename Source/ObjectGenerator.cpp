@@ -33,7 +33,7 @@ namespace DiscordCoreLoader {
 		*this = configData;
 	}
 
-	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const Jsonifier::Vector<RoleData>& roles) {
+	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const ContIterator::Vector<RoleData>& roles) {
 		GuildMemberData theData{};
 		theData.nick = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
@@ -110,7 +110,7 @@ namespace DiscordCoreLoader {
 	GuildData ObjectGenerator::generateGuild(std::string guildId) {
 		GuildData theData{};
 		auto roleCount = this->randomize64BitUInt(static_cast<double>(this->configData.meanForRoleCount), static_cast<double>(this->configData.stdDeviationForRoleCount));
-		Jsonifier::Vector<uint64_t> thePositions{};
+		ContIterator::Vector<uint64_t> thePositions{};
 		for (uint32_t x = 0; x < roleCount; x++) {
 			thePositions.emplace_back(x);
 		}

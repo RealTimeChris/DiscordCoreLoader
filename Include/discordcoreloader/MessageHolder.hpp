@@ -32,7 +32,7 @@ namespace DiscordCoreLoader {
 
 	inline thread_local Jsonifier::JsonifierCore parser{};
 
-	class MessageHolder : public ObjectGenerator, EtfSerializer  {
+	class MessageHolder : public ObjectGenerator {
 	  public:
 		inline MessageHolder() noexcept = default;
 
@@ -96,8 +96,8 @@ namespace DiscordCoreLoader {
 		}
 
 	  protected:
-		Jsonifier::Vector<std::unique_ptr<std::jthread>> jthreads{};
-		std::deque<Jsonifier::String> messagesToSend{};
+		ContIterator::Vector<std::unique_ptr<std::jthread>> jthreads{};
+		std::deque<ContIterator::String> messagesToSend{};
 		std::atomic_uint32_t lastNumberSent{};
 		std::mutex accessMutex{};
 	};

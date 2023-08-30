@@ -87,14 +87,14 @@ namespace DiscordCoreLoader {
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
 	struct PollFDWrapper {
-		Jsonifier::Vector<uint32_t> theIndices{};
-		Jsonifier::Vector<pollfd> thePolls{};
+		ContIterator::Vector<uint32_t> theIndices{};
+		ContIterator::Vector<pollfd> thePolls{};
 	};
 
 	class BaseSocketAgent;
 
 	struct MessagePackage {
-		Jsonifier::Vector<std::string> theStrings{};
+		ContIterator::Vector<std::string> theStrings{};
 	};
 
 	struct WebSocketMessage {
@@ -322,7 +322,7 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
 
-		Jsonifier::Vector<WebSocketSSLShard*> processIO(Jsonifier::Vector<WebSocketSSLShard*>& theMap) noexcept;
+		ContIterator::Vector<WebSocketSSLShard*> processIO(ContIterator::Vector<WebSocketSSLShard*>& theMap) noexcept;
 
 		SOCKET getNewSocket();
 

@@ -243,10 +243,10 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	Jsonifier::Vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator) noexcept {
+	ContIterator::Vector<std::string> BaseSocketAgent::tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator) noexcept {
 		try {
 			size_t value{ 0 };
-			Jsonifier::Vector<std::string> dataOut{};
+			ContIterator::Vector<std::string> dataOut{};
 			while ((value = dataIn.find_first_not_of(separator, value)) != std::string::npos) {
 				auto output = dataIn.find(separator, value);
 				dataOut.emplace_back(dataIn.substr(value, output - value));
@@ -283,7 +283,7 @@ namespace DiscordCoreLoader {
 				reportException("BaseSocketAgent::tokenize()");
 			}
 			theShard->disconnect();
-			return Jsonifier::Vector<std::string>{};
+			return ContIterator::Vector<std::string>{};
 		}
 	}
 
@@ -318,7 +318,7 @@ namespace DiscordCoreLoader {
 		try {
 			while (!theToken.stop_requested() && !this->doWeQuit->load()) {
 				if (this->theClients.size() > 0) {
-					Jsonifier::Vector<WebSocketSSLShard*> theVector{};
+					ContIterator::Vector<WebSocketSSLShard*> theVector{};
 					bool areWeAllConnected{ true };
 					for (auto& [key, valueNew]: this->theClients) {
 						if (valueNew && valueNew->areWeStillConnected() && valueNew->areWeConnected) {
@@ -455,11 +455,11 @@ namespace DiscordCoreLoader {
 					if (newVector.find("\r\n\r\n") != std::string::npos) {
 						std::string headers = newVector.substr(0, newVector.find("\r\n\r\n"));
 						newVector.erase(0, newVector.find("\r\n\r\n") + 4);
-						Jsonifier::Vector<std::string> headerOut = tokenize(headers, theShard);
+						ContIterator::Vector<std::string> headerOut = tokenize(headers, theShard);
 						if (headerOut.size()) {
 							std::string statusLine = headerOut[0];
 							headerOut.erase(headerOut.begin());
-							Jsonifier::Vector<std::string> status = tokenize(statusLine, theShard, " ");
+							ContIterator::Vector<std::string> status = tokenize(statusLine, theShard, " ");
 							theShard->theState				= WebSocketState::Connected;
 							theShard->getInputBuffer().clear();
 							theShard->getInputBuffer().insert(theShard->getInputBuffer().end(), newVector.begin(), newVector.end());

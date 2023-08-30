@@ -84,7 +84,7 @@ namespace DiscordCoreLoader {
 
 	  protected:
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
-		std::unordered_map<SOCKET, Jsonifier::Vector<UnavailableGuild>> theGuilds{};
+		std::unordered_map<SOCKET, ContIterator::Vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
@@ -99,7 +99,7 @@ namespace DiscordCoreLoader {
 		uint16_t closeCode{ 0 };
 		std::string sessionId{};
 
-		Jsonifier::Vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
+		ContIterator::Vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
 
 		void createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
 

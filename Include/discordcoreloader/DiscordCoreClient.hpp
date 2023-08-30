@@ -25,6 +25,7 @@
 #include <discordcoreloader/ConfigParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
+#include <discordcoreloader/JsonSpecializations.hpp>
 #include <discordcoreloader/MessageHolder.hpp>
 #include <source_location>
 

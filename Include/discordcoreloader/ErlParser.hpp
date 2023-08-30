@@ -150,7 +150,7 @@ namespace DiscordCoreLoader {
 		}
 
 	  protected:
-		Jsonifier::String finalString{};///< The final JSON string.
+		ContIterator::String finalString{};///< The final JSON string.
 		const char* dataBuffer{};///< Pointer to ETF data buffer.
 		uint64_t currentSize{};///< Current size of the JSON string.
 		uint64_t dataSize{};///< Size of the ETF data.
@@ -533,7 +533,7 @@ namespace DiscordCoreLoader {
 		template<typename ValueType> using allocator = std::allocator<ValueType>;
 		using map_allocator							 = allocator<std::pair<const std::string, EtfSerializer>>;
 		using object_type							 = std::map<std::string, EtfSerializer, std::less<>, map_allocator>;
-		using array_type							 = Jsonifier::Vector<EtfSerializer>;
+		using array_type							 = ContIterator::Vector<EtfSerializer>;
 		using string_type							 = std::string;
 		using float_type							 = double;
 		using uint_type								 = uint64_t;
@@ -1051,43 +1051,43 @@ namespace DiscordCoreLoader {
 			type = typeNew;
 			switch (type) {
 				case JsonType::Object: {
-					JsonifierInternal::AllocWrapper<object_type> alloc{};
+					ContIterator::AllocWrapper<object_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getObject());
 					break;
 				}
 				case JsonType::Array: {
-					JsonifierInternal::AllocWrapper<array_type> alloc{};
+					ContIterator::AllocWrapper<array_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getArray());
 					break;
 				}
 				case JsonType::String: {
-					JsonifierInternal::AllocWrapper<string_type> alloc{};
+					ContIterator::AllocWrapper<string_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getString());
 					break;
 				}
 				case JsonType::Float: {
-					JsonifierInternal::AllocWrapper<float_type> alloc{};
+					ContIterator::AllocWrapper<float_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getFloat());
 					break;
 				}
 				case JsonType::Uint: {
-					JsonifierInternal::AllocWrapper<uint_type> alloc{};
+					ContIterator::AllocWrapper<uint_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getUint());
 					break;
 				}
 				case JsonType::Int: {
-					JsonifierInternal::AllocWrapper<int_type> alloc{};
+					ContIterator::AllocWrapper<int_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getInt());
 					break;
 				}
 				case JsonType::Bool: {
-					JsonifierInternal::AllocWrapper<bool_type> alloc{};
+					ContIterator::AllocWrapper<bool_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getBool());
 					break;
@@ -1102,43 +1102,43 @@ namespace DiscordCoreLoader {
 			if (value) {
 				switch (type) {
 					case JsonType::Object: {
-						JsonifierInternal::AllocWrapper<object_type> alloc{};
+						ContIterator::AllocWrapper<object_type> alloc{};
 						alloc.destroy(&getObject());
 						alloc.deallocate(static_cast<object_type*>(value), 1);
 						break;
 					}
 					case JsonType::Array: {
-						JsonifierInternal::AllocWrapper<array_type> alloc{};
+						ContIterator::AllocWrapper<array_type> alloc{};
 						alloc.destroy(&getArray());
 						alloc.deallocate(static_cast<array_type*>(value), 1);
 						break;
 					}
 					case JsonType::String: {
-						JsonifierInternal::AllocWrapper<string_type> alloc{};
+						ContIterator::AllocWrapper<string_type> alloc{};
 						alloc.destroy(&getString());
 						alloc.deallocate(static_cast<string_type*>(value), 1);
 						break;
 					}
 					case JsonType::Float: {
-						JsonifierInternal::AllocWrapper<float_type> alloc{};
+						ContIterator::AllocWrapper<float_type> alloc{};
 						alloc.destroy(&getFloat());
 						alloc.deallocate(static_cast<float_type*>(value), 1);
 						break;
 					}
 					case JsonType::Uint: {
-						JsonifierInternal::AllocWrapper<uint_type> alloc{};
+						ContIterator::AllocWrapper<uint_type> alloc{};
 						alloc.destroy(&getUint());
 						alloc.deallocate(static_cast<uint_type*>(value), 1);
 						break;
 					}
 					case JsonType::Int: {
-						JsonifierInternal::AllocWrapper<int_type> alloc{};
+						ContIterator::AllocWrapper<int_type> alloc{};
 						alloc.destroy(&getInt());
 						alloc.deallocate(static_cast<int_type*>(value), 1);
 						break;
 					}
 					case JsonType::Bool: {
-						JsonifierInternal::AllocWrapper<bool_type> alloc{};
+						ContIterator::AllocWrapper<bool_type> alloc{};
 						alloc.destroy(&getBool());
 						alloc.deallocate(static_cast<bool_type*>(value), 1);
 						break;
