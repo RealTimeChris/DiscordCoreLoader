@@ -25,7 +25,6 @@
 #include <discordcoreloader/ConfigParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
-#include <discordcoreloader/JsonSpecializations.hpp>
 #include <discordcoreloader/MessageHolder.hpp>
 #include <source_location>
 
@@ -33,32 +32,32 @@ namespace DiscordCoreLoader {
 
 	class SIGTERMError : public std::runtime_error {
 	  public:
-		SIGTERMError(const std::string& string);
+		SIGTERMError(const Jsonifier::String& string);
 	};
 
 	class SIGSEGVError : public std::runtime_error {
 	  public:
-		SIGSEGVError(const std::string& string);
+		SIGSEGVError(const Jsonifier::String& string);
 	};
 
 	class SIGINTError : public std::runtime_error {
 	  public:
-		SIGINTError(const std::string& string);
+		SIGINTError(const Jsonifier::String& string);
 	};
 
 	class SIGILLError : public std::runtime_error {
 	  public:
-		SIGILLError(const std::string& string);
+		SIGILLError(const Jsonifier::String& string);
 	};
 
 	class SIGABRTError : public std::runtime_error {
 	  public:
-		SIGABRTError(const std::string& string);
+		SIGABRTError(const Jsonifier::String& string);
 	};
 
 	class SIGFPEError : public std::runtime_error {
 	  public:
-		SIGFPEError(const std::string& string);
+		SIGFPEError(const Jsonifier::String& string);
 	};
 
 	extern "C" void signalHandler(int32_t value, std::source_location location = std::source_location::current());
@@ -76,7 +75,7 @@ namespace DiscordCoreLoader {
 
 		/// DiscordCoreClient constructor. \brief DiscordCoreClient constructor.
 		/// \param configFilePath A string containing the path to the config file.
-		DiscordCoreClient(const std::string& configFilePath);
+		DiscordCoreClient(const Jsonifier::String& configFilePath);
 
 		/// Executes the library, and waits for completion. \brief Executes the library, and waits for completion.
 		void runServer();

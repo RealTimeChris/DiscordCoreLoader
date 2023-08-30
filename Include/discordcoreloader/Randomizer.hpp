@@ -28,7 +28,7 @@ namespace DiscordCoreLoader {
 
 	class Randomizer {
 	  public:
-		void randomizeId(std::string& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
+		void randomizeId(Jsonifier::String& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
 
 		uint64_t randomize64BitUInt(uint64_t minValue, uint64_t maxValue);
 
@@ -42,11 +42,11 @@ namespace DiscordCoreLoader {
 
 		int8_t randomize8BitInt(uint8_t minValue, uint8_t maxValue);
 
-		uint64_t drawRandomValue(ContIterator::Vector<uint64_t>&);
+		uint64_t drawRandomValue(Jsonifier::Vector<uint64_t>&);
 
-		std::string randomizeString(int64_t length);
+		Jsonifier::String randomizeString(int64_t length);
 
-		std::string randomizeIconHash();
+		Jsonifier::String randomizeIconHash();
 
 		uint64_t randomize64BitUInt();
 

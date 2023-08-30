@@ -31,8 +31,8 @@ namespace DiscordCoreLoader {
 	};
 
 	struct ConfigData {
-		std::string connectionIp{};
-		std::string connectionPort{};
+		Jsonifier::String connectionIp{};
+		Jsonifier::String connectionPort{};
 		bool doWePrintWebSocketSuccessReceiveMessages{ false };
 		bool doWePrintWebSocketSuccessSentMessages{ false };
 		bool doWePrintWebSocketErrorMessages{ false };
@@ -47,12 +47,12 @@ namespace DiscordCoreLoader {
 		uint64_t meanForChannelCount{};
 		uint64_t stdDeviationForRoleCount{};
 		uint64_t meanForRoleCount{};
-		std::string format{};
+		Jsonifier::String format{};
 	};
 
 	class ConfigParser {
 	  public:
-		ConfigParser(std::string theConfigPath);
+		ConfigParser(Jsonifier::String theConfigPath);
 
 		ConfigParser() = default;
 
@@ -61,6 +61,6 @@ namespace DiscordCoreLoader {
 	  protected:
 		ConfigData theData{};
 
-		void parseConfigData(std::string configFilePath);
+		void parseConfigData(Jsonifier::String configFilePath);
 	};
 }// namespace DiscordCoreLoader

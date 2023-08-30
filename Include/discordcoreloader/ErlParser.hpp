@@ -26,11 +26,12 @@
 #pragma once
 
 #include <discordcoreloader/FoundationEntities.hpp>
+#include <discordcoreloader/UnorderedMap.hpp>
 
 namespace DiscordCoreLoader {
 
-	struct DCAException : public std::runtime_error, std::string {
-		DCAException(const std::string&, std::source_location = std::source_location::current()) noexcept;
+	struct DCAException : public std::runtime_error, Jsonifier::String {
+		DCAException(const Jsonifier::String&, std::source_location = std::source_location::current()) noexcept;
 	};
 	/**
 		* \addtogroup discord_core_internal
@@ -109,7 +110,7 @@ namespace DiscordCoreLoader {
 		/// @brief Constructs an EtfParseError instance with a message and source location.
 		/// @param message The error message.
 		/// @param location The source location where the error occurred.
-		EtfParseError(const std::string& message, std::source_location location = std::source_location::current()) : DCAException{ message, location } {};
+		EtfParseError(const Jsonifier::String& message, std::source_location location = std::source_location::current()) : DCAException{ message, location } {};
 	};
 
 	enum class EtfType : char {
@@ -136,7 +137,7 @@ namespace DiscordCoreLoader {
 		/// @brief Parse ETF data to JSON format.
 		/// @param dataToParse The ETF data to be parsed.
 		/// @return The JSON representation of the parsed data.
-		inline std::string_view parseEtfToJson(std::string_view dataToParse) {
+		inline Jsonifier::StringView parseEtfToJson(Jsonifier::StringView dataToParse) {
 			dataBuffer = dataToParse.data();
 			dataSize   = dataToParse.size();
 			finalString.clear();
@@ -146,11 +147,11 @@ namespace DiscordCoreLoader {
 				throw EtfParseError{ "EtfParser::parseEtfToJson() Error: Incorrect format version specified." };
 			}
 			singleValueETFToJson();
-			return std::string_view{ finalString.data(), currentSize };
+			return Jsonifier::StringView{ finalString.data(), currentSize };
 		}
 
 	  protected:
-		ContIterator::String finalString{};///< The final JSON string.
+		Jsonifier::String finalString{};///< The final JSON string.
 		const char* dataBuffer{};///< Pointer to ETF data buffer.
 		uint64_t currentSize{};///< Current size of the JSON string.
 		uint64_t dataSize{};///< Size of the ETF data.
@@ -316,7 +317,7 @@ namespace DiscordCoreLoader {
 					return parseMapExt();
 				}
 				default: {
-					throw EtfParseError{ "EtfParser::singleValueETFToJson() Error: Unknown data type in ETF, the type: " + std::to_string(type) };
+					throw EtfParseError{ Jsonifier::String{ "EtfParser::singleValueETFToJson() Error: Unknown data type in ETF, the type: " + std::to_string(type) } };
 				}
 			}
 		}
@@ -368,7 +369,7 @@ namespace DiscordCoreLoader {
 			uint64_t value = readBitsFromBuffer<uint64_t>();
 			double newDouble{};
 			std::memcpy(&newDouble, &value, sizeof(double));
-			std::string valueNew = std::to_string(newDouble);
+			Jsonifier::String valueNew{ std::to_string(newDouble) };
 			writeCharacters(valueNew.data(), valueNew.size());
 		}
 
@@ -444,7 +445,7 @@ namespace DiscordCoreLoader {
 		/// @brief Constructor for EtfSerializeError.
 		/// @param message The error message.
 		/// @param location Source location where the error occurred.
-		EtfSerializeError(const std::string& message, std::source_location location = std::source_location::current()) : DCAException{ message, location } {};
+		EtfSerializeError(const Jsonifier::String& message, std::source_location location = std::source_location::current()) : DCAException{ message, location } {};
 	};
 
 	/// @brief Enumeration for different JSON value types.
@@ -483,8 +484,8 @@ namespace DiscordCoreLoader {
 
 	/// @brief Concept for string types excluding EtfSerializer.
 	template<typename ValueType>
-	concept StringT = std::same_as<std::decay_t<ValueType>, std::string> || std::same_as<std::decay_t<ValueType>, std::string_view> ||
-		std::convertible_to<ValueType, std::string> && !std::same_as<std::decay_t<ValueType>, char>;
+	concept StringT = std::same_as<std::decay_t<ValueType>, Jsonifier::String> || std::same_as<std::decay_t<ValueType>, Jsonifier::StringView> ||
+		std::convertible_to<ValueType, Jsonifier::String> && !std::same_as<std::decay_t<ValueType>, char>;
 
 	/// @brief Concept for types that have emplace_back method.
 	template<typename ValueType>
@@ -531,10 +532,10 @@ namespace DiscordCoreLoader {
 	class EtfSerializer {
 	  public:
 		template<typename ValueType> using allocator = std::allocator<ValueType>;
-		using map_allocator							 = allocator<std::pair<const std::string, EtfSerializer>>;
-		using object_type							 = std::map<std::string, EtfSerializer, std::less<>, map_allocator>;
-		using array_type							 = ContIterator::Vector<EtfSerializer>;
-		using string_type							 = std::string;
+		using map_allocator							 = allocator<std::pair<const Jsonifier::String, EtfSerializer>>;
+		using object_type							 = DiscordCoreAPI::UnorderedMap<Jsonifier::String, EtfSerializer>;
+		using array_type							 = Jsonifier::Vector<EtfSerializer>;
+		using string_type							 = Jsonifier::String;
 		using float_type							 = double;
 		using uint_type								 = uint64_t;
 		using int_type								 = int64_t;
@@ -626,13 +627,13 @@ namespace DiscordCoreLoader {
 			*this = std::forward<ValueType>(data);
 		}
 
-		template<StringT ValueType> inline EtfSerializer& operator=(ValueType&& data) {
+		template<JsonifierInternal::StringT ValueType> inline EtfSerializer& operator=(ValueType&& data) {
 			setValue(JsonType::String);
 			getString() = std::forward<ValueType>(data);
 			return *this;
 		}
 
-		template<StringT ValueType> inline EtfSerializer(ValueType&& data) {
+		template<JsonifierInternal::StringT ValueType> inline EtfSerializer(ValueType&& data) {
 			*this = std::forward<ValueType>(data);
 		}
 
@@ -705,7 +706,7 @@ namespace DiscordCoreLoader {
 			return type;
 		}
 
-		inline operator std::string() {
+		inline operator Jsonifier::String() {
 			stringReal.clear();
 			appendVersion();
 			serializeJsonToEtfString(*this);
@@ -719,7 +720,7 @@ namespace DiscordCoreLoader {
 
 			if (type == JsonType::Object) {
 				auto result = getObject().emplace(key, EtfSerializer{});
-				return result.first->second;
+				return result->second;
 			}
 			throw EtfSerializeError{ "Sorry, but this value's type is not Object." };
 		}
@@ -731,7 +732,7 @@ namespace DiscordCoreLoader {
 
 			if (type == JsonType::Object) {
 				auto result = getObject().emplace(std::forward<typename object_type_new::key_type>(key), EtfSerializer{});
-				return result.first->second;
+				return result->second;
 			}
 			throw EtfSerializeError{ "Sorry, but this value's type is not Object." };
 		}
@@ -823,7 +824,7 @@ namespace DiscordCoreLoader {
 
 	  protected:
 		JsonType type{ JsonType::Null };
-		std::string stringReal{};
+		Jsonifier::String stringReal{};
 		void* value{};
 
 		inline object_type& getObject() const {
@@ -940,10 +941,10 @@ namespace DiscordCoreLoader {
 		}
 
 		inline void writeCharacter(const char charValue) {
-			stringReal.push_back(charValue);
+			stringReal.pushBack(charValue);
 		}
 
-		inline void appendBinaryExt(const std::string& bytes, uint32_t sizeNew) {
+		inline void appendBinaryExt(const Jsonifier::String& bytes, uint32_t sizeNew) {
 			char newBuffer[5]{ static_cast<char>(EtfType::Binary_Ext) };
 			storeBits(newBuffer + 1, sizeNew);
 			writeString(newBuffer, std::size(newBuffer));
@@ -1051,43 +1052,43 @@ namespace DiscordCoreLoader {
 			type = typeNew;
 			switch (type) {
 				case JsonType::Object: {
-					ContIterator::AllocWrapper<object_type> alloc{};
+					JsonifierInternal::AllocWrapper<object_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getObject());
 					break;
 				}
 				case JsonType::Array: {
-					ContIterator::AllocWrapper<array_type> alloc{};
+					JsonifierInternal::AllocWrapper<array_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getArray());
 					break;
 				}
 				case JsonType::String: {
-					ContIterator::AllocWrapper<string_type> alloc{};
+					JsonifierInternal::AllocWrapper<string_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getString());
 					break;
 				}
 				case JsonType::Float: {
-					ContIterator::AllocWrapper<float_type> alloc{};
+					JsonifierInternal::AllocWrapper<float_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getFloat());
 					break;
 				}
 				case JsonType::Uint: {
-					ContIterator::AllocWrapper<uint_type> alloc{};
+					JsonifierInternal::AllocWrapper<uint_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getUint());
 					break;
 				}
 				case JsonType::Int: {
-					ContIterator::AllocWrapper<int_type> alloc{};
+					JsonifierInternal::AllocWrapper<int_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getInt());
 					break;
 				}
 				case JsonType::Bool: {
-					ContIterator::AllocWrapper<bool_type> alloc{};
+					JsonifierInternal::AllocWrapper<bool_type> alloc{};
 					value = alloc.allocate(1);
 					alloc.construct(&getBool());
 					break;
@@ -1102,43 +1103,43 @@ namespace DiscordCoreLoader {
 			if (value) {
 				switch (type) {
 					case JsonType::Object: {
-						ContIterator::AllocWrapper<object_type> alloc{};
+						JsonifierInternal::AllocWrapper<object_type> alloc{};
 						alloc.destroy(&getObject());
 						alloc.deallocate(static_cast<object_type*>(value), 1);
 						break;
 					}
 					case JsonType::Array: {
-						ContIterator::AllocWrapper<array_type> alloc{};
+						JsonifierInternal::AllocWrapper<array_type> alloc{};
 						alloc.destroy(&getArray());
 						alloc.deallocate(static_cast<array_type*>(value), 1);
 						break;
 					}
 					case JsonType::String: {
-						ContIterator::AllocWrapper<string_type> alloc{};
+						JsonifierInternal::AllocWrapper<string_type> alloc{};
 						alloc.destroy(&getString());
 						alloc.deallocate(static_cast<string_type*>(value), 1);
 						break;
 					}
 					case JsonType::Float: {
-						ContIterator::AllocWrapper<float_type> alloc{};
+						JsonifierInternal::AllocWrapper<float_type> alloc{};
 						alloc.destroy(&getFloat());
 						alloc.deallocate(static_cast<float_type*>(value), 1);
 						break;
 					}
 					case JsonType::Uint: {
-						ContIterator::AllocWrapper<uint_type> alloc{};
+						JsonifierInternal::AllocWrapper<uint_type> alloc{};
 						alloc.destroy(&getUint());
 						alloc.deallocate(static_cast<uint_type*>(value), 1);
 						break;
 					}
 					case JsonType::Int: {
-						ContIterator::AllocWrapper<int_type> alloc{};
+						JsonifierInternal::AllocWrapper<int_type> alloc{};
 						alloc.destroy(&getInt());
 						alloc.deallocate(static_cast<int_type*>(value), 1);
 						break;
 					}
 					case JsonType::Bool: {
-						ContIterator::AllocWrapper<bool_type> alloc{};
+						JsonifierInternal::AllocWrapper<bool_type> alloc{};
 						alloc.destroy(&getBool());
 						alloc.deallocate(static_cast<bool_type*>(value), 1);
 						break;

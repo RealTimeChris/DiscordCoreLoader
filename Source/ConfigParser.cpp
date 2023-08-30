@@ -26,7 +26,7 @@
 
 namespace DiscordCoreLoader {
 
-	ConfigParser::ConfigParser(std::string configFilePath) {
+	ConfigParser::ConfigParser(Jsonifier::String configFilePath) {
 		this->parseConfigData(configFilePath);
 	};
 
@@ -34,10 +34,10 @@ namespace DiscordCoreLoader {
 		return this->theData;
 	}
 
-	void ConfigParser::parseConfigData(std::string configFilePath) {
+	void ConfigParser::parseConfigData(Jsonifier::String configFilePath) {
 		std::stringstream theStream{};
 		theStream << std::filesystem::current_path();
-		std::string currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
+		Jsonifier::String currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
 
 #ifdef _WIN32
 		currentPath += "\\" + configFilePath;
@@ -45,7 +45,7 @@ namespace DiscordCoreLoader {
 		currentPath += "/" + configFilePath;
 #endif
 		Jsonifier::JsonifierCore parser{};
-		std::string fileContents = loadFileContents(currentPath);
+		Jsonifier::String fileContents = loadFileContents(currentPath);
 		parser.parseJson<true, true>(this->theData, fileContents);
 	}
 

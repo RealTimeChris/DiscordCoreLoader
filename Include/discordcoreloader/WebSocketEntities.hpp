@@ -74,9 +74,9 @@ namespace DiscordCoreLoader {
 		BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew,
 			bool doWeInstantiateAThread) noexcept;
 
-		void sendMessage(std::string&& dataToSend, WebSocketOpCode theOpCode, SSLClient* theShard, bool priority) noexcept;
+		void sendMessage(Jsonifier::String&& dataToSend, WebSocketOpCode theOpCode, SSLClient* theShard, bool priority) noexcept;
 
-		void sendMessage(std::string* dataToSend, SSLClient* theShard, bool priority) noexcept;
+		void sendMessage(Jsonifier::String* dataToSend, SSLClient* theShard, bool priority) noexcept;
 
 		std::jthread* getTheTask() noexcept;
 
@@ -84,7 +84,7 @@ namespace DiscordCoreLoader {
 
 	  protected:
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
-		std::unordered_map<SOCKET, ContIterator::Vector<UnavailableGuild>> theGuilds{};
+		std::unordered_map<SOCKET, Jsonifier::Vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
 		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
@@ -95,15 +95,15 @@ namespace DiscordCoreLoader {
 		Jsonifier::JsonifierCore parser{};
 		ObjectGenerator randomizer{};
 		int32_t currentClientSize{};
-		std::string stringBuffer{};
+		Jsonifier::String stringBuffer{};
 		uint16_t closeCode{ 0 };
-		std::string sessionId{};
+		Jsonifier::String sessionId{};
 
-		ContIterator::Vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
+		Jsonifier::Vector<Jsonifier::String> tokenize(const Jsonifier::String& dataIn, SSLClient* theShard, const Jsonifier::String& separator = "\r\n") noexcept;
 
-		void createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
+		void createHeader(Jsonifier::String& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
 
-		void onMessageReceived(WebSocketSSLShard* theShard, std::string& theString) noexcept;
+		void onMessageReceived(WebSocketSSLShard* theShard, Jsonifier::String& theString) noexcept;
 
 		void initDisconnect(WebSocketCloseCode reason, SSLClient* theShard) noexcept;
 

@@ -6,7 +6,7 @@
   "DoWePrintWebSocketErrorMessages": true,
   "DoWePrintWebSocketSuccessReceiveMessages": true,
   "DoWePrintWebSocketSuccessSentMessages": false,
-  "GuildQuantity": 30000,
+  "GuildQuantity": 60000,
   "MeanForChannelCount": 35,
   "MeanForMemberCount": 200,
   "MeanForRoleCount": 40,

@@ -33,7 +33,7 @@ namespace DiscordCoreLoader {
 		*this = configData;
 	}
 
-	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const ContIterator::Vector<RoleData>& roles) {
+	GuildMemberData ObjectGenerator::generateGuildMember(const Jsonifier::String& guildId, const Jsonifier::Vector<RoleData>& roles) {
 		GuildMemberData theData{};
 		theData.nick = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
@@ -58,7 +58,7 @@ namespace DiscordCoreLoader {
 		return theData;
 	}
 
-	ChannelData ObjectGenerator::generateChannel(std::string guildId) {
+	ChannelData ObjectGenerator::generateChannel(Jsonifier::String guildId) {
 		ChannelData theData{};
 		theData.rtcRegion = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
@@ -81,7 +81,7 @@ namespace DiscordCoreLoader {
 		theData.threadMetadata.autoArchiveDuration = this->randomize32BitUInt();
 		for (int32_t x = 0; x < this->randomize8BitInt(0, 10); x++) {
 			UserData theDataNew						  = this->generateUser();
-			theData.recipients[stoull(theDataNew.id)] = theDataNew;
+			theData.recipients[std::stoull(theDataNew.id)] = theDataNew;
 		}
 		theData.type					 = static_cast<ChannelType>(this->randomize8BitInt(0, 24));
 		theData.threadMetadata.archived	 = static_cast<bool>(this->randomize8BitInt(0, 1));
@@ -107,10 +107,10 @@ namespace DiscordCoreLoader {
 		return theData;
 	}
 
-	GuildData ObjectGenerator::generateGuild(std::string guildId) {
+	GuildData ObjectGenerator::generateGuild(Jsonifier::String guildId) {
 		GuildData theData{};
 		auto roleCount = this->randomize64BitUInt(static_cast<double>(this->configData.meanForRoleCount), static_cast<double>(this->configData.stdDeviationForRoleCount));
-		ContIterator::Vector<uint64_t> thePositions{};
+		Jsonifier::Vector<uint64_t> thePositions{};
 		for (uint32_t x = 0; x < roleCount; x++) {
 			thePositions.emplace_back(x);
 		}
@@ -174,7 +174,7 @@ namespace DiscordCoreLoader {
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
 		theData.email = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
-		theData.discriminator = std::string(std::to_string(this->randomize8BitInt()) + std::to_string(this->randomize8BitInt())).substr(0, 4);
+		theData.discriminator = Jsonifier::String(std::to_string(this->randomize8BitInt()) + std::to_string(this->randomize8BitInt())).substr(0, 4);
 		theData.premiumType	  = static_cast<PremiumType>(this->randomize8BitInt());
 		theData.avatar		  = this->randomizeIconHash();
 		theData.banner		  = this->randomizeIconHash();
