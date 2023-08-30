@@ -26,16 +26,37 @@
 
 namespace JsonifierInternal {
 
-	template<> inline void ParseWithKeys::op<true, DiscordCoreLoader::TimeStamp>(DiscordCoreLoader::TimeStamp& value, StructuralIterator& it) {
-		std::string newString{};
-		ParseWithKeys::op<true>(newString, it);
-		value = newString;
-	}
+	template<> struct ParseImpl<DiscordCoreLoader::TimeStamp> {
+		template<bool printErrors> inline void parse(DiscordCoreLoader::TimeStamp& value, StructuralIterator& it) {
+			ContIterator::String newString{};
+			Parse<printErrors>::op(newString, it);
+			value = newString;
+		}
+	};
 
-	template<> inline void SerializeNoKeys::op(DiscordCoreLoader::TimeStamp& value, Jsonifier::String& buffer, uint64_t& index) {
-		std::string newString{ static_cast<std::string>(value) };
-		SerializeNoKeys::op(newString, buffer, index);
-	}
+	template<> struct ParseImpl<DiscordCoreLoader::Snowflake> {
+		template<bool printErrors> inline void parse(DiscordCoreLoader::Snowflake& value, StructuralIterator& it) {
+			ContIterator::String newString{};
+			Parse<printErrors>::op(newString, it);
+			value = newString;
+		}
+	};
+
+	template<> struct SerializeImpl<DiscordCoreLoader::TimeStamp> {
+		inline static void serialize(auto&& value, auto&& buffer, auto&& index) {
+			ContIterator::String newString{};
+			Serialize<false>::op(newString, buffer, index);
+			value = newString;
+		}
+	};
+
+	template<> struct SerializeImpl<DiscordCoreLoader::Snowflake> {
+		inline static void serialize(auto&& value, auto&& buffer, auto&& index) {
+			ContIterator::String newString{};
+			Serialize<false>::op(newString, buffer, index);
+			value = newString;
+		}
+	};
 }
 
 namespace Jsonifier {

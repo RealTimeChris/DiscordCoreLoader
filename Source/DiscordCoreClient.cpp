@@ -35,17 +35,17 @@ namespace DiscordCoreLoader {
 		Globals::doWeQuit.store(true);
 	}
 
-	SIGTERMError::SIGTERMError(const std::string& string) : std::runtime_error(string){};
+	SIGTERMError::SIGTERMError(const ContIterator::String& string) : std::runtime_error(string){};
 
-	SIGSEGVError::SIGSEGVError(const std::string& string) : std::runtime_error(string){};
+	SIGSEGVError::SIGSEGVError(const ContIterator::String& string) : std::runtime_error(string){};
 
-	SIGINTError::SIGINTError(const std::string& string) : std::runtime_error(string){};
+	SIGINTError::SIGINTError(const ContIterator::String& string) : std::runtime_error(string){};
 
-	SIGILLError::SIGILLError(const std::string& string) : std::runtime_error(string){};
+	SIGILLError::SIGILLError(const ContIterator::String& string) : std::runtime_error(string){};
 
-	SIGABRTError::SIGABRTError(const std::string& string) : std::runtime_error(string){};
+	SIGABRTError::SIGABRTError(const ContIterator::String& string) : std::runtime_error(string){};
 
-	SIGFPEError::SIGFPEError(const std::string& string) : std::runtime_error(string){};
+	SIGFPEError::SIGFPEError(const ContIterator::String& string) : std::runtime_error(string){};
 
 	void signalHandler(int32_t value, std::source_location location) {
 		try {
@@ -78,7 +78,7 @@ namespace DiscordCoreLoader {
 		std::exit(EXIT_FAILURE);
 	}
 
-	DiscordCoreClient::DiscordCoreClient(const std::string& configFilePath) : configParser{ configFilePath } {
+	DiscordCoreClient::DiscordCoreClient()  {
 #ifdef _WIN32
 		_crt_signal_t errorLambda = [](int32_t integer) -> void {
 			signalHandler(integer);
@@ -95,12 +95,9 @@ namespace DiscordCoreLoader {
 		std::signal(SIGILL, errorLambda);
 		std::signal(SIGABRT, errorLambda);
 		std::signal(SIGFPE, errorLambda);
-		this->configParser = ConfigParser{ configFilePath };
-		this->guildQuantity.store(this->configParser.getTheData().guildQuantity);
-		this->randomizer = this->configParser.getTheData();
-		messageHolder	 = configParser.getTheData();
+		this->guildQuantity.store(DiscordCoreClient::configData.guildQuantity);
 		std::cout << "Generating guild data..." << std::endl;
-		messageHolder.generateGuildMessages(configParser.getTheData().guildQuantity);
+		messageHolder.generateGuildMessages(DiscordCoreClient::configData.guildQuantity);
 		std::cout << "Done generating guild data - You can now attempt to connect your bot." << std::endl;
 	}
 
@@ -114,16 +111,16 @@ namespace DiscordCoreLoader {
 			}
 			this->connectionStopWatch.resetTimer();
 			auto newShard = std::make_unique<WebSocketSSLShard>(this->webSocketSSLServerMain->getNewSocket(), this->webSocketSSLServerMain->context,
-				this->configParser.getTheData().doWePrintWebSocketErrorMessages, this->baseSocketAgentMap[0].get());
+				DiscordCoreClient::configData.doWePrintWebSocketErrorMessages, this->baseSocketAgentMap[0].get());
 
-			Jsonifier::Vector<WebSocketSSLShard*> theVector{};
+			ContIterator::Vector<WebSocketSSLShard*> theVector{};
 			theVector.emplace_back(newShard.get());
 			while (newShard->authKey == "") {
 				this->webSocketSSLServerMain->processIO(theVector);
 				this->baseSocketAgentMap[0]->handleBuffer(newShard.get());
 			}
 			newShard->shard[0] = -1;
-			std::string sendString{ "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + newShard->authKey + "\r\n\r\n" };
+			ContIterator::String sendString{ "HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + newShard->authKey + "\r\n\r\n" };
 			this->baseSocketAgentMap[0]->sendMessage(&sendString, newShard.get(), false);
 			auto returnValue = this->webSocketSSLServerMain->processIO(theVector);
 			this->baseSocketAgentMap[0]->sendHelloMessage(newShard.get());
@@ -151,35 +148,36 @@ namespace DiscordCoreLoader {
 			}
 			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->theAgent	 = this->baseSocketAgentMap[theCurrentBaseSocketAgent].get();
 			this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->sendGuilds = true;
-			if (this->configParser.getTheData().doWePrintGeneralSuccessMessages) {
+			if (DiscordCoreClient::configData.doWePrintGeneralSuccessMessages) {
 				std::cout << shiftToBrightGreen()
 						  << "Connected Shard " +
 
 						std::to_string(this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->shard[0])
 						  << " of " << this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->shard[1]
-						  << std::string(" Shards for this process. (") +
+						  << ContIterator::String(" Shards for this process. (") +
 						std::to_string(this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->shard[0]) + " of " +
 						std::to_string(this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->shard[1]) +
-						std::string(" Shards total across all processes)")
+						ContIterator::String(" Shards total across all processes)")
 						  << reset() << std::endl;
 			}
 			if (this->baseSocketAgentMap[theCurrentBaseSocketAgent]->theClients[theCurrentShard]->shard[0] == this->totalShardCount.load() - 1) {
 				std::cout << shiftToBrightGreen() << "All of the shards are connected for the current process!" << reset() << std::endl << std::endl;
 			}
 		} catch (...) {
-			if (this->configParser.getTheData().doWePrintWebSocketErrorMessages) {
+			if (DiscordCoreClient::configData.doWePrintWebSocketErrorMessages) {
 				reportException("BaseSocketAgent::connect()");
 			}
 		}
 	}
 
 	void DiscordCoreClient::runServer() {
-		this->webSocketSSLServerMain = std::make_unique<WebSocketSSLServerMain>(this->configParser.getTheData().connectionIp, this->configParser.getTheData().connectionPort, true,
-			&Globals::doWeQuit, &this->configParser);
+		this->webSocketSSLServerMain = std::make_unique<WebSocketSSLServerMain>(DiscordCoreClient::configData.connectionIp, DiscordCoreClient::configData.connectionPort, true, &Globals::doWeQuit);
 		while (!Globals::doWeQuit.load()) {
 			this->connectShard();
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
 		this->baseSocketAgentMap[this->shardingOptions.startingShard]->getTheTask()->join();
 	}
+
+	const ConfigData DiscordCoreClient::configData{ ConfigParser{ "Config.json" } };
 }

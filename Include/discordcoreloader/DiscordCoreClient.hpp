@@ -32,32 +32,32 @@ namespace DiscordCoreLoader {
 
 	class SIGTERMError : public std::runtime_error {
 	  public:
-		SIGTERMError(const std::string& string);
+		SIGTERMError(const ContIterator::String& string);
 	};
 
 	class SIGSEGVError : public std::runtime_error {
 	  public:
-		SIGSEGVError(const std::string& string);
+		SIGSEGVError(const ContIterator::String& string);
 	};
 
 	class SIGINTError : public std::runtime_error {
 	  public:
-		SIGINTError(const std::string& string);
+		SIGINTError(const ContIterator::String& string);
 	};
 
 	class SIGILLError : public std::runtime_error {
 	  public:
-		SIGILLError(const std::string& string);
+		SIGILLError(const ContIterator::String& string);
 	};
 
 	class SIGABRTError : public std::runtime_error {
 	  public:
-		SIGABRTError(const std::string& string);
+		SIGABRTError(const ContIterator::String& string);
 	};
 
 	class SIGFPEError : public std::runtime_error {
 	  public:
-		SIGFPEError(const std::string& string);
+		SIGFPEError(const ContIterator::String& string);
 	};
 
 	extern "C" void signalHandler(int32_t value, std::source_location location = std::source_location::current());
@@ -72,10 +72,11 @@ namespace DiscordCoreLoader {
 	class DiscordCoreClient {
 	  public:
 		friend class BaseSocketAgent;
+		const static ConfigData configData;
 
 		/// DiscordCoreClient constructor. \brief DiscordCoreClient constructor.
 		/// \param configFilePath A string containing the path to the config file.
-		DiscordCoreClient(const std::string& configFilePath);
+		DiscordCoreClient();
 
 		/// Executes the library, and waits for completion. \brief Executes the library, and waits for completion.
 		void runServer();
@@ -90,9 +91,7 @@ namespace DiscordCoreLoader {
 		std::atomic_int32_t workerCount{ -1 };
 		std::atomic_int32_t guildQuantity{};
 		ShardingOptions shardingOptions{};
-		MessageHolder messageHolder;
-		ObjectGenerator randomizer{};
-		ConfigParser configParser{};
+		MessageHolder messageHolder{};
 #ifdef _WIN32
 		WSADataWrapper theWSAData{};
 #endif
