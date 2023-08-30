@@ -31,13 +31,8 @@ namespace DiscordCoreLoader {
 	};
 
 	struct ConfigData {
-		ConfigData() noexcept									= default;
-		ConfigData& operator=(ConfigData&& other) noexcept		= default;
-		ConfigData(ConfigData&& other) noexcept					= default;
-		ConfigData& operator=(const ConfigData& other) noexcept = default;
-		ConfigData(const ConfigData& other) noexcept			= default;
-		ContIterator::String connectionIp{};
-		ContIterator::String connectionPort{};
+		std::string connectionIp{};
+		std::string connectionPort{};
 		bool doWePrintWebSocketSuccessReceiveMessages{ false };
 		bool doWePrintWebSocketSuccessSentMessages{ false };
 		bool doWePrintWebSocketErrorMessages{ false };
@@ -52,20 +47,20 @@ namespace DiscordCoreLoader {
 		uint64_t meanForChannelCount{};
 		uint64_t stdDeviationForRoleCount{};
 		uint64_t meanForRoleCount{};
-		ContIterator::String format{};
+		std::string format{};
 	};
 
 	class ConfigParser {
 	  public:
-		ConfigParser(ContIterator::String theConfigPath);
+		ConfigParser(std::string theConfigPath);
 
 		ConfigParser() = default;
 
-		operator const ConfigData() const;
+		ConfigData getTheData();
 
 	  protected:
 		ConfigData theData{};
 
-		void parseConfigData(ContIterator::String configFilePath);
+		void parseConfigData(std::string configFilePath);
 	};
 }// namespace DiscordCoreLoader

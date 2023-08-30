@@ -26,13 +26,13 @@ namespace DiscordCoreLoader {
 
 	std::atomic_int64_t theValue{};
 
-	ContIterator::String getCurrentPath() {
+	std::string getCurrentPath() {
 		std::stringstream theStream{};
 		theStream << std::filesystem::current_path();
 		return theStream.str().substr(1, theStream.str().size() - 2);
 	}
 
-	ContIterator::String reportSSLError(const ContIterator::String& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
+	std::string reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 		if (ssl) {
@@ -43,7 +43,7 @@ namespace DiscordCoreLoader {
 		return stream.str();
 	}
 
-	ContIterator::String reportError(const char* errorPosition, int32_t value) noexcept {
+	std::string reportError(const char* errorPosition, int32_t value) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 #ifdef _WIN32
@@ -259,7 +259,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	void SSLClient::writeData(ContIterator::String& dataToWrite, bool priority) noexcept {
+	void SSLClient::writeData(std::string& dataToWrite, bool priority) noexcept {
 		if (dataToWrite.size() > 0 && this->ssl) {
 			if (priority && dataToWrite.size() < static_cast<size_t>(16 * 1024)) {
 				pollfd readWriteSet{};
@@ -282,7 +282,7 @@ namespace DiscordCoreLoader {
 				if (dataToWrite.size() >= static_cast<size_t>(16 * 1024)) {
 					size_t remainingBytes{ dataToWrite.size() };
 					while (remainingBytes > 0) {
-						ContIterator::String newString{};
+						std::string newString{};
 						size_t amountToCollect{};
 						if (dataToWrite.size() >= static_cast<size_t>(1024 * 16)) {
 							amountToCollect = static_cast<size_t>(1024 * 16);
@@ -291,7 +291,7 @@ namespace DiscordCoreLoader {
 						}
 						newString.insert(newString.begin(), dataToWrite.begin(), dataToWrite.begin() + amountToCollect);
 						this->outputBuffers.emplace_back(newString);
-						dataToWrite.erase(amountToCollect);
+						dataToWrite.erase(dataToWrite.begin(), dataToWrite.begin() + amountToCollect);
 						remainingBytes = dataToWrite.size();
 					}
 				} else {
@@ -302,7 +302,7 @@ namespace DiscordCoreLoader {
 		return;
 	}
 
-	ContIterator::String& SSLClient::getInputBuffer() noexcept {
+	std::string& SSLClient::getInputBuffer() noexcept {
 		return this->inputBuffer;
 	}
 
@@ -364,7 +364,7 @@ namespace DiscordCoreLoader {
 				}
 				case SSL_ERROR_NONE: {
 					if (readBytes > 0) {
-						this->inputBuffer.append(this->rawInputBuffer.data(), readBytes);
+						this->inputBuffer.append(this->rawInputBuffer.data(), this->rawInputBuffer.data() + readBytes);
 						this->bytesRead += readBytes;
 					}
 					break;
@@ -396,18 +396,20 @@ namespace DiscordCoreLoader {
 		this->areWeConnected = false;
 	}
 
-	WebSocketSSLServerMain::WebSocketSSLServerMain(const ContIterator::String& baseUrlNew, const ContIterator::String& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew) {
+	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew,
+		ConfigParser* theData) {
 		this->doWePrintError  = doWePrintErrorNew;
+		this->theConfigParser = theData;
 		this->doWeQuit		  = doWeQuitNew;
 		this->baseUrl		  = baseUrlNew;
 		this->port			  = portNew;
 
 #ifdef _WIN32
-		ContIterator::String certPath{ getCurrentPath() + "\\Cert.pem" };
-		ContIterator::String keyPath{ getCurrentPath() + "\\Key.pem" };
+		std::string certPath{ getCurrentPath() + "\\Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "\\Key.pem" };
 #elif __linux__
-		ContIterator::String certPath{ getCurrentPath() + "/Cert.pem" };
-		ContIterator::String keyPath{ getCurrentPath() + "/Key.pem" };
+		std::string certPath{ getCurrentPath() + "/Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "/Key.pem" };
 #endif
 
 		addrinfoWrapper hints{};
@@ -415,7 +417,7 @@ namespace DiscordCoreLoader {
 		hints->ai_socktype = SOCK_STREAM;
 		hints->ai_protocol = IPPROTO_TCP;
 
-		if (auto resultValue = getaddrinfo(this->baseUrl.data(), this->port.data(), hints, this->addrInfo); resultValue != 0) {
+		if (auto resultValue = getaddrinfo(this->baseUrl.c_str(), this->port.c_str(), hints, this->addrInfo); resultValue != 0) {
 			if (this->doWePrintError) {
 				reportError("getaddrinfo() Error: ", resultValue);
 			}
@@ -472,14 +474,14 @@ namespace DiscordCoreLoader {
 			return;
 		}
 
-		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.data()) <= 0) {
+		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
 			}
 			return;
 		}
 
-		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.data(), SSL_FILETYPE_PEM) <= 0) {
+		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.c_str(), SSL_FILETYPE_PEM) <= 0) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_use_PrivateKey_file() Error: ");
 			}
@@ -495,7 +497,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	ContIterator::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(ContIterator::Vector<WebSocketSSLShard*>& theVector) noexcept {
+	Jsonifier::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(Jsonifier::Vector<WebSocketSSLShard*>& theVector) noexcept {
 		PollFDWrapper readWriteSet{};
 		for (uint32_t x = 0; x < theVector.size(); ++x) {
 			pollfd theWrapper{};
@@ -509,7 +511,7 @@ namespace DiscordCoreLoader {
 			readWriteSet.thePolls.emplace_back(theWrapper);
 		}
 
-		ContIterator::Vector<WebSocketSSLShard*> returnValue02{};
+		Jsonifier::Vector<WebSocketSSLShard*> returnValue02{};
 		if (readWriteSet.theIndices.size() == 0) {
 			return returnValue02;
 		}

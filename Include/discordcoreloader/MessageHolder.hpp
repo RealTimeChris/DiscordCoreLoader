@@ -32,22 +32,72 @@ namespace DiscordCoreLoader {
 
 	inline thread_local Jsonifier::JsonifierCore parser{};
 
-	inline thread_local EtfSerializer serializer{};
-
-	class MessageHolder {
+	class MessageHolder : public ObjectGenerator, EtfSerializer  {
 	  public:
+		inline MessageHolder() noexcept = default;
 
-		inline MessageHolder(){};
+		inline MessageHolder& operator=(const ConfigData& configDataNew) {
+			configData = configDataNew;
+			return *this;
+		}
 
-		void generateGuildMessagesFinal(uint64_t guildCount);
-		
-		void generateGuildMessages(uint64_t guildCount);
-		
-		bool collectNextMessage(ContIterator::String& newMessage);
-		
+		inline MessageHolder(const ConfigData& configDataNew) : ObjectGenerator{ configDataNew } {
+			*this = configDataNew;
+		};
+
+		inline void generateGuildMessagesFinal(uint64_t guildCount) {
+			for (size_t x = 0; x < guildCount; ++x) {
+				if (messagesToSend.size() % 100 == 0) {
+					std::cout << "Generating guild #" << messagesToSend.size() + 1 << "'s data." << std::endl;
+				}
+				std::string newId{};
+				this->randomizeId(newId, 0);
+				auto newGuild = this->generateGuild(newId);
+				if (configData.format == "Json") {
+					std::string stringBufferNew{};
+					WebSocketMessageReal<GuildData> data{};
+					data.d = std::move(newGuild);
+					data.s = lastNumberSent.load();
+					data.t = "GUILD_CREATE";
+					parser.serializeJson(data, stringBufferNew);
+					std::unique_lock lock{ accessMutex };
+					messagesToSend.emplace_back(std::move(stringBufferNew));
+				} else {
+					EtfSerializer guild{ newGuild };
+					EtfSerializer serializer{};
+					serializer["d"] = std::move(guild);
+					serializer["s"] = lastNumberSent.load();
+					serializer["t"] = "GUILD_CREATE";
+					std::unique_lock lock{ accessMutex };
+					messagesToSend.emplace_back(std::move(serializer.operator std::string()));
+				}
+				std::atomic_fetch_add(&lastNumberSent, 1);
+			}
+		}
+
+		inline void generateGuildMessages(uint64_t guildCount) {
+			jthreads.resize(std::jthread::hardware_concurrency());
+			for (size_t x = 0; x < std::jthread::hardware_concurrency(); ++x) {
+				jthreads[x] = std::make_unique<std::jthread>(std::jthread{ [=]() {
+					generateGuildMessagesFinal(guildCount / std::jthread::hardware_concurrency());
+				} });
+			}
+		}
+
+		inline bool collectNextMessage(std::string& newMessage) {
+			std::unique_lock lock{ accessMutex };
+			if (messagesToSend.size() > 0) {
+				newMessage = std::move(messagesToSend.front());
+				messagesToSend.pop_front();
+				return true;
+			}
+			
+			return false;
+		}
+
 	  protected:
-		ContIterator::Vector<std::unique_ptr<std::jthread>> jthreads{};
-		std::deque<ContIterator::String> messagesToSend{};
+		Jsonifier::Vector<std::unique_ptr<std::jthread>> jthreads{};
+		std::deque<Jsonifier::String> messagesToSend{};
 		std::atomic_uint32_t lastNumberSent{};
 		std::mutex accessMutex{};
 	};

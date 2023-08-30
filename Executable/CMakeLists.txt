@@ -48,7 +48,6 @@ target_link_libraries(
 	$<$<TARGET_EXISTS:OpenSSL::SSL>:OpenSSL::SSL>
 	$<$<TARGET_EXISTS:Threads::Threads>:Threads::Threads>
 	$<$<TARGET_EXISTS:Jsonifier::Jsonifier>:Jsonifier::Jsonifier>
-	$<$<TARGET_EXISTS:ContIterator::ContIterator>:ContIterator::ContIterator>
 )
 
 target_compile_features(

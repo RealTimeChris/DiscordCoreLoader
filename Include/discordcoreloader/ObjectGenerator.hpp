@@ -31,16 +31,23 @@ namespace DiscordCoreLoader {
 	  public:
 		ObjectGenerator() noexcept = default;
 
-		static GuildMemberData generateGuildMember(const ContIterator::String& guildId, const ContIterator::Vector<RoleData>& roles);
+		ObjectGenerator& operator=(const ConfigData& configData);
 
-		static UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
+		ObjectGenerator(const ConfigData& configData);
 
-		static ChannelData generateChannel(Snowflake guildId);
+		GuildMemberData generateGuildMember(const std::string& guildId, const Jsonifier::Vector<RoleData>& roles);
 
-		static GuildData generateGuild(Snowflake guildId);
+		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 
-		static RoleData generateRole(uint64_t position);
+		ChannelData generateChannel(std::string guildId);
 
-		static UserData generateUser();
+		GuildData generateGuild(std::string guildId);
+
+		RoleData generateRole(uint64_t position);
+
+		UserData generateUser();
+
+	  protected:
+		ConfigData configData{};
 	};
 }

@@ -28,44 +28,49 @@ namespace DiscordCoreLoader {
 
 	class Randomizer {
 	  public:
-		static void randomizeId(Snowflake& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
+		void randomizeId(std::string& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
 
-		static uint64_t randomize64BitUInt(uint64_t minValue, uint64_t maxValue);
+		uint64_t randomize64BitUInt(uint64_t minValue, uint64_t maxValue);
 
-		static uint32_t randomize32BitUInt(uint32_t minValue, uint32_t maxValue);
+		uint32_t randomize32BitUInt(uint32_t minValue, uint32_t maxValue);
 
-		static uint16_t randomize16BitUInt(uint16_t minValue, uint16_t maxValue);
+		uint16_t randomize16BitUInt(uint16_t minValue, uint16_t maxValue);
 
-		static uint8_t randomize8BitUInt(uint8_t minValue, uint8_t maxValue);
+		uint8_t randomize8BitUInt(uint8_t minValue, uint8_t maxValue);
 
-		static uint64_t randomize64BitUInt(double mean, double stdDeviation);
+		uint64_t randomize64BitUInt(double mean, double stdDeviation);
 
-		static int8_t randomize8BitInt(uint8_t minValue, uint8_t maxValue);
+		int8_t randomize8BitInt(uint8_t minValue, uint8_t maxValue);
 
-		static uint64_t drawRandomValue(ContIterator::Vector<uint64_t>&);
+		uint64_t drawRandomValue(Jsonifier::Vector<uint64_t>&);
 
-		static ContIterator::String randomizeString(int64_t length);
+		std::string randomizeString(int64_t length);
 
-		static ContIterator::String randomizeIconHash();
+		std::string randomizeIconHash();
 
-		static uint64_t randomize64BitUInt();
+		uint64_t randomize64BitUInt();
 
-		static uint32_t randomize32BitUInt();
+		uint32_t randomize32BitUInt();
 
-		static uint16_t randomize16BitUInt();
+		uint16_t randomize16BitUInt();
 
-		static double randomize64BitFloat();
+		double randomize64BitFloat();
 
-		static uint8_t randomize8BitUInt();
+		uint8_t randomize8BitUInt();
 
-		static int64_t randomize64BitInt();
+		int64_t randomize64BitInt();
 
-		static int32_t randomize32BitInt();
+		int32_t randomize32BitInt();
 
-		static int16_t randomize16BitInt();
+		int16_t randomize16BitInt();
 
-		static float randomize32BitFloat();
+		float randomize32BitFloat();
 
-		static int8_t randomize8BitInt();
+		int8_t randomize8BitInt();
+
+	  protected:
+		std::mt19937_64 randomEngine{ this->randomDevice() };
+		std::random_device randomDevice{};
+		std::recursive_mutex theMutex{};
 	};
 }

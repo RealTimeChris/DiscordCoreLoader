@@ -24,7 +24,7 @@
 int32_t main() {
 	try {
 		std::cout << "WERE HERE THIS IS IT!" << std::endl;
-		DiscordCoreLoader::DiscordCoreClient theClient{};
+		DiscordCoreLoader::DiscordCoreClient theClient{ "Config.json" };
 		theClient.runServer();
 	} catch (...) {
 		DiscordCoreLoader::reportException("main()");
