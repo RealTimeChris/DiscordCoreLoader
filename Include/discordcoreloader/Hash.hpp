@@ -1,7 +1,7 @@
 /*
 	MIT License
 
-	DiscordCoreAPI, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
+	DiscordCoreLoader, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
 
 	Copyright 2022, 2023 Chris M. (RealTimeChris)
 
@@ -34,7 +34,7 @@
 #include <exception>
 #include <vector>
 
-namespace DiscordCoreAPI {
+namespace DiscordCoreLoader {
 
 	namespace DiscordCoreInternal {
 		struct EventDelegateToken;
@@ -83,20 +83,20 @@ namespace DiscordCoreAPI {
 			return internalHashFunction(other, std::char_traits<char>::length(other));
 		}
 
-		template<typename ValueType> inline uint64_t operator()(const Jsonifier::StringBase<ValueType>& other) {
+		template<typename ValueType> inline uint64_t operator()(const jsonifier::string_base<ValueType>& other) {
 			return internalHashFunction(other.data(), other.size());
 		}
 
-		inline uint64_t operator()(const Jsonifier::String& other) const {
+		inline uint64_t operator()(const std::string& other) const {
 			return internalHashFunction(other.data(), other.size());
 		}
 
-		inline uint64_t operator()(const Jsonifier::StringView& other) const {
+		inline uint64_t operator()(const std::string_view& other) const {
 			return internalHashFunction(other.data(), other.size());
 		}
 
-		inline uint64_t operator()(const Jsonifier::Vector<Jsonifier::String>& data) const {
-			Jsonifier::String newString{};
+		inline uint64_t operator()(const std::vector<std::string>& data) const {
+			std::string newString{};
 			for (auto& value: data) {
 				newString.append(value);
 			}

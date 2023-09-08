@@ -81,20 +81,20 @@ namespace DiscordCoreLoader {
 
 	struct ConnectionError : public std::runtime_error {
 		int32_t shardNumber{};
-		explicit ConnectionError(const Jsonifier::String& theString);
+		explicit ConnectionError(const std::string& theString);
 	};
 
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
 	struct PollFDWrapper {
-		Jsonifier::Vector<uint32_t> theIndices{};
-		Jsonifier::Vector<pollfd> thePolls{};
+		std::vector<uint32_t> theIndices{};
+		std::vector<pollfd> thePolls{};
 	};
 
 	class BaseSocketAgent;
 
 	struct MessagePackage {
-		Jsonifier::Vector<Jsonifier::String> theStrings{};
+		std::vector<std::string> theStrings{};
 	};
 
 	struct WebSocketMessage {
@@ -122,13 +122,13 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage() = default;
 		WebSocketOpCode theOpCode{};
-		Jsonifier::RawJsonData d{};
-		Jsonifier::String t{};
+		jsonifier::raw_json_data d{};
+		std::string t{};
 		int32_t op{};
 		int32_t s{};
 	};
 
-	Jsonifier::String reportError(const char* errorPosition, int32_t errorValue) noexcept;
+	std::string reportError(const char* errorPosition, int32_t errorValue) noexcept;
 
 #ifdef _WIN32
 	struct WSADataWrapper {
@@ -258,11 +258,11 @@ namespace DiscordCoreLoader {
 
 		SSLClient(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew);
 
-		void writeData(Jsonifier::String& data, bool priority) noexcept;
+		void writeData(std::string& data, bool priority) noexcept;
 
 		virtual void handleBuffer() noexcept = 0;
 
-		Jsonifier::String& getInputBuffer() noexcept;
+		std::string& getInputBuffer() noexcept;
 
 		bool areWeStillConnected() noexcept;
 
@@ -283,13 +283,13 @@ namespace DiscordCoreLoader {
 		const uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::array<char, 1024 * 16> rawInputBuffer{};
 		SOCKETWrapper clientSocket{};
-		std::deque<Jsonifier::String> outputBuffers{};
+		std::deque<std::string> outputBuffers{};
 		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
 		uint32_t currentSocketIndex{ 0 };
 		bool doWeHaveOurGuild{ false };
 		SSL_CTX* theContext{ nullptr };
-		Jsonifier::String serverToClientBuffer{};
+		std::string serverToClientBuffer{};
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
 		GuildData theGuildHolder{};
@@ -301,9 +301,9 @@ namespace DiscordCoreLoader {
 		int64_t totalGuildCount{};
 		int64_t lastNumberSent{};
 		uint64_t bytesRead{ 0 };
-		Jsonifier::String inputBuffer{};
+		std::string inputBuffer{};
 		uint32_t shard[2]{};
-		Jsonifier::String authKey{};
+		std::string authKey{};
 		SSLWrapper ssl{};
 	};
 
@@ -320,9 +320,9 @@ namespace DiscordCoreLoader {
 
 		WebSocketSSLServerMain() = default;
 
-		WebSocketSSLServerMain(const Jsonifier::String& theUrl, const Jsonifier::String& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
+		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
 
-		Jsonifier::Vector<WebSocketSSLShard*> processIO(Jsonifier::Vector<WebSocketSSLShard*>& theMap) noexcept;
+		std::vector<WebSocketSSLShard*> processIO(std::vector<WebSocketSSLShard*>& theMap) noexcept;
 
 		SOCKET getNewSocket();
 
@@ -336,8 +336,8 @@ namespace DiscordCoreLoader {
 		bool doWePrintError{ false };
 		std::atomic_bool* doWeQuit{};
 		std::mutex theMutex{};
-		Jsonifier::String baseUrl{};
-		Jsonifier::String port{};
+		std::string baseUrl{};
+		std::string port{};
 	};
 
 }//

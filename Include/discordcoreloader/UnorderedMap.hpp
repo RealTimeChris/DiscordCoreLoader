@@ -1,7 +1,7 @@
 /*
 	MIT License
 
-	DiscordCoreAPI, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
+	DiscordCoreLoader, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
 
 	Copyright 2022, 2023 Chris M. (RealTimeChris)
 
@@ -39,7 +39,7 @@
 #include <vector>
 #include <mutex>
 
-namespace DiscordCoreAPI {
+namespace DiscordCoreLoader {
 
 	template<typename KeyType, typename ValueType> class UnorderedMap;
 
@@ -47,7 +47,7 @@ namespace DiscordCoreAPI {
 	concept MapContainerIteratorT = std::is_same_v<typename UnorderedMap<KeyType, ValueType>::iterator, std::decay_t<MapIterator>>;
 
 	template<typename KeyType, typename ValueType>
-	class UnorderedMap : protected HashPolicy<UnorderedMap<KeyType, ValueType>>, protected JsonifierInternal::AllocWrapper<Pair<KeyType, ValueType>>, protected ObjectCompare {
+	class UnorderedMap : protected HashPolicy<UnorderedMap<KeyType, ValueType>>, protected jsonifier_internal::alloc_wrapper<Pair<KeyType, ValueType>>, protected ObjectCompare {
 	  public:
 		using mapped_type			 = ValueType;
 		using key_type				 = KeyType;
@@ -62,7 +62,7 @@ namespace DiscordCoreAPI {
 		using const_iterator		 = HashIterator<const UnorderedMap<key_type, mapped_type>>;
 		using reverse_iterator		 = std::reverse_iterator<iterator>;
 		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-		using allocator				 = JsonifierInternal::AllocWrapper<value_type>;
+		using allocator				 = jsonifier_internal::alloc_wrapper<value_type>;
 
 		friend hash_policy;
 		friend iterator;
@@ -320,7 +320,7 @@ namespace DiscordCoreAPI {
 		};
 
 	  protected:
-		Jsonifier::Vector<int8_t> sentinelVector{};
+		std::vector<int8_t> sentinelVector{};
 		uint64_t currentMaxLookAhead{ 0 };
 		size_type capacityVal{};
 		size_type sizeVal{};
@@ -373,7 +373,7 @@ namespace DiscordCoreAPI {
 		inline void resize(size_type capacityNew) {
 			auto newSize = nextSizeOver(capacityNew);
 			if (newSize > capacityVal) {
-				Jsonifier::Vector<int8_t> oldSentinelVector = std::move(sentinelVector);
+				std::vector<int8_t> oldSentinelVector = std::move(sentinelVector);
 				auto oldCapacity							= capacityVal;
 				auto oldSize								= sizeVal;
 				auto oldPtr									= data;

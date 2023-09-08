@@ -15,11 +15,11 @@ set(OPENSSL_ROOT_DIR "C:/vcpkg/installed/x64-windows")
 
 include(FetchContent)	
 	FetchContent_Declare(
-	   Jsonifier
-	   GIT_REPOSITORY https://github.com/RealTimeChris/Jsonifier.git
+	   jsonifier
+	   GIT_REPOSITORY https://github.com/RealTimeChris/jsonifier.git
 	   GIT_TAG dev
 	)
-	FetchContent_MakeAvailable(Jsonifier)
+	FetchContent_MakeAvailable(jsonifier)
 
 find_package(OpenSSL REQUIRED)
 

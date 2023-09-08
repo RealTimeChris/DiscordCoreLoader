@@ -23,34 +23,34 @@
 
 namespace DiscordCoreLoader {
 
-	template<typename ReturnType> Jsonifier::String toHex(ReturnType inputValue) {
+	template<typename ReturnType> std::string toHex(ReturnType inputValue) {
 		std::stringstream theStream{};
 		theStream << std::setfill('0') << std::setw(sizeof(ReturnType) * 2) << std::hex << inputValue;
-		return theStream.str();
+		return std::string{ theStream.str() };
 	}
 
-	Jsonifier::String Randomizer::randomizeIconHash() {
+	std::string Randomizer::randomizeIconHash() {
 		uint64_t theValue01 = this->randomize64BitUInt();
 		uint64_t theValue02 = this->randomize64BitUInt();
 
-		Jsonifier::String returnString = toHex(theValue01);
-		Jsonifier::String returnStringNew{};
+		std::string returnString = toHex(theValue01);
+		std::string returnStringNew{};
 
 		for (uint32_t x = 0; x < returnString.size(); x++) {
 			auto newValue = returnString[x];
-			returnStringNew.pushBack(newValue);
+			returnStringNew.push_back(newValue);
 		}
 		returnString = toHex(theValue02);
 		for (uint32_t x = 0; x < returnString.size(); x++) {
 			auto newValue = returnString[x];
-			returnStringNew.pushBack(newValue);
+			returnStringNew.push_back(newValue);
 		}
 		returnStringNew.resize(32);
 		return returnStringNew;
 	}
 
-	Jsonifier::String Randomizer::randomizeString(int64_t length) {
-		Jsonifier::String returnString{};
+	std::string Randomizer::randomizeString(int64_t length) {
+		std::string returnString{};
 		for (uint32_t x = 0; x < length; x++) {
 			auto theValue = static_cast<char>((static_cast<float>(this->randomEngine()) / static_cast<float>(this->randomEngine.max()) * 93.0f) + 35.0f);
 			if (static_cast<char>(theValue) == static_cast<char>(',') || static_cast<char>(theValue) == '\'' || static_cast<char>(theValue) == '/' ||
@@ -59,12 +59,12 @@ namespace DiscordCoreLoader {
 				static_cast<char>(theValue) == ')' || static_cast<char>(theValue) == static_cast<char>(0) || static_cast<char>(theValue) == static_cast<char>(1)) {
 				theValue = static_cast<char>('s');
 			}
-			returnString.pushBack(theValue);
+			returnString.push_back(theValue);
 		}
 		return returnString;
 	}
 
-	void Randomizer::randomizeId(Jsonifier::String& theString, uint64_t minValue, uint64_t maxValue) {
+	void Randomizer::randomizeId(std::string& theString, uint64_t minValue, uint64_t maxValue) {
 		theString = std::to_string(this->randomize64BitUInt(minValue, maxValue));
 	}
 
@@ -107,7 +107,7 @@ namespace DiscordCoreLoader {
 		return theValue;
 	}
 
-	uint64_t Randomizer::drawRandomValue(Jsonifier::Vector<uint64_t>& theValues) {
+	uint64_t Randomizer::drawRandomValue(std::vector<uint64_t>& theValues) {
 		if (theValues.size() == 0) {
 			return 0;
 		}

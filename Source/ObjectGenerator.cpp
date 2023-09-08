@@ -33,7 +33,7 @@ namespace DiscordCoreLoader {
 		*this = configData;
 	}
 
-	GuildMemberData ObjectGenerator::generateGuildMember(const Jsonifier::String& guildId, const Jsonifier::Vector<RoleData>& roles) {
+	GuildMemberData ObjectGenerator::generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles) {
 		GuildMemberData theData{};
 		theData.nick = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
@@ -58,7 +58,7 @@ namespace DiscordCoreLoader {
 		return theData;
 	}
 
-	ChannelData ObjectGenerator::generateChannel(Jsonifier::String guildId) {
+	ChannelData ObjectGenerator::generateChannel(std::string guildId) {
 		ChannelData theData{};
 		theData.rtcRegion = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
@@ -107,10 +107,10 @@ namespace DiscordCoreLoader {
 		return theData;
 	}
 
-	GuildData ObjectGenerator::generateGuild(Jsonifier::String guildId) {
+	GuildData ObjectGenerator::generateGuild(std::string guildId) {
 		GuildData theData{};
 		auto roleCount = this->randomize64BitUInt(static_cast<double>(this->configData.meanForRoleCount), static_cast<double>(this->configData.stdDeviationForRoleCount));
-		Jsonifier::Vector<uint64_t> thePositions{};
+		std::vector<uint64_t> thePositions{};
 		for (uint32_t x = 0; x < roleCount; x++) {
 			thePositions.emplace_back(x);
 		}
@@ -174,7 +174,7 @@ namespace DiscordCoreLoader {
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
 		theData.email = this->randomizeString(
 			this->randomize64BitUInt(static_cast<double>(this->configData.meanForStringLength), static_cast<double>(this->configData.stdDeviationForStringLength)));
-		theData.discriminator = Jsonifier::String(std::to_string(this->randomize8BitInt()) + std::to_string(this->randomize8BitInt())).substr(0, 4);
+		theData.discriminator = std::string(std::to_string(this->randomize8BitInt()) + std::to_string(this->randomize8BitInt())).substr(0, 4);
 		theData.premiumType	  = static_cast<PremiumType>(this->randomize8BitInt());
 		theData.avatar		  = this->randomizeIconHash();
 		theData.banner		  = this->randomizeIconHash();

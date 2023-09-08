@@ -19,6 +19,10 @@
 /// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file main.cpp
 
+#if !defined(NOMINMAX)
+	#define NOMINMAX
+#endif
+
 #include <discordcoreloader/DiscordCoreClient.hpp>
 
 int32_t main() {

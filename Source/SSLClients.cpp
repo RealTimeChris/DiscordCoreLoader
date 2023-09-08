@@ -26,13 +26,13 @@ namespace DiscordCoreLoader {
 
 	std::atomic_int64_t theValue{};
 
-	Jsonifier::String getCurrentPath() {
+	std::string getCurrentPath() {
 		std::stringstream theStream{};
 		theStream << std::filesystem::current_path();
-		return theStream.str().substr(1, theStream.str().size() - 2);
+		return std::string{ theStream.str().substr(1, theStream.str().size() - 2) };
 	}
 
-	Jsonifier::String reportSSLError(const Jsonifier::String& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
+	std::string reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 		if (ssl) {
@@ -40,10 +40,10 @@ namespace DiscordCoreLoader {
 		} else {
 			stream << ERR_error_string(errorValue, nullptr) << std::endl << std::endl;
 		}
-		return stream.str();
+		return std::string{ stream.str() };
 	}
 
-	Jsonifier::String reportError(const char* errorPosition, int32_t value) noexcept {
+	std::string reportError(const char* errorPosition, int32_t value) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 #ifdef _WIN32
@@ -57,7 +57,7 @@ namespace DiscordCoreLoader {
 #else
 		stream << strerror(errno) << DiscordCoreLoader::reset();
 #endif
-		return stream.str();
+		return std::string{ stream.str() };
 	}
 
 #ifdef _WIN32
@@ -259,7 +259,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	void SSLClient::writeData(Jsonifier::String& dataToWrite, bool priority) noexcept {
+	void SSLClient::writeData(std::string& dataToWrite, bool priority) noexcept {
 		if (dataToWrite.size() > 0 && this->ssl) {
 			if (priority && dataToWrite.size() < static_cast<size_t>(16 * 1024)) {
 				pollfd readWriteSet{};
@@ -282,7 +282,7 @@ namespace DiscordCoreLoader {
 				if (dataToWrite.size() >= static_cast<size_t>(16 * 1024)) {
 					size_t remainingBytes{ dataToWrite.size() };
 					while (remainingBytes > 0) {
-						Jsonifier::String newString{};
+						std::string newString{};
 						size_t amountToCollect{};
 						if (dataToWrite.size() >= static_cast<size_t>(1024 * 16)) {
 							amountToCollect = static_cast<size_t>(1024 * 16);
@@ -302,7 +302,7 @@ namespace DiscordCoreLoader {
 		return;
 	}
 
-	Jsonifier::String& SSLClient::getInputBuffer() noexcept {
+	std::string& SSLClient::getInputBuffer() noexcept {
 		return this->inputBuffer;
 	}
 
@@ -396,7 +396,7 @@ namespace DiscordCoreLoader {
 		this->areWeConnected = false;
 	}
 
-	WebSocketSSLServerMain::WebSocketSSLServerMain(const Jsonifier::String& baseUrlNew, const Jsonifier::String& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew,
+	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew, std::atomic_bool* doWeQuitNew,
 		ConfigParser* theData) {
 		this->doWePrintError  = doWePrintErrorNew;
 		this->theConfigParser = theData;
@@ -405,11 +405,11 @@ namespace DiscordCoreLoader {
 		this->port			  = portNew;
 
 #ifdef _WIN32
-		Jsonifier::String certPath{ getCurrentPath() + "\\Cert.pem" };
-		Jsonifier::String keyPath{ getCurrentPath() + "\\Key.pem" };
+		std::string certPath{ getCurrentPath() + "\\Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "\\Key.pem" };
 #elif __linux__
-		Jsonifier::String certPath{ getCurrentPath() + "/Cert.pem" };
-		Jsonifier::String keyPath{ getCurrentPath() + "/Key.pem" };
+		std::string certPath{ getCurrentPath() + "/Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "/Key.pem" };
 #endif
 
 		addrinfoWrapper hints{};
@@ -497,7 +497,7 @@ namespace DiscordCoreLoader {
 		}
 	};
 
-	Jsonifier::Vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(Jsonifier::Vector<WebSocketSSLShard*>& theVector) noexcept {
+	std::vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(std::vector<WebSocketSSLShard*>& theVector) noexcept {
 		PollFDWrapper readWriteSet{};
 		for (uint32_t x = 0; x < theVector.size(); ++x) {
 			pollfd theWrapper{};
@@ -511,7 +511,7 @@ namespace DiscordCoreLoader {
 			readWriteSet.thePolls.emplace_back(theWrapper);
 		}
 
-		Jsonifier::Vector<WebSocketSSLShard*> returnValue02{};
+		std::vector<WebSocketSSLShard*> returnValue02{};
 		if (readWriteSet.theIndices.size() == 0) {
 			return returnValue02;
 		}

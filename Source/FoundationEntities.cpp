@@ -25,11 +25,10 @@
 
 namespace DiscordCoreLoader {
 
-	DCAException::DCAException(const Jsonifier::String& error, std::source_location location) noexcept : std::runtime_error(error) {
+	DCAException::DCAException(const std::string& error, std::source_location location) noexcept : std::runtime_error(error) {
 		std::stringstream stream{};
-		stream << shiftToBrightRed() << "Thrown From: " << location.file_name() << " (" << std::to_string(location.line()) << ":" << std::to_string(location.column()) << ")\n"
-			   << error << reset() << std::endl
-			   << std::endl;
+		stream << shiftToBrightRed() << "Thrown From: " << location.file_name() << " (" << std::to_string(location.line()) << ":" << std::to_string(location.column()) << ")\n";
+		stream << error << DiscordCoreLoader::reset().operator std::basic_string_view<char, std::char_traits<char>>().data() << std::endl;
 		*static_cast<std::runtime_error*>(this) = std::runtime_error{ stream.str() };
 	}
 
@@ -37,25 +36,25 @@ namespace DiscordCoreLoader {
 		EtfSerializer data{};
 		for (auto& valueNew: this->channels) {
 			EtfSerializer channel{};
-			channel["id"] = valueNew.id;
+			channel["id"] = std::string{ valueNew.id };
 			data["channels"].emplaceBack(std::move(channel));
 		}
 
 		for (auto& valueNew: this->roles) {
 			EtfSerializer role{};
-			role["id"] = valueNew.id;
+			role["id"] = std::string{ valueNew.id };
 			data["roles"].emplaceBack(std::move(role));
 		}
 
 		for (auto& valueNew: this->members) {
 			EtfSerializer member{};
-			member["user"]["id"] = valueNew.user.id;
+			member["user"]["id"] = std::string{ valueNew.user.id };
 			data["members"].emplaceBack(std::move(member));
 		}
 		return data;
 	}
 
-	void reportException(const Jsonifier::String& currentFunctionName, std::source_location theLocation) {
+	void reportException(const std::string& currentFunctionName, std::source_location theLocation) {
 		try {
 			auto currentException = std::current_exception();
 			if (currentException) {
@@ -74,9 +73,9 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	Jsonifier::String getISO8601TimeStamp(const Jsonifier::String& year, const Jsonifier::String& month, const Jsonifier::String& day, const Jsonifier::String& hour, const Jsonifier::String& minute,
-		const Jsonifier::String& second) {
-		Jsonifier::String theTimeStamp{};
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour, const std::string& minute,
+		const std::string& second) {
+		std::string theTimeStamp{};
 		theTimeStamp += year + "-";
 		if (month.size() < 2) {
 			theTimeStamp += "0" + month + "-";
@@ -103,14 +102,14 @@ namespace DiscordCoreLoader {
 		} else {
 			theTimeStamp += ":" + second;
 		}
-		return theTimeStamp;
+		return std::string{ theTimeStamp };
 	}
 
-	Jsonifier::String convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat) {
+	std::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat) {
 		uint64_t timeValue = timeInMs / 1000;
 		time_t rawTime(timeValue);
 		tm timeInfo = *localtime(&rawTime);
-		Jsonifier::String timeStamp{};
+		std::string timeStamp{};
 		timeStamp.resize(48);
 		switch (timeFormat) {
 			case TimeFormat::LongDate: {
@@ -150,8 +149,8 @@ namespace DiscordCoreLoader {
 		return timeStamp;
 	}
 
-	Jsonifier::String convertMsToDurationString(int32_t durationInMs) {
-		Jsonifier::String newString{};
+	std::string convertMsToDurationString(int32_t durationInMs) {
+		std::string newString{};
 		int32_t msPerSecond{ 1000 };
 		int32_t secondsPerMinute{ 60 };
 		int32_t minutesPerHour{ 60 };
@@ -173,8 +172,8 @@ namespace DiscordCoreLoader {
 		return newString;
 	}
 
-	Jsonifier::String convertToLowerCase(const Jsonifier::String& stringToConvert) {
-		Jsonifier::String newString;
+	std::string convertToLowerCase(const std::string& stringToConvert) {
+		std::string newString;
 		for (auto& value: stringToConvert) {
 			if (isupper(static_cast<int8_t>(value))) {
 				newString += static_cast<int8_t>(tolower(static_cast<int8_t>(value)));
@@ -185,13 +184,13 @@ namespace DiscordCoreLoader {
 		return newString;
 	}
 
-	uint64_t convertTimestampToMsInteger(const Jsonifier::String& timeStamp) {
+	uint64_t convertTimestampToMsInteger(const std::string& timeStamp) {
 		Time timeValue = Time(std::stoi(timeStamp.substr(0, 4)), std::stoi(timeStamp.substr(5, 6)), std::stoi(timeStamp.substr(8, 9)), std::stoi(timeStamp.substr(11, 12)),
 			std::stoi(timeStamp.substr(14, 15)), std::stoi(timeStamp.substr(17, 18)));
 		return timeValue.getTime() * 1000;
 	}
 
-	Jsonifier::String base64Encode(const Jsonifier::String& theString, bool url) {
+	std::string base64Encode(const std::string& theString, bool url) {
 		const char* base64_chars[2] = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 										"abcdefghijklmnopqrstuvwxyz"
 										"0123456789"
@@ -208,28 +207,28 @@ namespace DiscordCoreLoader {
 
 		const char* base64_chars_ = base64_chars[url];
 
-		Jsonifier::String returnString{};
+		std::string returnString{};
 		returnString.reserve(len_encoded);
 
 		uint64_t pos = 0;
 
 		while (pos < theString.size()) {
-			returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
+			returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
 
 			if (static_cast<uint64_t>(pos + 1) < theString.size()) {
-				returnString.pushBack(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) + ((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
+				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) + ((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
 
 				if (static_cast<uint64_t>(pos + 2) < theString.size()) {
-					returnString.pushBack(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) + ((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
-					returnString.pushBack(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
+					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) + ((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
+					returnString.push_back(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
 				} else {
-					returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
-					returnString.pushBack(trailing_char);
+					returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
+					returnString.push_back(trailing_char);
 				}
 			} else {
-				returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4]);
-				returnString.pushBack(trailing_char);
-				returnString.pushBack(trailing_char);
+				returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4]);
+				returnString.push_back(trailing_char);
+				returnString.push_back(trailing_char);
 			}
 
 			pos += 3;
@@ -238,33 +237,33 @@ namespace DiscordCoreLoader {
 		return returnString;
 	}
 
-	Jsonifier::String loadFileContents(const Jsonifier::String& filePath) {
+	std::string loadFileContents(const std::string& filePath) {
 		std::ifstream file(filePath, std::ios::in | std::ios::binary);
 		std::ostringstream stream{};
 		stream << file.rdbuf();
-		Jsonifier::String theString{ stream.str() };
+		std::string theString{ stream.str() };
 		return theString;
 	}
 
-	Jsonifier::String utf8MakeValid(const Jsonifier::String& inputString) {
-		Jsonifier::String returnString{};
+	std::string utf8MakeValid(const std::string& inputString) {
+		std::string returnString{};
 		for (auto& value: inputString) {
 			if (value >= 128) {
-				returnString.pushBack(value - 128);
+				returnString.push_back(value - 128);
 			} else {
-				returnString.pushBack(value);
+				returnString.push_back(value);
 			}
 		}
 		return returnString;
 	}
 
-	Jsonifier::String urlEncode(const Jsonifier::String& inputString) {
+	std::string urlEncode(const std::string& inputString) {
 		std::ostringstream escaped{};
 		escaped.fill('0');
 		escaped << std::hex;
 
-		for (Jsonifier::String::const_iterator x = inputString.begin(), n = inputString.end(); x != n; ++x) {
-			Jsonifier::String::value_type c = (*x);
+		for (std::string::const_iterator x = inputString.begin(), n = inputString.end(); x != n; ++x) {
+			std::string::value_type c = (*x);
 
 			if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
 				escaped << c;
@@ -275,7 +274,7 @@ namespace DiscordCoreLoader {
 			escaped << '%' << std::setw(2) << int32_t(static_cast<int8_t>(c));
 			escaped << std::nouppercase;
 		}
-		return escaped.str();
+		return std::string{ escaped.str() };
 	}
 
 	void spinLock(uint64_t timeInNsToSpinLockFor) {
@@ -286,16 +285,16 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	Jsonifier::String getCurrentISO8601TimeStamp() {
+	std::string getCurrentISO8601TimeStamp() {
 		std::time_t result		 = std::time(nullptr);
 		auto resultTwo			 = std::localtime(&result);
-		Jsonifier::String resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
+		std::string resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
 			std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		return resultString;
 	}
 
-	Jsonifier::String generateBase64EncodedKey() {
-		Jsonifier::String returnString{};
+	std::string generateBase64EncodedKey() {
+		std::string returnString{};
 		returnString.resize(16);
 		std::mt19937_64 randomEngine{ static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()) };
 		for (uint32_t x = 0; x < 16; x++) {
@@ -305,16 +304,16 @@ namespace DiscordCoreLoader {
 		return returnString;
 	}
 
-	Jsonifier::String shiftToBrightGreen() {
-		return Jsonifier::String("\033[1;40;92m");
+	std::string shiftToBrightGreen() {
+		return std::string("\033[1;40;92m");
 	}
 
-	Jsonifier::String shiftToBrightBlue() {
-		return Jsonifier::String("\033[1;40;96m");
+	std::string shiftToBrightBlue() {
+		return std::string("\033[1;40;96m");
 	}
 
-	Jsonifier::String shiftToBrightRed() {
-		return Jsonifier::String("\033[1;40;91m");
+	std::string shiftToBrightRed() {
+		return std::string("\033[1;40;91m");
 	}
 
 	bool nanoSleep(int64_t ns) {
@@ -337,16 +336,16 @@ namespace DiscordCoreLoader {
 		return true;
 	}
 
-	Jsonifier::String reset() {
-		return Jsonifier::String("\033[0m");
+	std::string reset() {
+		return std::string("\033[0m");
 	}
 
-	std::ostream& operator<<(std::ostream& outputSttream, const Jsonifier::String& (*theFunction)( void )) {
+	std::ostream& operator<<(std::ostream& outputSttream, const std::string& (*theFunction)( void )) {
 		outputSttream << theFunction();
 		return outputSttream;
 	}
 
-	bool hasTimeElapsed(const Jsonifier::String& timeStamp, uint64_t days, uint64_t hours, uint64_t minutes) {
+	bool hasTimeElapsed(const std::string& timeStamp, uint64_t days, uint64_t hours, uint64_t minutes) {
 		uint64_t startTimeRaw	  = convertTimestampToMsInteger(timeStamp);
 		auto currentTime		  = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		uint64_t secondsPerMinute = 60;
@@ -361,7 +360,7 @@ namespace DiscordCoreLoader {
 		}
 	}
 
-	Jsonifier::String getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd, int32_t daysToAdd, int32_t monthsToAdd, int32_t yearsToAdd) {
+	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd, int32_t daysToAdd, int32_t monthsToAdd, int32_t yearsToAdd) {
 		std::time_t result = std::time(nullptr);
 		int32_t secondsPerMinute{ 60 };
 		int32_t minutesPerHour{ 60 };
@@ -376,7 +375,7 @@ namespace DiscordCoreLoader {
 			(yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) + (hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
 		result += secondsToAdd;
 		auto resultTwo = std::localtime(&result);
-		Jsonifier::String resultString{};
+		std::string resultString{};
 		if (resultTwo->tm_isdst) {
 			if (resultTwo->tm_hour + 4 >= 24) {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
@@ -395,10 +394,10 @@ namespace DiscordCoreLoader {
 		return resultString;
 	}
 
-	Jsonifier::String getTimeAndDate() {
+	std::string getTimeAndDate() {
 		const time_t now = std::time(nullptr);
 		tm time			 = *std::localtime(&now);
-		Jsonifier::String timeStamp{};
+		std::string timeStamp{};
 		timeStamp.resize(48);
 		if (time.tm_isdst) {
 			if (time.tm_hour + 4 >= 24) {
@@ -419,8 +418,8 @@ namespace DiscordCoreLoader {
 		return timeStamp;
 	}
 
-	Jsonifier::String DiscordEntity::getCreatedAtTimestamp(TimeFormat timeFormat) {
-		Jsonifier::String returnString{};
+	std::string DiscordEntity::getCreatedAtTimestamp(TimeFormat timeFormat) {
+		std::string returnString{};
 		uint64_t timeInMs = (std::stoull(this->id) >> 22) + 1420070400000;
 		returnString	  = convertTimeInMsToDateTimeString(timeInMs, timeFormat);
 		return returnString;

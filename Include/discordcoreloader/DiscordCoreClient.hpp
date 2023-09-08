@@ -32,32 +32,32 @@ namespace DiscordCoreLoader {
 
 	class SIGTERMError : public std::runtime_error {
 	  public:
-		SIGTERMError(const Jsonifier::String& string);
+		SIGTERMError(const std::string& string);
 	};
 
 	class SIGSEGVError : public std::runtime_error {
 	  public:
-		SIGSEGVError(const Jsonifier::String& string);
+		SIGSEGVError(const std::string& string);
 	};
 
 	class SIGINTError : public std::runtime_error {
 	  public:
-		SIGINTError(const Jsonifier::String& string);
+		SIGINTError(const std::string& string);
 	};
 
 	class SIGILLError : public std::runtime_error {
 	  public:
-		SIGILLError(const Jsonifier::String& string);
+		SIGILLError(const std::string& string);
 	};
 
 	class SIGABRTError : public std::runtime_error {
 	  public:
-		SIGABRTError(const Jsonifier::String& string);
+		SIGABRTError(const std::string& string);
 	};
 
 	class SIGFPEError : public std::runtime_error {
 	  public:
-		SIGFPEError(const Jsonifier::String& string);
+		SIGFPEError(const std::string& string);
 	};
 
 	extern "C" void signalHandler(int32_t value, std::source_location location = std::source_location::current());
@@ -75,7 +75,7 @@ namespace DiscordCoreLoader {
 
 		/// DiscordCoreClient constructor. \brief DiscordCoreClient constructor.
 		/// \param configFilePath A string containing the path to the config file.
-		DiscordCoreClient(const Jsonifier::String& configFilePath);
+		DiscordCoreClient(const std::string& configFilePath);
 
 		/// Executes the library, and waits for completion. \brief Executes the library, and waits for completion.
 		void runServer();

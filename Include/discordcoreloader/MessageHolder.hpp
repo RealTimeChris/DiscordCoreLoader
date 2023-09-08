@@ -30,7 +30,7 @@
 
 namespace DiscordCoreLoader {
 
-	inline thread_local Jsonifier::JsonifierCore parser{};
+	inline thread_local jsonifier::jsonifier_core parser{};
 
 	class MessageHolder : public ObjectGenerator, EtfSerializer  {
 	  public:
@@ -50,11 +50,11 @@ namespace DiscordCoreLoader {
 				if (messagesToSend.size() % 100 == 0) {
 					std::cout << "Generating guild #" << messagesToSend.size() + 1 << "'s data." << std::endl;
 				}
-				Jsonifier::String newId{};
+				std::string newId{};
 				this->randomizeId(newId, 0);
 				auto newGuild = this->generateGuild(newId);
 				if (configData.format == "Json") {
-					Jsonifier::String stringBufferNew{};
+					std::string stringBufferNew{};
 					WebSocketMessageReal<GuildData> data{};
 					data.d = std::move(newGuild);
 					data.s = lastNumberSent.load();
@@ -69,7 +69,7 @@ namespace DiscordCoreLoader {
 					serializer["s"] = lastNumberSent.load();
 					serializer["t"] = "GUILD_CREATE";
 					std::unique_lock lock{ accessMutex };
-					messagesToSend.emplace_back(std::move(serializer.operator Jsonifier::String()));
+					messagesToSend.emplace_back(std::move(serializer.operator std::string()));
 				}
 				std::atomic_fetch_add(&lastNumberSent, 1);
 			}
@@ -84,7 +84,7 @@ namespace DiscordCoreLoader {
 			}
 		}
 
-		inline bool collectNextMessage(Jsonifier::String& newMessage) {
+		inline bool collectNextMessage(std::string& newMessage) {
 			std::unique_lock lock{ accessMutex };
 			if (messagesToSend.size() > 0) {
 				newMessage = std::move(messagesToSend.front());
@@ -96,8 +96,8 @@ namespace DiscordCoreLoader {
 		}
 
 	  protected:
-		Jsonifier::Vector<std::unique_ptr<std::jthread>> jthreads{};
-		std::deque<Jsonifier::String> messagesToSend{};
+		std::vector<std::unique_ptr<std::jthread>> jthreads{};
+		std::deque<std::string> messagesToSend{};
 		std::atomic_uint32_t lastNumberSent{};
 		std::mutex accessMutex{};
 	};

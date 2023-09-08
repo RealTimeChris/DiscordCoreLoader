@@ -35,13 +35,13 @@ namespace DiscordCoreLoader {
 
 		ObjectGenerator(const ConfigData& configData);
 
-		GuildMemberData generateGuildMember(const Jsonifier::String& guildId, const Jsonifier::Vector<RoleData>& roles);
+		GuildMemberData generateGuildMember(const std::string& guildId, const std::vector<RoleData>& roles);
 
 		UnavailableGuild generateUnavailableGuild(uint64_t minValue, uint64_t maxValue);
 
-		ChannelData generateChannel(Jsonifier::String guildId);
+		ChannelData generateChannel(std::string guildId);
 
-		GuildData generateGuild(Jsonifier::String guildId);
+		GuildData generateGuild(std::string guildId);
 
 		RoleData generateRole(uint64_t position);
 
