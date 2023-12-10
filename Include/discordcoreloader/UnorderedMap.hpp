@@ -1,7 +1,7 @@
 /*
 	MIT License
 
-	DiscordCoreLoader, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
+	discord_core_loader, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
 
 	Copyright 2022, 2023 Chris M. (RealTimeChris)
 
@@ -39,7 +39,7 @@
 #include <vector>
 #include <mutex>
 
-namespace DiscordCoreLoader {
+namespace discord_core_loader {
 
 	template<typename KeyType, typename ValueType> class UnorderedMap;
 
@@ -320,7 +320,7 @@ namespace DiscordCoreLoader {
 		};
 
 	  protected:
-		std::vector<int8_t> sentinelVector{};
+		jsonifier::vector<int8_t> sentinelVector{};
 		uint64_t currentMaxLookAhead{ 0 };
 		size_type capacityVal{};
 		size_type sizeVal{};
@@ -373,7 +373,7 @@ namespace DiscordCoreLoader {
 		inline void resize(size_type capacityNew) {
 			auto newSize = nextSizeOver(capacityNew);
 			if (newSize > capacityVal) {
-				std::vector<int8_t> oldSentinelVector = std::move(sentinelVector);
+				jsonifier::vector<int8_t> oldSentinelVector = std::move(sentinelVector);
 				auto oldCapacity							= capacityVal;
 				auto oldSize								= sizeVal;
 				auto oldPtr									= data;

@@ -14,37 +14,43 @@
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
-/// ConfigParser.cpp - Source file for the config parser class.
+/// JSONIfier.hpp - Header file for the etf_serializer stuff.
 /// May 22, 2022
 /// https://github.com/RealTimeChris/discord_core_loader
-/// \file ConfigParser.cpp
+/// \file JSONIfier.hpp
 
+#pragma once
+
+#include <discordcoreloader/Etf.hpp>
+#include <discordcoreloader/ObjectGenerator.hpp>
 #include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/JsonSpecializations.hpp>
-#include <discordcoreloader/ConfigParser.hpp>
-#include <filesystem>
+#include <discordcoreloader/Randomizer.hpp>
 
 namespace discord_core_loader {
 
-	ConfigParser::ConfigParser(jsonifier::string configFilePath) {
-		this->parseConfigData(configFilePath);
+	class JSONIFier : public ObjectGenerator {
+	  public:
+		JSONIFier() = default;
+
+		JSONIFier& operator=(JSONIFier&) noexcept = default;
+
+		JSONIFier(JSONIFier&) noexcept = default;
+
+		JSONIFier& operator=(ConfigData&);
+
+		JSONIFier(ConfigData& configData);
+
+		etf_serializer JSONIFYUnavailableGuild(UnavailableGuild& theGuild);
+
+		etf_serializer JSONIFYGuildMember(GuildMemberData&&);
+
+		etf_serializer JSONIFYGuild(GuildData&& guildOld);
+
+		etf_serializer JSONIFYChannel(ChannelData&&);
+
+		etf_serializer JSONIFYRole(RoleData&&);
+
+		etf_serializer JSONIFYUser(UserData&&);
 	};
 
-	ConfigData& ConfigParser::getTheData() {
-		return this->theData;
-	}
-
-	void ConfigParser::parseConfigData(jsonifier::string configFilePath) {
-		std::stringstream theStream{};
-		theStream << std::filesystem::current_path();
-		jsonifier::string currentPath{ theStream.str().substr(1, theStream.str().size() - 2) };
-#ifdef _WIN32
-		currentPath += "\\" + configFilePath;
-#elif __linux__
-		currentPath += "/" + configFilePath;
-#endif
-		jsonifier::string fileContents = loadFileContents(currentPath);
-		parser.parseJson(this->theData, fileContents);
-	}
-
-}// namespace discord_core_loader
+}

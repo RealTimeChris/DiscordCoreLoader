@@ -18,7 +18,7 @@
 #
 # FindSIMDJSON.cmake - This file locates the Simdjson library, using a couple of provided paths for searching.
 # May 13, 2021
-# https://github.com/RealTimeChris/DiscordCoreLoader
+# https://github.com/RealTimeChris/discord_core_loader
 
 # Usage:
 #	Set the following directories: SIMDJSON_RELEASE_ROOT, SIMDJSON_DEBUG_ROOT, SIMDJSON_INCLUDE_DIR

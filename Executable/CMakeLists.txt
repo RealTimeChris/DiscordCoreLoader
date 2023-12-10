@@ -3,7 +3,7 @@ generate_product_version(
 	PRODUCT_INFO
 	NAME "${PROJECT_NAME}"
 	FILE_DESCRIPTION "${DESCRIPTION}"
-	ORIGINAL_FILENAME "discordcoreloader.exe"
+	ORIGINAL_FILENAME "DiscordCoreLoader.exe"
 	ICON "${CMAKE_SOURCE_DIR}/Documentation/Images/TheLogo.ico"
 	COMPANY_NAME "RealTimeChris Inc."
 	VERSION_MAJOR "1"
@@ -25,7 +25,7 @@ elseif (UNIX)
 	find_package(Threads REQUIRED)
 endif()
 
-file(GLOB HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Include/discordcoreloader/*.hpp")
+file(GLOB HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Include/DiscordCoreLoader/*.hpp")
 
 set_target_properties(
 	"${PROJECT_NAME}" PROPERTIES
@@ -55,6 +55,19 @@ target_compile_features(
 	"cxx_std_20"
 )
 
+target_compile_options(
+	"${PROJECT_NAME}" PUBLIC
+	"$<$<CXX_COMPILER_ID:MSVC>:/Zi>"
+)
+
+target_link_options(
+	"${PROJECT_NAME}" PUBLIC
+	"$<$<CXX_COMPILER_ID:GNU>:$<$<STREQUAL:${ASAN_ENABLED},TRUE>:-fsanitize=address>>"
+	"$<$<CXX_COMPILER_ID:MSVC>:/DEBUG>"
+	"$<$<CXX_COMPILER_ID:MSVC>:/OPT:REF>"
+	"$<$<CXX_COMPILER_ID:MSVC>:/OPT:ICF>"
+)
+
 if (DEFINED ENV{EnableASAN})
 	if(MSVC)
 		target_compile_options("${PROJECT_NAME}"  PUBLIC "/fsanitize=address" "/Zi" "/Debug")
@@ -70,17 +83,15 @@ target_compile_options(
 	"$<$<PLATFORM_ID:Windows>:/bigobj>"
 	"$<$<PLATFORM_ID:Windows>:/MP>"
 	"$<$<PLATFORM_ID:Windows>:/W4>"
-	"$<$<PLATFORM_ID:Windows>:/Zi>"
 	"$<$<PLATFORM_ID:Linux>:-mavx>"
 	"$<$<PLATFORM_ID:Linux>:-mavx2>"
 )
 
 target_link_options(
-	"${PROJECT_NAME}" PUBLIC
-	"$<$<CXX_COMPILER_ID:GNU>:$<$<STREQUAL:${ASAN_ENABLED},TRUE>:-fsanitize=address>>"
-	"$<$<CXX_COMPILER_ID:MSVC>:/INCREMENTAL:NO>"
-	"$<$<CXX_COMPILER_ID:MSVC>:/DEBUG>"
+	"${PROJECT_NAME}"  PUBLIC
+	"$<$<PLATFORM_ID:Windows>:/DEBUG>"
 )
+
 install(
 	FILES
 	"${CMAKE_SOURCE_DIR}/Config.json"
@@ -93,12 +104,3 @@ install(
 	TARGETS "${PROJECT_NAME}" 
 	RUNTIME DESTINATION "${CMAKE_SOURCE_DIR}/Output Files/$<CONFIG>"
 )
-
-if (WIN32)
-	install(
-		FILES 
-		"$<TARGET_PDB_FILE:${PROJECT_NAME}>"
-		DESTINATION "$<IF:$<CONFIG:Debug>,${DEBUG_PREFIX}bin,bin>"
-		OPTIONAL
-	)
-endif()

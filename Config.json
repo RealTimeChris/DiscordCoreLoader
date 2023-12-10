@@ -5,15 +5,15 @@
   "DoWePrintGeneralSuccessMessages": true,
   "DoWePrintWebSocketErrorMessages": true,
   "DoWePrintWebSocketSuccessReceiveMessages": true,
-  "DoWePrintWebSocketSuccessSentMessages": false,
+  "DoWePrintWebSocketSuccessSentMessages": true,
   "GuildQuantity": 30000,
-  "MeanForChannelCount": 20,
-  "MeanForMemberCount": 200,
-  "MeanForRoleCount": 20,
-  "MeanForStringLength": 5,
+  "MeanForChannelCount": 10,
+  "MeanForMemberCount": 100,
+  "MeanForRoleCount": 10,
+  "MeanForStringLength": 10,
   "StdDeviationForChannelCount": 1,
   "StdDeviationForMemberCount": 1,
   "StdDeviationForRoleCount": 1,
-  "StdDeviationForStringLength": 3,
-  "TextFormat": "Json"
+  "StdDeviationForStringLength": 1,
+  "ShardCount": 1
 }

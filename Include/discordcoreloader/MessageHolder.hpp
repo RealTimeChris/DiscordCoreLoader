@@ -1,22 +1,22 @@
 /*
 *
-	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
+	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
+	You should have received a copy of the GNU General Public License along with discord_core_loader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// MessageHolderhpp - Header file for the MessageHolder stuff.
 /// Aug 27, 2023
-/// https://github.com/RealTimeChris/DiscordCoreLoader
+/// https://github.com/RealTimeChris/discord_core_loader
 /// \file MessageHolder.hpp
 
 #pragma once
@@ -25,10 +25,10 @@
 #include <discordcoreloader/ObjectGenerator.hpp>
 #include <discordcoreloader/JsonSpecializations.hpp>
 #include <discordcoreloader/Randomizer.hpp>
-#include <discordcoreloader/ErlParser.hpp>
+#include <discordcoreloader/Etf.hpp>
 #include <jsonifier/Index.hpp>
 
-namespace DiscordCoreLoader {
+namespace discord_core_loader {
 
 	inline thread_local jsonifier::jsonifier_core parser{};
 
@@ -50,11 +50,11 @@ namespace DiscordCoreLoader {
 				if (messagesToSend.size() % 100 == 0) {
 					std::cout << "Generating guild #" << messagesToSend.size() + 1 << "'s data." << std::endl;
 				}
-				std::string newId{};
+				jsonifier::string newId{};
 				this->randomizeId(newId, 0);
 				auto newGuild = this->generateGuild(newId);
 				if (configData.format == "Json") {
-					std::string stringBufferNew{};
+					jsonifier::string stringBufferNew{};
 					WebSocketMessageReal<GuildData> data{};
 					data.d = std::move(newGuild);
 					data.s = lastNumberSent.load();
@@ -69,7 +69,7 @@ namespace DiscordCoreLoader {
 					serializer["s"] = lastNumberSent.load();
 					serializer["t"] = "GUILD_CREATE";
 					std::unique_lock lock{ accessMutex };
-					messagesToSend.emplace_back(std::move(serializer.operator std::string()));
+					messagesToSend.emplace_back(std::move(serializer.operator jsonifier::string()));
 				}
 				std::atomic_fetch_add(&lastNumberSent, 1);
 			}
@@ -84,7 +84,7 @@ namespace DiscordCoreLoader {
 			}
 		}
 
-		inline bool collectNextMessage(std::string& newMessage) {
+		inline bool collectNextMessage(jsonifier::string& newMessage) {
 			std::unique_lock lock{ accessMutex };
 			if (messagesToSend.size() > 0) {
 				newMessage = std::move(messagesToSend.front());
@@ -96,8 +96,8 @@ namespace DiscordCoreLoader {
 		}
 
 	  protected:
-		std::vector<std::unique_ptr<std::jthread>> jthreads{};
-		std::deque<std::string> messagesToSend{};
+		jsonifier::vector<std::unique_ptr<std::jthread>> jthreads{};
+		std::deque<jsonifier::string> messagesToSend{};
 		std::atomic_uint32_t lastNumberSent{};
 		std::mutex accessMutex{};
 	};

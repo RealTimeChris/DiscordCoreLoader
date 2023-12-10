@@ -1,22 +1,22 @@
 /*
 *
-	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
+	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
+	You should have received a copy of the GNU General Public License along with discord_core_loader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// SSLClents.hpp - Header file for the "SSL Client" stuff.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/DiscordCoreLoader
+/// https://github.com/RealTimeChris/discord_core_loader
 /// \file SSLClients.hpp
 
 #pragma once
@@ -32,12 +32,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/ConfigParser.hpp>
-
+#include <discordcoreloader/JSONIfier.hpp>
 extern "C" {
-#undef APPMACROS_ONLY
-#include <openssl/err.h>
-#include <openssl/ssl.h>
+	#undef APPMACROS_ONLY
+	#include <openssl/err.h>
+	#include <openssl/ssl.h>
 }
 
 #ifdef max
@@ -67,7 +66,7 @@ extern "C" {
 	#include <unistd.h>
 #endif
 
-namespace DiscordCoreLoader {
+namespace discord_core_loader {
 
 #ifndef SOCKET_ERROR
 	#define SOCKET_ERROR (-1)
@@ -81,29 +80,26 @@ namespace DiscordCoreLoader {
 
 	struct ConnectionError : public std::runtime_error {
 		int32_t shardNumber{};
-		explicit ConnectionError(const std::string& theString);
+		explicit ConnectionError(const jsonifier::string& theString);
 	};
 
 	enum class WebSocketMode : int8_t { JSON = 0, ETF = 1 };
 
 	struct PollFDWrapper {
-		std::vector<uint32_t> theIndices{};
-		std::vector<pollfd> thePolls{};
+		jsonifier::vector<uint32_t> theIndices{};
+		jsonifier::vector<pollfd> thePolls{};
 	};
-
 	class BaseSocketAgent;
 
 	struct MessagePackage {
-		std::vector<std::string> theStrings{};
+		jsonifier::vector<jsonifier::string> theStrings{};
 	};
 
 	struct WebSocketMessage {
 		WebSocketMessage& operator=(WebSocketMessage&& other) noexcept {
+			this->stringMsg = std::move(other.stringMsg);
+			this->jsonMsg = std::move(other.jsonMsg);
 			this->theOpCode = other.theOpCode;
-			this->t			= std::move(other.t);
-			this->d			= std::move(other.d);
-			this->op		= other.op;
-			this->s			= other.s;
 			return *this;
 		}
 		WebSocketMessage(WebSocketMessage&& other) noexcept {
@@ -111,10 +107,8 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage& operator=(const WebSocketMessage& other) noexcept {
 			this->theOpCode = other.theOpCode;
-			this->op		= other.op;
-			this->t			= other.t;
-			this->d			= other.d;
-			this->s			= other.s;
+			this->stringMsg = other.stringMsg;
+			this->jsonMsg = other.jsonMsg;
 			return *this;
 		}
 		WebSocketMessage(const WebSocketMessage& other) noexcept {
@@ -122,13 +116,11 @@ namespace DiscordCoreLoader {
 		}
 		WebSocketMessage() = default;
 		WebSocketOpCode theOpCode{};
-		jsonifier::raw_json_data d{};
-		std::string t{};
-		int32_t op{};
-		int32_t s{};
+		etf_serializer jsonMsg{};
+		jsonifier::string stringMsg{};
 	};
 
-	std::string reportError(const char* errorPosition, int32_t errorValue) noexcept;
+	jsonifier::string reportError(const char* errorPosition, int32_t errorValue) noexcept;
 
 #ifdef _WIN32
 	struct WSADataWrapper {
@@ -230,7 +222,7 @@ namespace DiscordCoreLoader {
 	};
 
 	enum class ProcessIOReturnCode : int32_t {
-		Error	= -1,///< Error occurred.
+		Error = -1,///< Error occurred.
 		Success = 0,///< Succesful read or write occurred.
 	};
 
@@ -256,13 +248,15 @@ namespace DiscordCoreLoader {
 
 		SSLClient() noexcept = default;
 
-		SSLClient(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew);
+		SSLClient(bool doWePrintErrorsNew);
 
-		void writeData(std::string& data, bool priority) noexcept;
+		void writeData(jsonifier::string& data, bool priority) noexcept;
+
+		void connect(SOCKET socketNew, SSL_CTX* theContextNew);
+
+		jsonifier::string& getInputBuffer() noexcept;
 
 		virtual void handleBuffer() noexcept = 0;
-
-		std::string& getInputBuffer() noexcept;
 
 		bool areWeStillConnected() noexcept;
 
@@ -283,16 +277,17 @@ namespace DiscordCoreLoader {
 		const uint64_t maxBufferSize{ (1024 * 16) - 1 };
 		std::array<char, 1024 * 16> rawInputBuffer{};
 		SOCKETWrapper clientSocket{};
-		std::deque<std::string> outputBuffers{};
+		std::deque<jsonifier::string> outputBuffers{};
 		MessagePackage theCurrentMessage{};
 		int32_t currentReconnectTries{ 0 };
 		uint32_t currentSocketIndex{ 0 };
 		bool doWeHaveOurGuild{ false };
 		SSL_CTX* theContext{ nullptr };
-		std::string serverToClientBuffer{};
+		jsonifier::string serverToClientBuffer{};
 		bool areWeConnected{ false };
 		bool doWePrintError{ false };
-		GuildData theGuildHolder{};
+		etf_serializer theGuildHolder{};
+		SSLWrapper ssl{};
 		int64_t currentGuildCount{};
 		WebSocketState theState{};
 		bool sendGuilds{ false };
@@ -301,10 +296,9 @@ namespace DiscordCoreLoader {
 		int64_t totalGuildCount{};
 		int64_t lastNumberSent{};
 		uint64_t bytesRead{ 0 };
-		std::string inputBuffer{};
+		jsonifier::string inputBuffer{};
 		uint32_t shard[2]{};
-		std::string authKey{};
-		SSLWrapper ssl{};
+		jsonifier::string authKey{};
 	};
 
 	struct ReconnectionPackage {
@@ -312,17 +306,22 @@ namespace DiscordCoreLoader {
 		int32_t currentShardIndex{};
 		int32_t totalShardCount{};
 	};
+
 	class WebSocketSSLShard;
+
 	class WebSocketSSLServerMain {
 	  public:
+		friend class WebSocketSSLClient;
 		friend class DiscordCoreClient;
+		friend class BaseSocketAgent;
 		friend class SSLClient;
 
 		WebSocketSSLServerMain() = default;
 
-		WebSocketSSLServerMain(const std::string& theUrl, const std::string& port, bool doWePrintError, std::atomic_bool* doWeQuit, ConfigParser* theData);
+		WebSocketSSLServerMain(const jsonifier::string& theUrl, const jsonifier::string& port, bool doWePrintError, std::atomic_bool* doWeQuit,
+			ConfigParser* theData);
 
-		std::vector<WebSocketSSLShard*> processIO(std::vector<WebSocketSSLShard*>& theMap) noexcept;
+		jsonifier::vector<WebSocketSSLShard*> processIO(jsonifier::vector<WebSocketSSLShard*>& theMap) noexcept;
 
 		SOCKET getNewSocket();
 
@@ -336,8 +335,8 @@ namespace DiscordCoreLoader {
 		bool doWePrintError{ false };
 		std::atomic_bool* doWeQuit{};
 		std::mutex theMutex{};
-		std::string baseUrl{};
-		std::string port{};
+		jsonifier::string baseUrl{};
+		jsonifier::string port{};
 	};
 
-}//
+}// namespace

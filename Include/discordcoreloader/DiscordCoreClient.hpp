@@ -1,22 +1,22 @@
 /*
 *
-	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
+	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
+	You should have received a copy of the GNU General Public License along with discord_core_loader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// DiscordCoreClient01.hpp - Header file for the main/exposed DiscordCoreClient class.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/DiscordCoreLoader
+/// https://github.com/RealTimeChris/discord_core_loader
 /// \file DiscordCoreClient.hpp
 
 #pragma once
@@ -25,10 +25,9 @@
 #include <discordcoreloader/ConfigParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
-#include <discordcoreloader/MessageHolder.hpp>
 #include <source_location>
 
-namespace DiscordCoreLoader {
+namespace discord_core_loader {
 
 	class SIGTERMError : public std::runtime_error {
 	  public:
@@ -75,7 +74,7 @@ namespace DiscordCoreLoader {
 
 		/// DiscordCoreClient constructor. \brief DiscordCoreClient constructor.
 		/// \param configFilePath A string containing the path to the config file.
-		DiscordCoreClient(const std::string& configFilePath);
+		DiscordCoreClient(const jsonifier::string& configFilePath);
 
 		/// Executes the library, and waits for completion. \brief Executes the library, and waits for completion.
 		void runServer();
@@ -83,24 +82,22 @@ namespace DiscordCoreLoader {
 	  protected:
 		StopWatch<std::chrono::milliseconds> connectionStopWatch{ std::chrono::milliseconds{ 5000 } };
 		std::unordered_map<int32_t, std::unique_ptr<BaseSocketAgent>> baseSocketAgentMap{};
-		std::unique_ptr<WebSocketSSLServerMain> webSocketSSLServerMain{ nullptr };
 		bool haveWeCollectedShardingInfo{ false };
 		std::atomic_uint32_t currentShardIndex{};
 		std::atomic_uint32_t totalShardCount{};
 		std::atomic_int32_t workerCount{ -1 };
 		std::atomic_int32_t guildQuantity{};
 		ShardingOptions shardingOptions{};
-		MessageHolder messageHolder;
-		ObjectGenerator randomizer{};
 		ConfigParser configParser{};
 #ifdef _WIN32
 		WSADataWrapper theWSAData{};
 #endif
 		std::mutex coutMutex{};
 		std::mutex theMutex{};
+		JSONIFier jsonifier{};
 
 
-		void connectShard();
+		void initSocketAgents();
 	};
 	/**@}*/
-}// namespace DiscordCoreLoader
+}// namespace discord_core_loader
