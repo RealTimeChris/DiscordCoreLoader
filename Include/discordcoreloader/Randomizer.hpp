@@ -1,22 +1,22 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// Randomizer.hpp - Header file for the Randomizer stuff.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file Randomizer.hpp
 
 #pragma once
@@ -24,11 +24,11 @@
 #include <discordcoreloader/FoundationEntities.hpp>
 #include <charconv>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
 	class Randomizer {
 	  public:
-		void randomizeId(jsonifier::string& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
+		void randomizeId(std::string& theString, uint64_t minValue = 0, uint64_t maxValue = UINT64_MAX);
 
 		uint64_t randomize64BitUInt(uint64_t minValue, uint64_t maxValue);
 
@@ -42,11 +42,11 @@ namespace discord_core_loader {
 
 		int8_t randomize8BitInt(uint8_t minValue, uint8_t maxValue);
 
-		uint64_t drawRandomValue(jsonifier::vector<uint64_t>&);
+		uint64_t drawRandomValue(std::vector<uint64_t>&);
 
-		jsonifier::string randomizeString(int64_t size);
+		std::string randomizeString(int64_t length);
 
-		jsonifier::string randomizeIconHash();
+		std::string randomizeIconHash();
 
 		uint64_t randomize64BitUInt();
 

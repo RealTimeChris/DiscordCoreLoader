@@ -3,7 +3,7 @@ generate_product_version(
 	PRODUCT_INFO
 	NAME "${PROJECT_NAME}"
 	FILE_DESCRIPTION "${DESCRIPTION}"
-	ORIGINAL_FILENAME "DiscordCoreLoader.exe"
+	ORIGINAL_FILENAME "discordcoreloader.exe"
 	ICON "${CMAKE_SOURCE_DIR}/Documentation/Images/TheLogo.ico"
 	COMPANY_NAME "RealTimeChris Inc."
 	VERSION_MAJOR "1"
@@ -25,7 +25,7 @@ elseif (UNIX)
 	find_package(Threads REQUIRED)
 endif()
 
-file(GLOB HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Include/DiscordCoreLoader/*.hpp")
+file(GLOB HEADERS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Include/discordcoreloader/*.hpp")
 
 set_target_properties(
 	"${PROJECT_NAME}" PROPERTIES
@@ -47,25 +47,13 @@ target_link_libraries(
 	$<$<TARGET_EXISTS:OpenSSL::Crypto>:OpenSSL::Crypto>
 	$<$<TARGET_EXISTS:OpenSSL::SSL>:OpenSSL::SSL>
 	$<$<TARGET_EXISTS:Threads::Threads>:Threads::Threads>
+	$<$<TARGET_EXISTS:simdjson::simdjson>:simdjson::simdjson>
 	$<$<TARGET_EXISTS:Jsonifier::Jsonifier>:Jsonifier::Jsonifier>
 )
 
 target_compile_features(
 	"${PROJECT_NAME}" PUBLIC
 	"cxx_std_20"
-)
-
-target_compile_options(
-	"${PROJECT_NAME}" PUBLIC
-	"$<$<CXX_COMPILER_ID:MSVC>:/Zi>"
-)
-
-target_link_options(
-	"${PROJECT_NAME}" PUBLIC
-	"$<$<CXX_COMPILER_ID:GNU>:$<$<STREQUAL:${ASAN_ENABLED},TRUE>:-fsanitize=address>>"
-	"$<$<CXX_COMPILER_ID:MSVC>:/DEBUG>"
-	"$<$<CXX_COMPILER_ID:MSVC>:/OPT:REF>"
-	"$<$<CXX_COMPILER_ID:MSVC>:/OPT:ICF>"
 )
 
 if (DEFINED ENV{EnableASAN})

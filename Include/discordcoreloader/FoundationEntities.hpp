@@ -1,23 +1,33 @@
-/*
-*
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	/*
+	MIT License
 
-	Copyright 2022 Chris M. (RealTimeChris)
+	DiscordCoreAPI, A bot library for Discord, written in C++, and featuring explicit multithreading through the usage of custom, asynchronous C++ CoRoutines.
 
-	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
-	General Public License as published by the Free Software Foundation, either version 3 of the License,
-	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
-	If not, see <https://www.gnu.org/licenses/>.
+	Copyright 2022, 2023 Chris M. (RealTimeChris)
 
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
 */
-/// FoundationEntities.hpp - Header for all of the Discord/Support API data
-/// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// FoundationEntities.hpp - Header for all of the discord/support api data structures.
+/// May 12, 2021 Chris M.
+/// https://discordcoreapi.com
 /// \file FoundationEntities.hpp
+#pragma once
 
 #pragma once
 
@@ -31,11 +41,6 @@
 #pragma warning(disable : 4459)
 #pragma warning(disable : 4245)
 
-
-#if !defined(NOMINMAX)
-	#define NOMINMAX
-#endif
-
 #ifdef _WIN32
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
@@ -44,6 +49,12 @@
 		#define WINRT_LEAN_AND_MEAN
 	#endif
 	#include <WinSock2.h>
+	#include <chrono>
+inline tm getTime(time_t time) {
+	tm timeNew{};
+	gmtime_s(&timeNew, &time);
+	return timeNew;
+}
 #elif __linux__
 	#include <cstdint>
 	#include <cstring>
@@ -54,13 +65,15 @@
 	#include <ctime>
 #endif
 
-
 #include <jsonifier/Index.hpp>
+#include <discordcoreloader/Etf.hpp>
 
 #include <condition_variable>
 #include <source_location>
 #include <unordered_map>
+#include <unordered_set>
 #include <functional>
+#include <simdjson.h>
 #include <semaphore>
 #include <coroutine>
 #include <concepts>
@@ -86,2043 +99,2700 @@
 	#undef min
 #endif
 
-/**
- * \defgroup main_endpoints Main Endpoints
- * \brief For all of the Discord API's endpoints.
- */
+namespace DiscordCoreLoader {
 
-/**
- * \defgroup voice_connection Voice Connection
- * \brief For all of the voice connection related stuff.
- */
+	struct voice_connection_data {
+		jsonifier::string sessionId{};
+		jsonifier::string endPoint{};
+		jsonifier::string token{};
+	};
 
-/**
- * \defgroup discord_events Discord Events
- * \brief For all of the events that could be sent by the Discord API.
- */
+	struct websocket_resume_data {
+		uint64_t lastNumberReceived{};
+		jsonifier::string sessionId{};
+		jsonifier::string botToken{};
 
-/**
- * \defgroup utilities Utilities
- * \brief For utility classes/functions.
- */
+		operator etf_serializer();
+	};
 
-/**
- * \defgroup foundation_entities Foundation Entities
- * \brief For all of the building blocks of the main endpoints.
- */
+	struct connect_properties {
+		static constexpr jsonifier::string_view browser{ "DiscordCoreAPI" };
+		static constexpr jsonifier::string_view device{ "DiscordCoreAPI" };
+#if defined _WIN32
+		static constexpr jsonifier::string_view os{ "Windows" };
+#elif __linux__
+		static constexpr jsonifier::string_view os{ "Linux" };
+#else
+		static constexpr jsonifier::string_view os{ "MacOs" };
+#endif
+	};
 
-/**
- * \addtogroup foundation_entities
- * @{
- */
-/// The main namespace for this library. \brief The main namespace for this
-/// library.
-namespace discord_core_loader {
+	struct websocket_identify_data {
+		std::array<uint64_t, 2> shard{};
+		uint64_t largeThreshold{ 250 };
+		jsonifier::string botToken{};
+		int64_t intents{};
 
-	inline thread_local jsonifier::jsonifier_core<0> parser{};
+		operator etf_serializer();
+	};
 
-	struct RecurseThroughMessagePagesData;
-	struct DeleteInteractionResponseData;
-	struct DeleteFollowUpMessageData;
-	struct OnInteractionCreationData;
-	struct GetGuildMemberRolesData;
-	struct BaseFunctionArguments;
-	struct HttpWorkloadData;
-	struct GetRolesData;
-	struct CommandData;
-	struct File;
+	struct voice_socket_protocol_payload_data_data {
+		jsonifier::string address{};
+		jsonifier::string mode{};
+		uint16_t port{};
+	};
 
-	class CreateEphemeralInteractionResponseData;
-	class CreateDeferredInteractionResponseData;
-	class CreateEphemeralFollowUpMessageData;
-	class CreateInteractionResponseData;
-	class EditInteractionResponseData;
-	class CreateFollowUpMessageData;
-	class RespondToInputEventData;
-	class EditFollowUpMessageData;
-	class SelectMenuCollector;
-	class DiscordCoreClient;
-	class CreateMessageData;
-	class VoiceConnection;
-	class EditMessageData;
-	class ButtonCollector;
-	class ModalCollector;
-	class Interactions;
-	class EventManager;
-	class EventHandler;
-	class GuildMembers;
-	class GuildMember;
-	class ChannelData;
-	class InputEvents;
-	class EventWaiter;
-	class SendDMData;
-	class Reactions;
-	class Messages;
-	class WebHooks;
-	class SongAPI;
-	class BotUser;
-	class Guilds;
-	class Roles;
-	class Test;
+	struct voice_socket_protocol_payload_data {
+		static constexpr jsonifier::string_view protocol{ "udp" };
+		voice_socket_protocol_payload_data_data data{};
+	};
 
-	enum class WebSocketOpCode : int8_t { Op_Continuation = 0x00, Op_Text = 0x01, Op_Binary = 0x02, Op_Close = 0x08, Op_Ping = 0x09, Op_Pong = 0x0a };
+	struct voice_identify_data {
+		jsonifier::string sessionId{};
+		jsonifier::string serverId{};
+		jsonifier::string token{};
+	};
 
-	template<typename TTy> class StopWatch {
+	enum class send_speaking_type : uint8_t {
+		None			   = 0,
+		Microphone		   = 1 << 0,
+		Soundshare		   = 1 << 1,
+		Priority		   = 1 << 2,
+		Priority_And_Voice = Microphone | Priority,
+	};
+
+	struct send_speaking_data {
+		send_speaking_type type{};
+		uint64_t delay{};
+		uint64_t ssrc{};
+	};
+
+	enum class https_workload_class : uint8_t { Get = 0, Put = 1, Post = 2, Patch = 3, Delete = 4 };
+
+	enum class payload_type : uint8_t { Application_Json = 1, Multipart_Form = 2 };
+
+	enum class https_workload_type : uint8_t {
+		Unset											= 0,
+		Get_Global_Application_Commands					= 1,
+		Post_Global_Application_Command					= 2,
+		Get_Global_Application_Command					= 3,
+		Patch_Global_Application_Command				= 4,
+		Delete_Global_Application_Command				= 5,
+		Bulk_Put_Global_Application_Commands			= 6,
+		Get_Guild_Application_Commands					= 7,
+		Post_Guild_Application_Command					= 8,
+		Get_Guild_Application_Command					= 9,
+		Patch_Guild_Application_Command					= 10,
+		Delete_Guild_Application_Command				= 11,
+		Bulk_Put_Guild_Application_Commands				= 12,
+		Get_Guild_Application_Commands_Permissions		= 13,
+		Get_Guild_Application_Command_Permissions		= 14,
+		Put_Guild_Application_Command_Permissions		= 15,
+		Batch_Put_Guild_Application_Command_Permissions = 16,
+		Post_Interaction_Response						= 17,
+		Get_Interaction_Response						= 18,
+		Patch_Interaction_Response						= 19,
+		Delete_Interaction_Response						= 20,
+		Post_Followup_Message							= 21,
+		Get_Followup_Message							= 22,
+		Patch_Followup_Message							= 23,
+		Delete_Followup_Message							= 24,
+		Get_Guild_Audit_Logs							= 25,
+		Get_Channel										= 26,
+		Patch_Channel									= 27,
+		Delete_Channel									= 28,
+		Get_Messages									= 29,
+		Get_Message										= 30,
+		Post_Message									= 31,
+		Crosspost_Message								= 32,
+		Put_Reaction									= 33,
+		Delete_Own_Reaction								= 34,
+		Delete_User_Reaction							= 35,
+		Get_Reactions									= 36,
+		Delete_All_Reactions							= 37,
+		Delete_Reactions_By_Emoji						= 38,
+		Patch_Message									= 39,
+		Delete_Message									= 40,
+		Delete_Message_Old								= 41,
+		Bulk_Delete_Messages							= 42,
+		Put_Channel_Permission_Overwrites				= 43,
+		Get_Channel_Invites								= 44,
+		Post_Channel_Invite								= 45,
+		Delete_Channel_Permission_Overwrites			= 46,
+		Post_Follow_News_Channel						= 47,
+		Post_Trigger_Typing_Indicator					= 48,
+		Get_Pinned_Messages								= 49,
+		Put_Pin_Message									= 50,
+		Delete_Pin_Message								= 51,
+		Put_Recipient_To_Group_Dm						= 52,
+		Delete_Recipient_From_Group_Dm					= 53,
+		Post_Thread_With_Message						= 54,
+		Post_Thread_Without_Message						= 55,
+		Put_Self_In_Thread								= 56,
+		Put_Thread_Member								= 57,
+		Delete_Self_From_Thread							= 58,
+		Delete_Thread_Member							= 59,
+		Get_Thread_Member								= 60,
+		Get_Thread_Members								= 61,
+		Get_Active_Threads								= 62,
+		Get_Public_Archived_Threads						= 63,
+		Get_Private_Archived_Threads					= 64,
+		Get_Joined_Private_Archived_Threads				= 65,
+		Get_Emoji_List									= 66,
+		Get_Guild_Emoji									= 67,
+		Post_Guild_Emoji								= 68,
+		Patch_Guild_Emoji								= 69,
+		Delete_Guild_Emoji								= 70,
+		Post_Guild										= 71,
+		Get_Guild										= 72,
+		Get_Guild_Preview								= 73,
+		Patch_Guild										= 74,
+		Delete_Guild									= 75,
+		Get_Guild_Channels								= 76,
+		Post_Guild_Channel								= 77,
+		Patch_Guild_Channel_Positions					= 78,
+		Get_Guild_Active_Threads						= 79,
+		Get_Guild_Member								= 80,
+		Get_Guild_Members								= 81,
+		Get_Search_Guild_Members						= 82,
+		Put_Guild_Member								= 83,
+		Patch_Guild_Member								= 84,
+		Patch_Current_Guild_Member						= 85,
+		Put_Guild_Member_Role							= 86,
+		Delete_Guild_Member_Role						= 87,
+		Delete_Guild_Member								= 88,
+		Get_Guild_Bans									= 89,
+		Get_Guild_Ban									= 90,
+		Put_Guild_Ban									= 91,
+		Delete_Guild_Ban								= 92,
+		Get_Guild_Roles									= 93,
+		Post_Guild_Role									= 94,
+		Patch_Guild_Role_Positions						= 95,
+		Patch_Guild_Role								= 96,
+		Delete_Guild_Role								= 97,
+		Get_Guild_Prune_Count							= 98,
+		Post_Guild_Prune								= 99,
+		Get_Guild_Voice_Regions							= 100,
+		Get_Guild_Invites								= 101,
+		Get_Guild_Integrations							= 102,
+		Delete_Guild_Integration						= 103,
+		Get_Guild_Widget_Settings						= 104,
+		Patch_Guild_Widget								= 105,
+		Get_Guild_Widget								= 106,
+		Get_Vanity_Invite								= 107,
+		Get_Guild_Widget_Image							= 108,
+		Get_Guild_Welcome_Screen						= 109,
+		Patch_Guild_Welcome_Screen						= 110,
+		Patch_Current_User_Voice_State					= 111,
+		Patch_User_Voice_State							= 112,
+		Get_Guild_Scheduled_Events						= 113,
+		Post_Guild_Scheduled_Event						= 114,
+		Get_Guild_Scheduled_Event						= 115,
+		Patch_Guild_Scheduled_Event						= 116,
+		Delete_Guild_Scheduled_Event					= 117,
+		Get_Guild_Scheduled_Event_Users					= 118,
+		Get_Guild_Template								= 119,
+		Post_Guild_From_Guild_Template					= 120,
+		Get_Guild_Templates								= 121,
+		Post_Guild_Template								= 122,
+		Put_Guild_Template								= 123,
+		Patch_Guild_Template							= 124,
+		Delete_Guild_Template							= 125,
+		Get_Invite										= 126,
+		Delete_Invite									= 127,
+		Post_Stage_Instance								= 128,
+		Get_Stage_Instance								= 129,
+		Patch_Stage_Instance							= 130,
+		Delete_Stage_Instance							= 131,
+		Get_Sticker										= 132,
+		Get_Nitro_Sticker_Packs							= 133,
+		Get_Guild_Stickers								= 134,
+		Post_Guild_Sticker								= 135,
+		Patch_Guild_Sticker								= 136,
+		Delete_Guild_Sticker							= 137,
+		Get_Current_User								= 138,
+		Get_User										= 139,
+		Patch_Current_User								= 140,
+		Get_Current_User_Guilds							= 141,
+		Delete_Leave_Guild								= 142,
+		Post_Create_User_Dm								= 143,
+		Get_User_Connections							= 144,
+		Get_Voice_Regions								= 145,
+		Post_Webhook									= 146,
+		Get_Channel_Webhooks							= 147,
+		Get_Guild_Webhooks								= 148,
+		Get_Webhook										= 149,
+		Get_Webhook_With_Token							= 150,
+		Patch_Webhook									= 151,
+		Patch_Webhook_With_Token						= 152,
+		Delete_Webhook									= 153,
+		Delete_Webhook_With_Token						= 154,
+		Post_Execute_Webhook							= 155,
+		Get_Webhook_Message								= 156,
+		Patch_Webhook_Message							= 157,
+		Delete_Webhook_Message							= 158,
+		Get_Application_Info							= 159,
+		Get_Authorization_Info							= 160,
+		Get_Gateway_Bot									= 161,
+		Post_Thread_In_Forum_Channel					= 162,
+		Get_Auto_Moderation_Rules						= 163,
+		Get_Auto_Moderation_Rule						= 164,
+		Post_Auto_Moderation_Rule						= 165,
+		Patch_Auto_Moderation_Rule						= 166,
+		Delete_Auto_Moderation_Rule						= 167,
+		YouTube_Get_Search_Results						= 168,
+		SoundCloud_Get_Search_Results					= 169,
+		SoundCloud_Get_Client_Id						= 170,
+		SoundCloud_Get_Download_Links					= 171,
+		Last											= 172
+	};
+
+	/// @brief A class representing a snowflake identifier with various operations.
+	class snowflake {
 	  public:
-		using HRClock = std::chrono::high_resolution_clock;
+		/// @brief Default constructor for snowflake.
+		inline snowflake() = default; 
 
-		StopWatch() = delete;
-
-		StopWatch<TTy>& operator=(StopWatch<TTy>&& data) noexcept {
-			this->maxNumberOfTimeUnits.store(data.maxNumberOfTimeUnits.load());
-			this->startTime.store(data.startTime.load());
-			return *this;
-		}
-
-		StopWatch(TTy maxNumberOfMsNew) {
-			this->maxNumberOfTimeUnits.store(maxNumberOfMsNew);
-			this->startTime.store(std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch()));
-		}
-
-		TTy totalTimePassed() {
-			TTy currentTime = std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch());
-			TTy elapsedTime = currentTime - this->startTime.load();
-			return elapsedTime;
-		}
-
-		TTy getTotalWaitTime() {
-			return this->maxNumberOfTimeUnits.load();
-		}
-
-		bool hasTimePassed() {
-			TTy currentTime = std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch());
-			TTy elapsedTime = currentTime - this->startTime.load();
-			return elapsedTime >= this->maxNumberOfTimeUnits.load();
-		}
-
-		void resetTimer() {
-			this->startTime.store(std::chrono::duration_cast<TTy>(HRClock::now().time_since_epoch()));
-		}
-
-	  protected:
-		std::atomic<TTy> maxNumberOfTimeUnits{ TTy{} };
-		std::atomic<TTy> startTime{ TTy{} };
-	};
-
-	const uint8_t formatVersion{ 131 };
-
-	enum class EtfType : uint8_t {
-		New_Float_Ext = 70,
-		Small_Integer_Ext = 97,
-		Integer_Ext = 98,
-		Atom_Ext = 100,
-		Nil_Ext = 106,
-		String_Ext = 107,
-		List_Ext = 108,
-		Binary_Ext = 109,
-		Small_Big_Ext = 110,
-		Small_Atom_Ext = 115,
-		Map_Ext = 116,
-	};
-
-	template<typename Ty>
-	concept IsEnum = std::is_enum<Ty>::value;
-
-	struct EnumConverter {
-		template<IsEnum EnumType> EnumConverter& operator=(const jsonifier::vector<EnumType>& data) {
-			for (auto& value: data) {
-				this->vector.emplace_back(std::move(static_cast<uint64_t>(value)));
-			}
-			return *this;
-		};
-
-		template<IsEnum EnumType> EnumConverter(const jsonifier::vector<EnumType>& data) {
-			*this = data;
-		};
-
-		template<IsEnum EnumType> EnumConverter& operator=(EnumType data) {
-			this->integer = static_cast<uint64_t>(data);
-			return *this;
-		};
-
-		template<IsEnum EnumType> EnumConverter(EnumType data) {
-			*this = data;
-		};
-
-		operator jsonifier::vector<uint64_t>() const noexcept;
-
-		operator uint64_t() const noexcept;
-
-		bool isItAVector() const noexcept;
-
-	  protected:
-		jsonifier::vector<uint64_t> vector{};
-		bool vectorType{};
-		uint64_t integer{};
-	};
-
-	enum class JsonType : uint8_t { Object = 1, Array = 2, String = 3, Float = 4, Uint64 = 5, Int64 = 6, Bool = 7, Null = 8 };
-
-	enum class JsonifierSerializeType { Etf = 0, Json = 1 };
-
-	/**
-	 * \addtogroup utilities
-	 * @{
-	 */
-
-	template<typename ObjectType>
-	concept Copyable = std::copyable<ObjectType>;
-
-	/// A messaging block for data-structures. \brief A messaging block for data-structures.
-	/// \tparam ObjectType The type of object that will be sent over the message block.
-	template<Copyable ObjectType> class UnboundedMessageBlock {
-	  public:
-		UnboundedMessageBlock<ObjectType>& operator=(UnboundedMessageBlock<ObjectType>&& other) {
-			if (this != &other) {
-				this->theArray = std::move(other.theArray);
-				other.theArray = std::queue<ObjectType>{};
-			}
-			return *this;
-		}
-
-		UnboundedMessageBlock(UnboundedMessageBlock<ObjectType>&& other) {
-			*this = std::move(other);
-		}
-
-		UnboundedMessageBlock<ObjectType>& operator=(const UnboundedMessageBlock<ObjectType>&) = delete;
-
-		UnboundedMessageBlock(const UnboundedMessageBlock<ObjectType>&) = delete;
-
-		UnboundedMessageBlock<ObjectType>& operator=(UnboundedMessageBlock<ObjectType>&) = delete;
-
-		UnboundedMessageBlock(UnboundedMessageBlock<ObjectType>&) = delete;
-
-		UnboundedMessageBlock() = default;
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(const ObjectType&& theObject) {
-			this->theArray.push(theObject);
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(ObjectType&& theObject) {
-			this->theArray.push(std::move(theObject));
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(const ObjectType& theObject) {
-			ObjectType newValue = theObject;
-			this->theArray.push(newValue);
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(ObjectType& theObject) {
-			ObjectType newValue = theObject;
-			this->theArray.push(newValue);
-		}
-
-		/// Clears the contents of the messaging block. \brief Clears the contents of the messaging block.
-		void clearContents() {
-			this->theArray = std::queue<ObjectType>{};
-		}
-
-		/// Tries to receive an object of type ObjectType to be placed into a reference. \brief Tries to receive an object of type ObjectType to be placed into a reference.
-		/// \param theObject A reference of type ObjectType for placing the potentially received object.
-		/// \returns A bool, denoting whether or not we received an object.
-		bool tryReceive(ObjectType& theObject) {
-			if (this->theArray.size() == 0) {
-				return false;
-			} else {
-				theObject = this->theArray.front();
-				this->theArray.pop();
-				return true;
-			}
-		}
-
-	  protected:
-		std::queue<ObjectType> theArray{};
-	};
-
-	/// A thread-safe messaging block for data-structures. \brief A thread-safe messaging block for data-structures.
-	/// \tparam ObjectType The type of object that will be sent over the message block.
-	template<Copyable ObjectType> class TSUnboundedMessageBlock {
-	  public:
-		TSUnboundedMessageBlock<ObjectType>& operator=(TSUnboundedMessageBlock<ObjectType>&& other) noexcept {
-			if (this != &other) {
-				this->theArray = std::move(other.theArray);
-				other.theArray = std::queue<ObjectType>{};
-			}
-			return *this;
-		}
-
-		TSUnboundedMessageBlock(TSUnboundedMessageBlock<ObjectType>&& other) noexcept {
-			*this = std::move(other);
-		}
-
-		TSUnboundedMessageBlock<ObjectType>& operator=(const TSUnboundedMessageBlock<ObjectType>&) = delete;
-
-		TSUnboundedMessageBlock(const TSUnboundedMessageBlock<ObjectType>&) = delete;
-
-		TSUnboundedMessageBlock<ObjectType>& operator=(TSUnboundedMessageBlock<ObjectType>&) = delete;
-
-		TSUnboundedMessageBlock(TSUnboundedMessageBlock<ObjectType>&) = delete;
-
-		TSUnboundedMessageBlock() = default;
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(const ObjectType&& theObject) {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			this->theArray.push(theObject);
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(ObjectType&& theObject) {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			this->theArray.push(std::move(theObject));
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(const ObjectType& theObject) {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			ObjectType newValue = theObject;
-			this->theArray.push(newValue);
-		}
-
-		/// Sends an object of type ObjectType to the "recipient". \brief Sends an object of type ObjectType to the "recipient".
-		/// \param theObject An object of ObjectType.
-		void send(ObjectType& theObject) {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			ObjectType newValue = theObject;
-			this->theArray.push(newValue);
-		}
-
-		/// Clears the contents of the messaging block. \brief Clears the contents of the messaging block.
-		void clearContents() {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			this->theArray = std::queue<ObjectType>{};
-		}
-
-		/// Tries to receive an object of type ObjectType to be placed into a reference. \brief Tries to receive an object of type ObjectType to be placed into a reference.
-		/// \param theObject A reference of type ObjectType for placing the potentially received object.
-		/// \returns A bool, denoting whether or not we received an object.
-		bool tryReceive(ObjectType& theObject) {
-			std::lock_guard<std::mutex> theLock{ this->accessMutex };
-			if (this->theArray.size() == 0) {
-				return false;
-			} else {
-				theObject = this->theArray.front();
-				this->theArray.pop();
-				return true;
-			}
-		}
-
-	  protected:
-		std::queue<ObjectType> theArray{};
-		std::mutex accessMutex{};
-	};
-
-	/**@}*/
-
-	struct RequestGuildMembersData {
-		jsonifier::vector<jsonifier::string>
-			userIds{};///< snowflake or array of snowflakes used to specify which users you wish to fetch one of query or user_ids.
-		bool presences{ false };///< Used to specify if we want the presences of the matched members.
-		jsonifier::string guildId{};///< Id of the guild to get members for.
-		jsonifier::string nonce{};///< Nonce to identify the Guild Members Chunk response.
-		jsonifier::string query{};///< jsonifier::string string that username starts with, or an empty string to return all members. one of query or user_ids.
-		int32_t limit{
-			0
-		};///< Maximum number of members to send matching the query; a limit of 0 can be used with an empty string query to return all members.
-	};
-
-	class Time {
-	  public:
-		Time(int32_t year, int32_t month, int32_t day, int32_t hour, int32_t minute, int32_t second) {
-			this->second = second;
-			this->minute = minute;
-			this->month = month;
-			this->year = year;
-			this->hour = hour;
-			this->day = day;
-		};
-
-		uint64_t getTime() {
-			uint64_t theValue{};
-			for (int32_t x = 1970; x < this->year; x++) {
-				theValue += this->secondsInJan;
-				theValue += this->secondsInFeb;
-				theValue += this->secondsInMar;
-				theValue += this->secondsInApr;
-				theValue += this->secondsInMay;
-				theValue += this->secondsInJun;
-				theValue += this->secondsInJul;
-				theValue += this->secondsInAug;
-				theValue += this->secondsInSep;
-				theValue += this->secondsInOct;
-				theValue += this->secondsInNov;
-				theValue += this->secondsInDec;
-				if (x % 4 == 0) {
-					theValue += this->secondsPerDay;
+		/// @brief Assignment operator to assign a string value to snowflake.
+		/// @param other the string value to assign.
+		/// @return reference to the modified snowflake instance.
+		inline snowflake& operator=(const jsonifier::string& other) {
+			if (other.size() > 0) {
+				for (auto& value: other) {
+					if (!std::isdigit(static_cast<uint8_t>(value))) {
+						return *this;
+					}
 				}
+				id = jsonifier::strToUint64(other);
 			}
-			if (this->month > 0) {
-				theValue += static_cast<uint64_t>((this->day - 1) * this->secondsPerDay);
-				theValue += static_cast<uint64_t>(this->hour * this->secondsPerHour);
-				theValue += static_cast<uint64_t>(this->minute * this->secondsPerMinute);
-				theValue += this->second;
-			}
-			if (this->month > 1) {
-				theValue += this->secondsInJan;
-			}
-			if (this->month > 2) {
-				theValue += this->secondsInFeb;
-			}
-			if (this->month > 3) {
-				theValue += this->secondsInMar;
-			}
-			if (this->month > 4) {
-				theValue += this->secondsInApr;
-			}
-			if (this->month > 5) {
-				theValue += this->secondsInMay;
-			}
-			if (this->month > 6) {
-				theValue += this->secondsInJun;
-			}
-			if (this->month > 7) {
-				theValue += this->secondsInJul;
-			}
-			if (this->month > 8) {
-				theValue += this->secondsInAug;
-			}
-			if (this->month > 9) {
-				theValue += this->secondsInSep;
-			}
-			if (this->month > 10) {
-				theValue += this->secondsInOct;
-			}
-			if (this->month > 11) {
-				theValue += this->secondsInNov;
-			}
-			return theValue;
-		}
-
-	  protected:
-		uint64_t year{ 0 };
-		uint64_t month{ 0 };
-		uint64_t day{ 0 };
-		uint64_t hour{ 0 };
-		uint64_t minute{ 0 };
-		uint64_t second{ 0 };
-		const int32_t secondsInJan{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInFeb{ 28 * 24 * 60 * 60 };
-		const int32_t secondsInMar{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInApr{ 30 * 24 * 60 * 60 };
-		const int32_t secondsInMay{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInJun{ 30 * 24 * 60 * 60 };
-		const int32_t secondsInJul{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInAug{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInSep{ 30 * 24 * 60 * 60 };
-		const int32_t secondsInOct{ 31 * 24 * 60 * 60 };
-		const int32_t secondsInNov{ 30 * 24 * 60 * 60 };
-		const int32_t secondsInDec{ 31 * 24 * 60 * 60 };
-		const int32_t secondsPerMinute{ 60 };
-		const int32_t secondsPerHour{ 60 * 60 };
-		const int32_t secondsPerDay{ 60 * 60 * 24 };
-	};
-
-	template<typename ObjectType> bool waitForTimeToPass(UnboundedMessageBlock<ObjectType>& outBuffer, ObjectType& argOne, int32_t timeInMsNew) {
-		StopWatch stopWatch{ std::chrono::milliseconds{ timeInMsNew } };
-		bool didTimePass{ false };
-		while (!outBuffer.tryReceive(argOne)) {
-			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-			if (stopWatch.hasTimePassed()) {
-				didTimePass = true;
-				break;
-			}
-		};
-		return didTimePass;
-	}
-
-	template<typename ObjectType> bool waitForTimeToPass(TSUnboundedMessageBlock<ObjectType>& outBuffer, ObjectType& argOne, int32_t timeInMsNew) {
-		StopWatch stopWatch{ std::chrono::milliseconds{ timeInMsNew } };
-		bool didTimePass{ false };
-		while (!outBuffer.tryReceive(argOne)) {
-			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
-			if (stopWatch.hasTimePassed()) {
-				didTimePass = true;
-				break;
-			}
-		};
-		return didTimePass;
-	}
-
-	/**
-	 * \addtogroup utilities
-	 * @{
-	 */
-
-	/// Time formatting methods. \brief Time formatting methods.
-	enum class TimeFormat {
-		LongDate = 'D',///< "20 April 2021" - Long Date
-		LongDateTime = 'F',///< "Tuesday, 20 April 2021 16:20" - Long Date/Time
-		LongTime = 'T',///< "16:20:30" - Long Time
-		ShortDate = 'd',///< "20/04/2021" - Short Date
-		ShortDateTime = 'f',///< "20 April 2021 16:20" - Short Date/Time
-		ShortTime = 't',///< "16:20" - Short Time
-	};
-
-	/**@}*/
-
-	jsonifier::string getISO8601TimeStamp(const jsonifier::string& year, const jsonifier::string& month, const jsonifier::string& day, const jsonifier::string& hour,
-		const jsonifier::string& minute, const jsonifier::string& second);
-
-	void reportException(const jsonifier::string& currentFunctionName, std::source_location theLocation = std::source_location::current());
-
-	jsonifier::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat);
-
-	jsonifier::string convertToLowerCase(const jsonifier::string& stringToConvert);
-
-	uint64_t convertTimestampToMsInteger(const jsonifier::string& timeStamp);
-
-	jsonifier::string base64Encode(const jsonifier::string&, bool = false);
-
-	jsonifier::string convertMsToDurationString(int32_t durationInMs);
-
-	jsonifier::string loadFileContents(const jsonifier::string& filePath);
-
-	jsonifier::string utf8MakeValid(const jsonifier::string& inputString);
-
-	jsonifier::string urlEncode(const jsonifier::string& inputString);
-
-	jsonifier::string urlDecode(const jsonifier::string& inputString);
-
-	void spinLock(uint64_t timeInNsToSpinLockFor);
-
-	jsonifier::string getCurrentISO8601TimeStamp();
-
-	jsonifier::string generateBase64EncodedKey();
-
-	jsonifier::string shiftToBrightGreen();
-
-	jsonifier::string shiftToBrightBlue();
-
-	jsonifier::string shiftToBrightRed();
-
-	bool nanoSleep(int64_t ns);
-
-	jsonifier::string reset();
-
-	/**
-	 * \addtogroup foundation_entities
-	 * @{
-	 */
-
-	/// Permission values, for a given Channel, by Role or GuildMember. \brief Permission values, for a given Channel, by Role or GuildMember.
-	enum class Permission : uint64_t {
-		Create_Instant_Invite = 1ull << 0,///< Create Instant Invite.
-		Kick_Members = 1ull << 1ull,///< Kick Members.
-		Ban_Members = 1ull << 2,///< Ban Members.
-		Administrator = 1ull << 3,///< Administrator.
-		Manage_Channels = 1ull << 4,///< Manage Channels.
-		Manage_Guild = 1ull << 5,///< Manage Guild.
-		Add_Reactions = 1ull << 6,///< Add Reactions.
-		View_Audit_Log = 1ull << 7,///< View Audit Log.
-		Priority_Speaker = 1ull << 8,///< Priority Speaker.
-		Stream = 1ull << 9,///< Stream.
-		View_Channel = 1ull << 10,///< View Channel.
-		Send_Messages = 1ull << 11,///< Send Messages.
-		Send_Tts_Messages = 1ull << 12,///< Send TTS Messages.
-		Manage_Messages = 1ull << 13,///< Manage Messages.
-		Embed_Links = 1ull << 14,///< Embed Links.
-		Attach_Files = 1ull << 15,///< Attach Files.
-		Read_Message_History = 1ull << 16,///< Read Message History.
-		Mention_Everyone = 1ull << 17,///< Mention Everyone.
-		Use_External_Emojis = 1ull << 18,///< Use External Emoji.
-		View_Guild_Insights = 1ull << 19,///< View Guild Insights.
-		Connect = 1ull << 20,///< Connect.
-		Speak = 1ull << 21,///< Speak.
-		Mute_Members = 1ull << 22,///< Mute Members.
-		Deafen_Members = 1ull << 23,///< Deafen Members.
-		Move_Members = 1ull << 24,///< Move Members.
-		Use_Vad = 1ull << 25,///< Use VAD.
-		Change_Nickname = 1ull << 26,///< Change Nickname.
-		Manage_Nicknames = 1ull << 27,///< Manage Nicknames.
-		Manage_Roles = 1ull << 28,///< Manage Roles.
-		Manage_Webhooks = 1ull << 29,///< Manage Webhooks.
-		Manage_Emojis_And_Stickers = 1ull << 30,///< Manage Emojis And Stickers.
-		Use_Application_Commands = 1ull << 31,///< Use Application Commands.
-		Request_To_Speak = 1ull << 32,///< Request To Speak.
-		Manage_Events = 1ull << 33,///< Manage Events.
-		Manage_Threads = 1ull << 34,///< Manage Threads.
-		Create_Public_Threads = 1ull << 35,///< Create Public Threads.
-		Create_Private_Threads = 1ull << 36,///< Create Private Threads.
-		Use_External_Stickers = 1ull << 37,///< Use External Stickers.
-		Send_Messages_In_Threads = 1ull << 38,///< Send Messages In Threads.
-		Start_Embedded_Activities = 1ull << 39,///< Start Embedded Activities.
-		Moderate_Members = 1ull << 40///< Moderate Members.
-	};
-
-	/**@}*/
-
-	std::ostream& operator<<(std::ostream& outputSttream, const jsonifier::string& (*theFunction)( void ));
-
-	/**
-	 * \addtogroup utilities
-	 * @{
-	 */
-
-	template<typename StoredAsType, typename FlagType> StoredAsType setbool(StoredAsType inputFlag, FlagType theFlag, bool enabled) {
-		if (enabled) {
-			inputFlag |= static_cast<StoredAsType>(theFlag);
-			return inputFlag;
-		} else {
-			inputFlag &= ~static_cast<StoredAsType>(theFlag);
-			return inputFlag;
-		}
-	}
-
-	template<typename StoredAsType, typename FlagType> bool getbool(StoredAsType inputFlag, FlagType theFlag) {
-		return static_cast<StoredAsType>(inputFlag) & static_cast<StoredAsType>(theFlag);
-	}
-
-	/// Deduces whether or not a chosen period of time has passed, for a chosen timestamp. \brief Deduces whether or not a chosen period of time has passed, for a chosen timestamp.
-	/// \param timeStamp A jsonifier::string representing the timestamp that you would like to check for time-elapsement.
-	/// \param days An uint64_t representing the number of days to check for.
-	/// \param hours An uint64_t representing the number of hours to check for.
-	/// \param minutes An uint64_t representing the number of minutes to check for.
-	/// \returns bool A bool denoting whether or not the input period of time has elapsed since the supplied timestamp.
-	bool hasTimeElapsed(const jsonifier::string& timeStamp, uint64_t days = 0, uint64_t hours = 0, uint64_t minutes = 0);
-
-	/// Collects a timestamp that is a chosen number of minutes ahead of the current time. \brief Collects a timestamp that is a chosen number of minutes ahead of the current time.
-	/// \param minutesToAdd An int32_t containing the number of minutes to increment the timestamp forward for.
-	/// \param hoursToAdd An int32_t containing the number of hours to increment the timestamp forward for.
-	/// \param daysToAdd An int32_t containing the number of days to increment the timestamp forward for.
-	/// \param monthsToAdd An int32_t containing the number of months to increment the timestamp forward for.
-	/// \param yearsToAdd An int32_t containing the number of years to increment the timestamp forward for.
-	/// \returns jsonifier::string A string containing the new ISO8601 timestamp.
-	jsonifier::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd = 0, int32_t daysToAdd = 0, int32_t monthsToAdd = 0,
-		int32_t yearsToAdd = 0);
-
-	/// Acquires a timestamp with the current time and date - suitable for use in message-embeds. \brief Acquires a timestamp with the current time and date - suitable for use in message-embeds.
-	/// \returns jsonifier::string A jsonifier::string containing the current date-time stamp.
-	jsonifier::string getTimeAndDate();
-	template<typename value_type>
-	struct WebSocketMessageReal {
-		WebSocketMessageReal() noexcept = default;
-		WebSocketMessageReal(jsonifier::jsonifier_core<0>& parser);
-		uint64_t op{ static_cast<uint64_t>(-1) };
-		jsonifier::string t{};
-		uint64_t s{};
-		value_type d{};
-	};
-
-	struct WebSocketMessageData{
-		WebSocketMessageData() noexcept = default;
-		uint64_t op{ static_cast<uint64_t>(-1) };
-		jsonifier::string t{};
-		uint64_t s{};
-	};
-
-	/// Class for representing a timestamp. \brief Class for representing a timestamp.
-	class TimeStamp {
-	  public:
-		operator jsonifier::string() {
-			return this->originalTimeStamp;
-		}
-
-		TimeStamp& operator=(jsonifier::string&& originalTimeStampNew) {
-			this->originalTimeStamp = originalTimeStampNew;
 			return *this;
 		}
 
-		TimeStamp(jsonifier::string&& originalTimeStampNew) {
-			*this = originalTimeStampNew;
+		/// @brief Constructor to create a snowflake instance from a string value.
+		/// @param other the string value to create the instance from.
+		inline snowflake(const jsonifier::string& other) {
+			*this = other;
 		}
 
-		TimeStamp& operator=(jsonifier::string& originalTimeStampNew) {
-			this->originalTimeStamp = originalTimeStampNew;
+		/// @brief Assignment operator to assign a uint64_t value to snowflake.
+		/// @param other the uint64_t value to assign.
+		/// @return reference to the modified snowflake instance.
+		inline snowflake& operator=(uint64_t other) {
+			id = other;
 			return *this;
 		}
 
-		TimeStamp(jsonifier::string& originalTimeStampNew) {
-			*this = originalTimeStampNew;
+		/// @brief Constructor to create a snowflake instance from a uint64_t value.
+		/// @param other the uint64_t value to create the instance from.
+		inline snowflake(uint64_t other) {
+			*this = other;
 		}
 
-		/// Collects a timestamp using the format TimeFormat, as a string. \brief Collects a timestamp using the format TimeFormat, as a string.
-		/// \param timeFormat A TimeFormat value, for selecting the output type.
-		/// \returns string A string containing the returned timestamp.
-		jsonifier::string getDateTimeStamp(TimeFormat timeFormat) {
-			this->timeStampInMs = convertTimestampToMsInteger(this->originalTimeStamp);
-			jsonifier::string newString = convertTimeInMsToDateTimeString(this->timeStampInMs, timeFormat);
+		/// @brief Conversion operator to convert snowflake to jsonifier::string.
+		/// @return the jsonifier::string value represented by the snowflake instance.
+		inline explicit operator jsonifier::string() const {
+			return jsonifier::toString(id);
+		}
+
+		/// @brief Explicit conversion operator to convert snowflake to uint64_t.
+		/// @return the uint64_t value represented by the snowflake instance.
+		inline explicit operator const uint64_t&() const {
+			return id;
+		}
+
+		inline bool operator==(const snowflake& other) const {
+			return id == other.id;
+		}
+
+		inline bool operator==(jsonifier::string_view other) const {
+			return operator jsonifier::string() == other;
+		}
+
+		inline bool operator==(uint64_t other) const {
+			return id == other;
+		}
+
+		/// @brief Concatenation operator to concatenate snowflake and a string value.
+		/// @tparam value_type the type of the string value.
+		/// @param rhs the string value to concatenate.
+		/// @return the concatenated string.
+		template<jsonifier::concepts::string_t value_type> inline jsonifier::string operator+(jsonifier::string_view rhs) const {
+			jsonifier::string newString{ operator jsonifier::string() };
+			newString += rhs;
 			return newString;
 		}
 
-		/// Returns the original timestamp, from a Discord entity. \brief Returns the original timestamp, from a Discord entity.
-		/// \returns string A string containing the returned timestamp.
-		jsonifier::string getOriginalTimeStamp() {
-			return this->originalTimeStamp;
+		/// @brief Friend function to concatenate snowflake and a string value.
+		/// @param lhs the snowflake instance.
+		/// @param other the string value to concatenate.
+		/// @return the concatenated string.
+		inline friend jsonifier::string operator+(const snowflake& lhs, jsonifier::string_view other) {
+			jsonifier::string lhsNew{ static_cast<jsonifier::string>(lhs) };
+			lhsNew += other;
+			return lhsNew;
+		}
+
+		/// @brief Friend function to concatenate two values.
+		/// @tparam value_type01 the type of the first value.
+		/// @tparam value_type02 the type of the second value.
+		/// @param lhs the first value.
+		/// @param rhs the second value.
+		/// @return the concatenated string.
+		template<jsonifier::concepts::string_t value_type01, typename value_type02>
+		friend inline jsonifier::string operator+(const value_type01& lhs, const value_type02& rhs) {
+			jsonifier::string newString{ lhs };
+			newString += rhs.operator jsonifier::string();
+			return newString;
+		}
+
+		/// @brief Friend function to concatenate two values.
+		/// @tparam value_type01 the type of the first value.
+		/// @tparam value_type02 the type of the second value.
+		/// @param lhs the first value.
+		/// @param rhs the second value.
+		/// @return the concatenated string.
+		template<uint64_t size> friend inline jsonifier::string operator+(const char (&lhs)[size], const snowflake& rhs) {
+			jsonifier::string newString{ lhs };
+			newString += rhs.operator jsonifier::string();
+			return newString;
 		}
 
 	  protected:
-		jsonifier::string originalTimeStamp{};
-		uint64_t timeStampInMs{ 0 };
+		uint64_t id{};///< The snowflake id.
 	};
 
-	/**@}*/
+	class https_workload_data {
+		public:
+		friend class https_client;
+
+		std::unordered_map<jsonifier::string, jsonifier::string> headersToInsert{};
+		payload_type payloadType{ payload_type::Application_Json };
+		https_workload_class workloadClass{};
+		jsonifier::string relativePath{};
+		jsonifier::string callStack{};
+		jsonifier::string baseUrl{};
+		jsonifier::string content{};
+
+		https_workload_data() = default;
+
+		https_workload_data& operator=(https_workload_data&& other) noexcept;
+		https_workload_data(https_workload_data&& other) noexcept;
+
+		https_workload_data& operator=(const https_workload_data& other) = delete;
+		https_workload_data(const https_workload_data& other)			 = delete;
+
+		https_workload_data& operator=(https_workload_type type);
+
+		https_workload_data(https_workload_type type);
+
+		https_workload_type getWorkloadType() const;
+
+		protected:
+		https_workload_type workloadType{};
+	};
+
+	struct hello_data {
+		hello_data() = default;
+		jsonifier::vector<jsonifier::string> _trace{};
+		uint64_t heartbeatInterval{};
+	};
+
+	struct websocket_message {
+		jsonifier::string t{};
+		int64_t op{ -1 };
+		int64_t s{};
+	};
+
+	template<typename value_type> struct websocket_message_data {
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+		jsonifier::string t{};
+		value_type d{};
+		int64_t op{};
+		int64_t s{};
+
+		inline operator etf_serializer() {
+			etf_serializer data{};
+			data["op"] = op;
+			data["s"]  = s;
+			data["t"]  = t;
+			data["d"]  = d.operator discord_core_internal::etf_serializer();
+			return data;
+		}
+	};
+
+	template<typename value_type, typename value_type02> struct updated_event_data;
+	template<typename value_type> struct event_data;
 
 	/**
 	 * \addtogroup foundation_entities
 	 * @{
-	 */
+	*/
 
-	/// Timeout durations for the timeout command. \brief Timeout durations for the timeout command.
-	enum class TimeoutDurations {
-		None = 0,///< None - remove timeout.
-		Minute = 1,///< 1 Minute timeout.
-		Five_Minutes = 5,///< 5 Minute timeout.
-		Ten_Minutes = 10,///< 10 Minute timeout.
-		Hour = 60,///< 1 Hour timeout.
-		Day = 1440,///< 1 Day timeout.
-		Week = 10080///< 1 Week timeout.
+	struct connection_package {
+		uint64_t currentReconnectTries{};
+		uint32_t currentShard{};
+		bool areWeResuming{};
 	};
 
-	/// Gateway intents. \brief Gateway intents.
-	enum class GatewayIntents : int32_t {
-		Guilds = 1 << 0,///< Intent for receipt of Guild information.
-		Guild_Members = 1 << 1,///< Intent for receipt of Guild members.
-		Guild_Bans = 1 << 2,///< Intent for receipt of Guild bans.
-		Guild_Emojis = 1 << 3,///< Intent for receipt of Guild emojis.
-		Guild_Integrations = 1 << 4,///< Intent for receipt of Guild integrations.
-		Guild_Webhooks = 1 << 5,///< Intent for receipt of Guild webhooks.
-		Guild_Invites = 1 << 6,///< Intent for receipt of Guild invites.
-		Guild_VoiceStates = 1 << 7,///< Intent for receipt of Guild voice states.
-		Guild_Presences = 1 << 8,///< Intent for receipt of Guild presences.
-		Guild_Messages = 1 << 9,///< Intent for receipt of Guild messages.
-		Guild_Message_Reactions = 1 << 10,///< Intent for receipt of Guild message reactions.
-		Guild_Message_Typing = 1 << 11,///< Intent for receipt of Guild message typing notifications.
-		Direct_Messages = 1 << 12,///< Intent for receipt of direct messages (DMs).
-		Direct_Message_Reactions = 1 << 13,///< Intent for receipt of direct message reactions.
-		Direct_Message_Typing = 1 << 14,///< Intent for receipt of direct message typing notifications.
-		Message_Content = 1 << 15,///< Intent for receipt of message content.
-		Guild_Scheduled_Events = 1 << 16,///< Scheduled events.
-		Default_Intents = Guilds | Guild_Bans | Guild_Emojis | Guild_Integrations | Guild_Webhooks | Guild_Invites | Guild_VoiceStates |
-			Guild_Messages | Guild_Message_Reactions | Guild_Message_Typing | Direct_Messages | Direct_Message_Reactions | Direct_Message_Typing |
-			Guild_Scheduled_Events,///< Default intents (all non-privileged intents).
-		Privileged_Intents = Guild_Members | Guild_Presences | Message_Content,///< Privileged intents requiring ID.
-		All_Intents = Default_Intents | Privileged_Intents///< Every single intent.
-	};	
-
-	struct WebSocketIdentifyData {
-		GatewayIntents intents{};
-		uint32_t shard[2]{};
+	/// @brief Timeout durations for the timeout command.
+	enum class timeout_durations : uint16_t {
+		None		 = 0,///< None - erase timeout.
+		Minute		 = 1,///< 1 minute timeout.
+		Five_Minutes = 5,///< 5 minute timeout.
+		Ten_Minutes	 = 10,///< 10 minute timeout.
+		Hour		 = 60,///< 1 hour timeout.
+		Day			 = 1440,///< 1 day timeout.
+		Week		 = 10080///< 1 week timeout.
 	};
 
-	/// For ids of DiscordEntities. \brief For ids of DiscordEntities.
-	using snowflake = jsonifier::string;
-
-	/// Base class  for all Discord entities. \brief Base class  for all Discord entities.
-	class DiscordEntity {
-	  public:
-		snowflake id{};///< The identifier "snowflake" of the given entity.
-		/// Converts the snowflake-id into a time and date stamp. \brief Converts the
-		/// snowflake-id into a time and date stamp. \returns jsonifier::string A
-		/// jsonifier::string containing the timestamp.
-		jsonifier::string getCreatedAtTimestamp(TimeFormat timeFormat);
-
-		virtual ~DiscordEntity() = default;
-	};
-
-	/// Role tags data. \brief Role tags data.
-	struct RoleTagsData {
+	/// @brief Role_data tags data.
+	struct role_tags_data {
 		jsonifier::string premiumSubscriber{};///< Are they a premium subscriber?
-		jsonifier::string integrationId{};///< What is the integration id?
-		jsonifier::string botId{};///< What is the bot id?
+		snowflake integrationId{};///< What is the integration id?
+		snowflake botId{};///< What is the bot id?
 	};
 
-	enum class RoleFlags : int8_t { Mentionable = 1 << 0, Managed = 1 << 1, Hoist = 1 << 2 };
-
-	/// Data structure representing a single Role. \brief Data structure representing a single Role.
-	class RoleData : public DiscordEntity {
-	  public:
-		jsonifier::string unicodeEmoji{};///< Emoji representing the Role.
-		jsonifier::string permissions{};
-		int32_t position{ 0 };///< Its position amongst the rest of the Guild's roles.
-		RoleTagsData tags{};///< Role tags for the Role.
-		bool hoist{ false };///< Is it hoisted?
-		jsonifier::string name{};///< The Role's name.
-		int32_t color{ 0 };///< The Role's color.
-		int8_t flags{ 0 };///< Role flags.
-		jsonifier::string icon{};///< Icon representing the Role.
-		bool mentionable{};
-		bool managed{};
-
-		virtual ~RoleData() = default;
+	/// @brief User_data flags.
+	enum class user_flags : uint32_t {
+		Staff					 = 1 << 0,///< Discord employee.
+		Partner					 = 1 << 1,///< Partnered server owner.
+		Hypesquad				 = 1 << 2,///< Hype_squad events member.
+		Bug_Hunter_Level_1		 = 1 << 3,///< Bug hunter level 1.
+		Hypesquad_Online_House_1 = 1 << 6,///< House bravery member.
+		Hypesquad_Online_House_2 = 1 << 7,///< House brilliance member.
+		Hypesquad_Online_House_3 = 1 << 8,///< House balance member.
+		Premium_Early_Suppoerter = 1 << 9,///< Early nitro supporter.
+		Team_Pseudo_User		 = 1 << 10,///< User_data is a team.
+		Bug_Hunter_Level_2		 = 1 << 14,///< Bug hunter level 2.
+		Verified_Bot			 = 1 << 16,///< Verified bot.
+		Verified_Developer		 = 1 << 17,///< Early verified bot developer.
+		Certified_Moderator		 = 1 << 18,///< Discord certified moderator.
+		Bot_Https_Interactions	 = 1 << 19,///< Bot uses only https interactions and is shown in the online member list.
+		Bot						 = 1 << 20,///< Is it a bot?
+		Mfaenabled				 = 1 << 21,///< Is mfa enabled?
+		System					 = 1 << 22,///< Is it a system integration?
+		Verified				 = 1 << 23///< Is it verified?
 	};
 
-	/// User flags. \brief User flags.
-	struct UnavailableGuild : public DiscordEntity {
-		bool unavailable{ true };
-	};
-
-	/// User flags. \brief User flags.
-	enum class UserFlags : int32_t {
-		Staff = 1 << 0,///< Discord Employee.
-		Partner = 1 << 1,///< Partnered Server Owner.
-		Hypesquad = 1 << 2,///< HypeSquad Events Member.
-		Bug_Hunter_Level_1 = 1 << 3,///< Bug Hunter Level 1.
-		Hypesquad_Online_House_1 = 1 << 6,///< House Bravery Member.
-		Hypesquad_Online_House_2 = 1 << 7,///< House Brilliance Member.
-		Hypesquad_Online_House_3 = 1 << 8,///< House Balance Member.
-		Premium_Early_Suppoerter = 1 << 9,///< Early Nitro Supporter.
-		Team_Pseudo_User = 1 << 10,///< User is a team.
-		Bug_Hunter_Level_2 = 1 << 14,///< Bug Hunter Level 2.
-		Verified_Bot = 1 << 16,///< Verified Bot.
-		Verified_Developer = 1 << 17,///< Early Verified Bot Developer.
-		Certified_Moderator = 1 << 18,///< Discord Certified Moderator.
-		Bot_Http_Interactions = 1 << 19,///< Bot uses only HTTP interactions and is shown in the online member list.
-		Bot = 1 << 20,///< Is it a bot?
-		MFAEnabled = 1 << 21,///< Is MFA enabled?
-		System = 1 << 22,///< Is it a system integration?
-		Verified = 1 << 23///< Is it verified?
-	};
-
-	/// Premium types denote the level of premium a user has. \brief Premium types denote the level of premium a user has.
-	enum class PremiumType : int8_t {
-		None = 0,///< None.
+	/// @brief Premium types denote the level of premium a user has.
+	enum class premium_type : uint8_t {
+		None		  = 0,///< None.
 		Nitro_Classic = 1,///< Nitro classic.
-		Nitro = 2///< Nitro.
+		Nitro		  = 2///< Nitro.
 	};
 
-	/// Data structure representing a single User. \brief Data structure representing a single User.
-	class UserData : public DiscordEntity {
+	template<typename value_type> class flag_entity {
 	  public:
-		UserData() = default;
+		template<jsonifier::concepts::enum_t value_type02> inline auto setFlagValue(value_type02 theFlagToSet, bool enabled) {
+			auto newValue = static_cast<int64_t>(static_cast<value_type*>(this)->flags);
+			if (enabled) {
+				newValue |= static_cast<int64_t>(theFlagToSet);
+			} else {
+				newValue &= ~static_cast<int64_t>(theFlagToSet);
+			}
+			static_cast<value_type*>(this)->flags = static_cast<value_type02>(newValue);
+		}
 
-		jsonifier::string discriminator{};///< The user's 4-digit discord-tag	identify.
-		PremiumType premiumType{};///< The type of Nitro subscription on a user's account.
-		int32_t accentColor{ 0 };///< The user 's banner color encoded as an integer representation of hexadecimal color code.
-		jsonifier::string userName{};///< The user's userName, not unique across the platform	identify.
-		int32_t publicFlags{};///< The public flags on a user' s account.
-		jsonifier::string avatar{};///< The user's avatar hash.
-		jsonifier::string banner{};///< The user's banner hash.
-		jsonifier::string locale{};///< The user' s chosen language option.
-		jsonifier::string email{};///< The user's email.
-		bool mfaEnabled{};
-		int32_t flags{};///< The public flags on a user' s account.
-		bool verified{};
-		bool system{};
-		bool bot{};
+		template<jsonifier::concepts::enum_t value_type02> inline bool getFlagValue(value_type02 theFlagToCheckFor) const {
+			return static_cast<int64_t>(static_cast<const value_type*>(this)->flags) & static_cast<int64_t>(theFlagToCheckFor);
+		}
 
-		virtual ~UserData() = default;
+	  protected:
+		inline flag_entity()  = default;
+		inline ~flag_entity() = default;
 	};
 
-	/// Attachment data. \brief Attachment data.
-	class AttachmentData : public DiscordEntity {
+	enum class user_image_types {
+		Banner			  = 0,
+		Default_Avatar	  = 1,
+		Avatar			  = 2,
+		Avatar_Decoration = 3,
+	};
+
+	template<typename value_type> class get_user_image_url {
+	  public:
+		inline jsonifier::string getUserImageUrl(user_image_types type) const {
+			jsonifier::string baseUrl{ "https://cdn.discordapp.com/" };
+			switch (type) {
+				case user_image_types::Banner: {
+					baseUrl += "banners/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->banner) + ".png";
+					return baseUrl;
+				}
+				case user_image_types::Default_Avatar: {
+					uint64_t index{};
+					if (static_cast<jsonifier::string>(static_cast<const value_type*>(this)->discriminator) == "0") {
+						index = (jsonifier::strToUint64(static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id).data()) >> 22) % 6;
+					} else {
+						index = jsonifier::strToUint64(static_cast<jsonifier::string>(static_cast<const value_type*>(this)->discriminator).data()) % 5;
+					}
+					baseUrl += "embed/avatars/" + jsonifier::toString(index) + ".png";
+					return baseUrl;
+				}
+				case user_image_types::Avatar: {
+					baseUrl += "avatars/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->avatar) + ".png";
+					return baseUrl;
+				}
+				case user_image_types::Avatar_Decoration: {
+					baseUrl += "avatar-decorations/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->avatarDecoration) + ".png";
+					return baseUrl;
+				}
+				default: {
+					return {};
+				}
+			}
+		}
+
+	  protected:
+		inline get_user_image_url()	 = default;
+		inline ~get_user_image_url() = default;
+	};
+
+
+	enum class guild_member_image_types {
+		Avatar = 0,
+		Banner = 1,
+	};
+
+	template<typename value_type> class get_guild_member_image_url {
+	  public:
+		jsonifier::string getGuildMemberImageUrl(guild_member_image_types type) const {
+			jsonifier::string baseUrl{ "https://cdn.discordapp.com/" };
+			switch (type) {
+				case guild_member_image_types::Avatar: {
+					baseUrl += "guilds/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->guildId) + "/users/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->user.id) + "/avatars/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->avatar) + ".png";
+					return baseUrl;
+				}
+				case guild_member_image_types::Banner: {
+					return baseUrl;
+				}
+				default: {
+					return {};
+				}
+			}
+		}
+
+	  protected:
+		inline get_guild_member_image_url()	 = default;
+		inline ~get_guild_member_image_url() = default;
+	};
+
+	enum class guild_image_types {
+		Icon			 = 0,
+		Splash			 = 1,
+		Discovery_Splash = 2,
+		Banner			 = 3,
+	};
+
+	template<typename value_type> class get_guild_image_url {
+	  public:
+		jsonifier::string getGuildImageUrl(guild_image_types type) const {
+			jsonifier::string baseUrl{ "https://cdn.discordapp.com/" };
+			switch (type) {
+				case guild_image_types::Icon: {
+					baseUrl += "icons/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->icon) + ".png";
+					return baseUrl;
+				}
+				case guild_image_types::Splash: {
+					baseUrl += "splashes/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->splash) + ".png";
+					return baseUrl;
+				}
+				case guild_image_types::Discovery_Splash: {
+					baseUrl += "icons/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->discoverySplash) + ".png";
+					return baseUrl;
+				}
+				case guild_image_types::Banner: {
+					baseUrl += "banners/" + static_cast<jsonifier::string>(static_cast<const value_type*>(this)->id) + "/" +
+						static_cast<jsonifier::string>(static_cast<const value_type*>(this)->banner) + ".png";
+					return baseUrl;
+				}
+				default: {
+					return {};
+				}
+			}
+		}
+
+	  protected:
+		inline get_guild_image_url()  = default;
+		inline ~get_guild_image_url() = default;
+	};
+
+	/// @brief Attachment data.
+	class attachment_data {
 	  public:
 		jsonifier::string contentType{};///< Type of content for the attachment.
 		jsonifier::string description{};///< A description of the attachment.
-		bool ephemeral{ false };///< Whether it was an ephemeral response.
 		jsonifier::string filename{};///< The file name of the attachment.
 		jsonifier::string proxyUrl{};///< The proxy url for the attachment.
-		int32_t height{ 0 };///< The height of the attachment.
-		int32_t width{ 0 };///< The width of the attachment.
-		int32_t size{ 0 };///< The size of the attachment.
 		jsonifier::string url{};///< The url for the attachment.
-
-		virtual ~AttachmentData() = default;
+		uint64_t height{};///< The height of the attachment.
+		bool ephemeral{};///< Whether it was an ephemeral response.
+		uint64_t width{};///< The width of the attachment.
+		uint64_t size{};///< The size of the attachment.
+		snowflake id{};///< This attachment data's id.
 	};
 
-	/// Sticker format types. \brief Sticker format types.
-	enum class StickerFormatType {
-		Png = 1,///< Png.
-		Apng = 2,///< Apng.
-		Lottie = 3///< Lottie
+	/// @brief Sticker_data format types.
+	enum class sticker_format_type : uint8_t {
+		png	   = 1,///< Png.
+		apng   = 2,///< Apng.
+		lottie = 3///< Lottie
 	};
 
-	/// Embed footer data. \brief Embed footer data.
-	struct EmbedFooterData {
+	/// @brief Embed footer data.
+	struct embed_footer_data {
 		jsonifier::string proxyIconUrl{};///< Proxy icon url.
 		jsonifier::string iconUrl{};///< Icon url.
 		jsonifier::string text{};///< Footer text.
 	};
 
-	/// Embed image data. \brief Embed image data.
-	struct EmbedImageData {
+	/// @brief Embed image data.
+	struct embed_image_data {
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< For excluding certain keys from parsing/serialization.
 		jsonifier::string proxyUrl{};///< Proxy url.
-		int32_t height{ 0 };///< Image height.
-		int32_t width{ 0 };///< Image width.
 		jsonifier::string url{};///< Image url.
+		uint64_t height{};///< Image height.
+		uint64_t width{};///< Image width.
+
+		void generateExcludedKeys();
 	};
 
-	/// Embed thumbnail data. \brief Embed thumbnail data.
-	struct EmbedThumbnailData {
+	/// @brief Embed thumbnail data.
+	struct embed_thumbnail_data {
 		jsonifier::string proxyUrl{};///< Proxy url.
-		int32_t height{ 0 };///< Image height.
-		int32_t width{ 0 };///< Image width.
 		jsonifier::string url{};///< Image url.
+		uint64_t height{};///< Image height.
+		uint64_t width{};///< Image width.
 	};
 
-	/// Embed video data. \brief Embed video data.
-	struct EmbedVideoData {
+	/// @brief Embed video data.
+	struct embed_video_data {
 		jsonifier::string proxyUrl{};///< Proxy url.
-		int32_t height{ 0 };///< Image height.
-		int32_t width{ 0 };///< Image width.
 		jsonifier::string url{};///< Image url.
+		uint64_t height{};///< Image height.
+		uint64_t width{};///< Image width.
 	};
 
-	/// Embed provider data. \brief Embed provider data.
-	struct EmbedProviderData {
+	/// @brief Embed provider data.
+	struct embed_provider_data {
 		jsonifier::string name{};///< Name.
 		jsonifier::string url{};///< Url.
 	};
 
-	/// Embed author data. \brief Embed author data.
-	struct EmbedAuthorData {
+	/// @brief Embed author data.
+	struct embed_author_data {
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< For excluding certain keys from parsing/serialization.
 		jsonifier::string proxyIconUrl{};///< Proxy icon url.
 		jsonifier::string iconUrl{};///< Icon url.
 		jsonifier::string name{};///< Name.
 		jsonifier::string url{};///< Url.
+
+		void generateExcludedKeys();
 	};
 
-	/// Embed field data. \brief Embed field data.
-	struct EmbedFieldData {
-		bool Inline{ false };///< Is the field inline with the rest of them?
+	/// @brief Embed field data.
+	struct embed_field_data {
 		jsonifier::string value{};///< The text on the field.
 		jsonifier::string name{};///< The title of the field.
+		bool Inline{};///< Is the field inline with the rest of them?
 	};
 
-	/// Embed types. \brief Embed types.
-	enum class EmbedType {
-		Rich = 0,///< Rich.
-		Image = 1,///< Image.
-		Video = 2,///< Video.
-		Gifv = 3,///< Gifv.
+	/// @brief Embed types.
+	enum class embed_type : uint8_t {
+		Rich	= 0,///< Rich.
+		Image	= 1,///< Image.
+		Video	= 2,///< Video.
+		Gifv	= 3,///< Gifv.
 		Article = 4,///< Article.
-		link = 5///< Link.
+		Link	= 5///< Link.
 	};
 
-	/// Embed data. \brief Embed data.
-	class EmbedData {
+	/// @brief Time formatting methods.
+	enum class time_format : char {
+		long_date = 'D',///< "20 April 2021" - Long Date
+		long_date_time = 'F',///< "Tuesday, 20 April 2021 16:20" - Long Date/Time
+		long_time = 'T',///< "16:20:30" - Long Time
+		short_date = 'd',///< "20/04/2021" - Short Date
+		short_date_time = 'f',///< "20 April 2021 16:20" - Short Date/Time
+		short_time = 't',///< "16:20" - Short Time
+	};
+	
+	class time_stamp;
+
+	/// @brief A base class for handling time stamps and conversions.
+	/// @tparam value_type the value type to be used with the time stamp.
+	template<typename value_type> class time_stamp_base {
 	  public:
-		jsonifier::string hexColorValue{ "000000" };///< Hex color value of the embed.
-		jsonifier::vector<EmbedFieldData> fields{};///< Array of embed fields.
-		EmbedThumbnailData thumbnail{};///< Embed thumbnail data.
-		EmbedProviderData provider{};///< Embed provider data.
+		/// @brief Checks if the time stamp is equal to a string representation.
+		/// @param other the string to compare with.
+		/// @return true if equal, false otherwise.
+		inline bool operator==(jsonifier::string_view other) const {
+			return static_cast<jsonifier::string>(*static_cast<const value_type*>(this)) == other;
+		}
+
+		/// @brief Converts given time values into a future iso8601 time stamp.
+		/// @param minutesToAdd number of minutes to add.
+		/// @param hoursToAdd number of hours to add.
+		/// @param daysToAdd number of days to add.
+		/// @param monthsToAdd number of months to add.
+		/// @param yearsToAdd number of years to add.
+		/// @param timeFormat format for the resulting time stamp.
+		/// @return iso8601 time stamp string.
+		inline static jsonifier::string convertToFutureISO8601TimeStamp(uint64_t minutesToAdd, uint64_t hoursToAdd, uint64_t daysToAdd,
+			uint64_t monthsToAdd, uint64_t yearsToAdd, time_format timeFormat) {
+			std::time_t result = std::time(nullptr);
+			static constexpr uint64_t secondsPerMinute{ 60ULL };
+			static constexpr uint64_t minutesPerHour{ 60ULL };
+			static constexpr uint64_t secondsPerHour{ minutesPerHour * secondsPerMinute };
+			static constexpr uint64_t hoursPerDay{ 24ULL };
+			static constexpr uint64_t secondsPerDay{ secondsPerHour * hoursPerDay };
+			static constexpr uint64_t daysPerMonth{ 30ULL };
+			static constexpr uint64_t secondsPerMonth{ secondsPerDay * daysPerMonth };
+			static constexpr uint64_t daysPerYear{ 365ULL };
+			static constexpr uint64_t secondsPerYear{ secondsPerDay * daysPerYear };
+			uint64_t secondsToAdd = (yearsToAdd * secondsPerYear) + (monthsToAdd * secondsPerMonth) + (daysToAdd * secondsPerDay) +
+				((hoursToAdd + 8) * secondsPerHour) + (minutesToAdd * secondsPerMinute);
+			result += secondsToAdd;
+			std::tm resultTwo{ getTime(result) };
+			jsonifier::string returnString{};
+			if (resultTwo.tm_isdst) {
+				if (resultTwo.tm_hour + 4ULL >= 24) {
+					resultTwo.tm_hour = resultTwo.tm_hour - 24;
+					++resultTwo.tm_mday;
+				}
+				auto newValue = getTimeSinceEpoch(static_cast<uint64_t>(resultTwo.tm_year) + 1900ULL, static_cast<uint64_t>(resultTwo.tm_mon) + 1ULL,
+					static_cast<uint64_t>(resultTwo.tm_mday), static_cast<uint64_t>(resultTwo.tm_hour) + 4ULL,
+					static_cast<uint64_t>(resultTwo.tm_min), static_cast<uint64_t>(resultTwo.tm_sec));
+				returnString = getISO8601TimeStamp(timeFormat, newValue);
+			} else {
+				if (resultTwo.tm_hour + 5ULL >= 24) {
+					resultTwo.tm_hour = resultTwo.tm_hour - 24;
+					++resultTwo.tm_mday;
+				}
+				auto newValue = getTimeSinceEpoch(static_cast<uint64_t>(resultTwo.tm_year) + 1900ULL, static_cast<uint64_t>(resultTwo.tm_mon) + 1ULL,
+					static_cast<uint64_t>(resultTwo.tm_mday), static_cast<uint64_t>(resultTwo.tm_hour) + 5ULL,
+					static_cast<uint64_t>(resultTwo.tm_min), static_cast<uint64_t>(resultTwo.tm_sec));
+				returnString = getISO8601TimeStamp(timeFormat, newValue);
+			}
+			return returnString;
+		}
+
+		/// @brief Converts the current time into an iso8601 time stamp.
+		/// @param timeFormat format for the resulting time stamp.
+		/// @return iso8601 time stamp string.
+		inline static jsonifier::string convertToCurrentISO8601TimeStamp(time_format timeFormat) {
+			std::time_t result = std::time(nullptr);
+			std::tm resultTwo{ getTime(result) };
+			jsonifier::string returnString{};
+			if (resultTwo.tm_isdst) {
+				if (resultTwo.tm_hour + 4ULL >= 24) {
+					resultTwo.tm_hour = resultTwo.tm_hour - 24;
+					++resultTwo.tm_mday;
+				}
+				auto newValue = getTimeSinceEpoch(static_cast<uint64_t>(resultTwo.tm_year) + 1900ULL, static_cast<uint64_t>(resultTwo.tm_mon) + 1ULL,
+					static_cast<uint64_t>(resultTwo.tm_mday), static_cast<uint64_t>(resultTwo.tm_hour) + 4ULL,
+					static_cast<uint64_t>(resultTwo.tm_min), static_cast<uint64_t>(resultTwo.tm_sec));
+				returnString = getISO8601TimeStamp(timeFormat, newValue);
+			} else {
+				if (resultTwo.tm_hour + 5ULL >= 24) {
+					resultTwo.tm_hour = resultTwo.tm_hour - 24;
+					++resultTwo.tm_mday;
+				}
+				auto newValue = getTimeSinceEpoch(static_cast<uint64_t>(resultTwo.tm_year) + 1900ULL, static_cast<uint64_t>(resultTwo.tm_mon) + 1ULL,
+					static_cast<uint64_t>(resultTwo.tm_mday), static_cast<uint64_t>(resultTwo.tm_hour) + 5ULL,
+					static_cast<uint64_t>(resultTwo.tm_min), static_cast<uint64_t>(resultTwo.tm_sec));
+				returnString = getISO8601TimeStamp(timeFormat, newValue);
+			}
+			return returnString;
+		}
+
+		/// @brief Checks if a certain time duration has elapsed.
+		/// @param days number of days for elapsed time.
+		/// @param hours number of hours for elapsed time.
+		/// @param minutes number of minutes for elapsed time.
+		/// @return true if the specified time has elapsed, otherwise false.
+		inline bool hasTimeElapsed(int64_t days, int64_t hours, int64_t minutes) const {
+			int64_t startTimeRaw{ static_cast<int64_t>(
+				convertTimeStampToTimeUnits(static_cast<jsonifier::string>(*static_cast<const value_type*>(this)))) };
+			startTimeRaw = std::chrono::current_zone()
+							   ->to_sys(std::chrono::local_time<std::chrono::milliseconds>(std::chrono::milliseconds{ startTimeRaw }))
+							   .time_since_epoch()
+							   .count();
+			auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			static constexpr int64_t secondsPerMinute = 60ULL;
+			static constexpr int64_t secondsPerHour = secondsPerMinute * 60ULL;
+			static constexpr int64_t secondsPerDay = secondsPerHour * 24ULL;
+			auto targetElapsedTime = ((static_cast<int64_t>(days) * secondsPerDay) + ((static_cast<int64_t>(hours)) * secondsPerHour) +
+										 (static_cast<int64_t>(minutes) * secondsPerMinute)) *
+				1000LL;
+			auto actualElapsedTime = currentTime - startTimeRaw;
+			if (actualElapsedTime <= 0) {
+				return false;
+			}
+			if (actualElapsedTime >= targetElapsedTime) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		/// @brief Converts milliseconds into a human-readable duration string.
+		/// @param durationInMs duration in milliseconds to convert.
+		/// @return human-readable duration string.
+		inline static jsonifier::string convertMsToDurationString(uint64_t durationInMs) {
+			jsonifier::string newString{};
+			static constexpr uint64_t msPerSecond{ 1000ULL };
+			static constexpr uint64_t secondsPerMinute{ 60ULL };
+			static constexpr uint64_t minutesPerHour{ 60ULL };
+			static constexpr uint64_t msPerMinute{ msPerSecond * secondsPerMinute };
+			static constexpr uint64_t msPerHour{ msPerMinute * minutesPerHour };
+			uint64_t hoursLeft = static_cast<uint64_t>(trunc(durationInMs / msPerHour));
+			uint64_t minutesLeft = static_cast<uint64_t>(trunc((durationInMs % msPerHour) / msPerMinute));
+			uint64_t secondsLeft = static_cast<uint64_t>(trunc(((durationInMs % msPerHour) % msPerMinute) / msPerSecond));
+			if (hoursLeft >= 1) {
+				newString += jsonifier::toString(hoursLeft) + " hours, ";
+				newString += jsonifier::toString(minutesLeft) + " minutes, ";
+				newString += jsonifier::toString(secondsLeft) + " seconds.";
+			} else if (minutesLeft >= 1) {
+				newString += jsonifier::toString(minutesLeft) + " minutes, ";
+				newString += jsonifier::toString(secondsLeft) + " seconds.";
+			} else {
+				newString += jsonifier::toString(secondsLeft) + " seconds.";
+			}
+			return newString;
+		}
+
+		/// @brief Gets an iso8601 time stamp string based on the provided time format.
+		/// @param timeFormat format for the resulting time stamp.
+		/// @param inputTime input time value.
+		/// @return iso8601 time stamp string.
+		inline static jsonifier::string getISO8601TimeStamp(time_format timeFormat, uint64_t inputTime) {
+			uint64_t timeValue = static_cast<uint64_t>(inputTime) / 1000ULL;
+			time_t rawTime(static_cast<time_t>(timeValue));
+			std::tm resultTwo{ getTime(rawTime) };
+			jsonifier::string timeStamp{};
+			timeStamp.resize(48);
+			switch (timeFormat) {
+				case time_format::long_date: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%d %B %G", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				case time_format::long_date_time: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%FT%T", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				case time_format::long_time: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%T", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				case time_format::short_date: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%d/%m/%g", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				case time_format::short_date_time: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%d %B %G %R", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				case time_format::short_time: {
+					uint64_t sizeResponse = strftime(timeStamp.data(), 48, "%R", &resultTwo);
+					timeStamp.resize(sizeResponse);
+					break;
+				}
+				default: {
+					break;
+				}
+			}
+			return timeStamp;
+		}
+
+		/// @brief Gets the time since the unix epoch for the specified date and time.
+		/// @param year year.
+		/// @param month month.
+		/// @param day day.
+		/// @param hour hour.
+		/// @param minute minute.
+		/// @param second second.
+		/// @return time since unix epoch in milliseconds.
+		inline static uint64_t getTimeSinceEpoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute, uint64_t second) {
+			static constexpr uint64_t secondsInJan{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInFeb{ 28 * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInMar{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInApr{ 30ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInMay{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInJun{ 30ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInJul{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInAug{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInSep{ 30ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInOct{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInNov{ 30ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsInDec{ 31ULL * 24ULL * 60ULL * 60ULL };
+			static constexpr uint64_t secondsPerMinute{ 60ULL };
+			static constexpr uint64_t secondsPerHour{ 60ULL * 60ULL };
+			static constexpr uint64_t secondsPerDay{ 60ULL * 60ULL * 24ULL };
+			seconds value{};
+			for (uint64_t x = 1970ULL; x < year; ++x) {
+				value += seconds{ secondsInJan };
+				value += seconds{ secondsInFeb };
+				value += seconds{ secondsInMar };
+				value += seconds{ secondsInApr };
+				value += seconds{ secondsInMay };
+				value += seconds{ secondsInJun };
+				value += seconds{ secondsInJul };
+				value += seconds{ secondsInAug };
+				value += seconds{ secondsInSep };
+				value += seconds{ secondsInOct };
+				value += seconds{ secondsInNov };
+				value += seconds{ secondsInDec };
+				if (x % 4ULL == 0ULL) {
+					value += seconds{ secondsPerDay };
+				}
+			}
+			if (month > 0) {
+				value += seconds{ static_cast<uint64_t>((day - 1ULL) * secondsPerDay) };
+				value += seconds{ static_cast<uint64_t>(hour * secondsPerHour) };
+				value += seconds{ static_cast<uint64_t>(minute * secondsPerMinute) };
+				value += seconds{ second };
+			}
+			if (month > 1ULL) {
+				value += seconds{ secondsInJan };
+			}
+			if (month > 2ULL) {
+				value += seconds{ secondsInFeb };
+			}
+			if (month > 3ULL) {
+				value += seconds{ secondsInMar };
+			}
+			if (month > 4ULL) {
+				value += seconds{ secondsInApr };
+			}
+			if (month > 5ULL) {
+				value += seconds{ secondsInMay };
+			}
+			if (month > 6ULL) {
+				value += seconds{ secondsInJun };
+			}
+			if (month > 7ULL) {
+				value += seconds{ secondsInJul };
+			}
+			if (month > 8ULL) {
+				value += seconds{ secondsInAug };
+			}
+			if (month > 9ULL) {
+				value += seconds{ secondsInSep };
+			}
+			if (month > 10ULL) {
+				value += seconds{ secondsInOct };
+			}
+			if (month > 11ULL) {
+				value += seconds{ secondsInNov };
+			}
+			return static_cast<uint64_t>(std::chrono::duration_cast<milliseconds>(value).count());
+		}
+
+	  protected:
+		/// @brief Converts a string time stamp into a uint64_t time value.
+		/// @param originalTimeStamp original time stamp string.
+		/// @return converted time value in milliseconds.
+		inline static uint64_t convertTimeStampToTimeUnits(jsonifier::string_view originalTimeStamp) {
+			if (originalTimeStamp != "" && originalTimeStamp.size() >= 19) {
+				auto newValue = getTimeSinceEpoch(jsonifier::strToUint64(originalTimeStamp.substr(0ULL, 4ULL).data()),
+					jsonifier::strToUint64(originalTimeStamp.substr(5ULL, 6ULL).data()),
+					jsonifier::strToUint64(originalTimeStamp.substr(8ULL, 9ULL).data()),
+					jsonifier::strToUint64(originalTimeStamp.substr(11ULL, 12ULL).data()),
+					jsonifier::strToUint64(originalTimeStamp.substr(14ULL, 15ULL).data()),
+					jsonifier::strToUint64(originalTimeStamp.substr(17ULL, 18ULL).data()));
+				return newValue;
+			} else {
+				return static_cast<uint64_t>(std::chrono::duration_cast<milliseconds>(sys_clock::now().time_since_epoch()).count());
+			}
+		}
+
+		/// @brief Converts a string time stamp into a uint64_t time value.
+		/// @param stringTimeStamp string time stamp to convert.
+		/// @return converted time value in milliseconds.
+		inline uint64_t convertStringToUintTimeStamp(jsonifier::string_view stringTimeStamp) const {
+			return convertTimeStampToTimeUnits(stringTimeStamp);
+		}
+
+		/// @brief Converts a uint64_t time value into a string time stamp.
+		/// @param uintTimeStamp time value to convert.
+		/// @return string time stamp.
+		inline jsonifier::string convertUintToStringTimeStamp(uint64_t uintTimeStamp) const {
+			return getISO8601TimeStamp(time_format::long_date_time, uintTimeStamp);
+		}
+	};
+
+	/// @brief A class that extends time_stamp_base to provide additional functionality.
+	class time_stamp : public time_stamp_base<time_stamp> {
+	  public:
+		template<typename value_type> friend class time_stamp_base;
+
+		/// @brief Default constructor for time_stamp.
+		inline time_stamp() = default;
+
+		/// @brief Move assignment operator to move a string value into time_stamp.
+		/// @param valueNew the string value to move.
+		/// @return reference to the modified time_stamp instance.
+		inline time_stamp& operator=(jsonifier::string_view valueNew) {
+			value = convertStringToUintTimeStamp(valueNew);
+			return *this;
+		}
+
+		/// @brief Move constructor to create a time_stamp instance by moving a string value.
+		/// @param valueNew the string value to move.
+		inline time_stamp(jsonifier::string_view valueNew) {
+			*this = valueNew;
+		}
+
+		/// @brief Assignment operator to assign a uint64_t value to time_stamp.
+		/// @param valueNew the new uint64_t value to assign.
+		/// @return reference to the modified time_stamp instance.
+		inline time_stamp& operator=(uint64_t valueNew) {
+			value = valueNew;
+			return *this;
+		}
+
+		/// @brief Constructor to create a time_stamp instance from a uint64_t value.
+		/// @param valueNew the uint64_t value to create the instance from.
+		inline time_stamp(uint64_t valueNew) {
+			*this = valueNew;
+		}
+
+		/// @brief Conversion operator to convert time_stamp to int64_t.
+		/// @return the int64_t value represented by the time_stamp instance.
+		inline operator uint64_t() const {
+			return value;
+		}
+
+		/// @brief Conversion operator to convert time_stamp to jsonifier::string.
+		/// @return the jsonifier::string value represented by the time_stamp instance.
+		inline operator jsonifier::string() const {
+			return convertUintToStringTimeStamp(value);
+		}
+
+	  protected:
+		uint64_t value{};///< The value stored in the time_stamp instance.
+	};
+
+	/// @brief Embed data.
+	class embed_data {
+	  public:
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< For excluding certain keys from parsing/serialization.
+		jsonifier::vector<embed_field_data> fields{};///< Array of embed fields.
+		embed_thumbnail_data thumbnail{};///< Embed thumbnail data.
 		jsonifier::string description{};///< Description of the embed.
-		EmbedFooterData footer{};///< Embed footer data.
-		EmbedAuthorData author{};///< Embed author data.
-		jsonifier::string timestamp{};///< Timestamp to be placed on the embed.
-		EmbedImageData image{};///< Embed image data.
-		EmbedVideoData video{};///< Embed video data.
+		embed_provider_data provider{};///< Embed provider data.
+		embed_footer_data footer{};///< Embed footer data.
+		embed_author_data author{};///< Embed author data.
 		jsonifier::string title{};///< Title of the embed.
+		uint64_t hexColorValue{};///< Hex color value of the embed.
 		jsonifier::string type{};///< Type of the embed.
+		embed_image_data image{};///< Embed image data.
+		embed_video_data video{};///< Embed video data.
 		jsonifier::string url{};///< Url for the embed.
+		time_stamp timeStamp{};///< Timestamp to be placed on the embed.
 
-		/// Sets the author's name and avatar for the embed. \brief Sets the author's name and avatar for the embed.
-		/// \param authorName The author's name.
-		/// \param authorAvatarUrl The url to their avatar.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setAuthor(const jsonifier::string& authorName, const jsonifier::string& authorAvatarUrl = "") {
-			this->author.name = authorName;
-			this->author.iconUrl = authorAvatarUrl;
-			return *this;
-		}
+		void generateExcludedKeys();
 
-		/// Sets the footer's values for the embed. \brief Sets the footer's values for the embed.
-		/// \param footerText The footer's text.
-		/// \param footerIconUrlText Url to the footer's icon.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setFooter(const jsonifier::string& footerText, const jsonifier::string& footerIconUrlText = "") {
-			this->footer.text = footerText;
-			this->footer.iconUrl = footerIconUrlText;
-			return *this;
-		}
+		/// @brief Sets the author's name and avatar for the embed.
+		/// @param authorName the author's name.
+		/// @param authorAvatarUrl the url to their avatar.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setAuthor(jsonifier::string_view authorName, jsonifier::string_view authorAvatarUrl = "");
 
-		/// Sets the timestamp on the embed. \brief Sets the timestamp on the embed.
-		/// \param timeStamp The timestamp to be set.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setTimeStamp(const jsonifier::string& timeStamp) {
-			this->timestamp = timeStamp;
-			return *this;
-		}
+		/// @brief Sets the footer's values for the embed.
+		/// @param footerText the footer's text.
+		/// @param footerIconUrlText url to the footer's icon.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setFooter(jsonifier::string_view footerText, jsonifier::string_view footerIconUrlText = "");
 
-		/// Adds a field to the embed. \brief Adds a field to the embed.
-		/// \param name The title of the embed field.
-		/// \param value The contents of the embed field.
-		/// \param Inline Is it inline with the rest of the fields on the embed?
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& addField(const jsonifier::string& name, const jsonifier::string& value, bool Inline = true) {
-			this->fields.emplace_back(EmbedFieldData{ .Inline = Inline, .value = value, .name = name });
-			return *this;
-		}
+		/// @brief Sets the timeStamp on the embed.
+		/// @param timeStamp the timeStamp to be set.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setTimeStamp(jsonifier::string_view timeStamp);
 
-		/// Sets the description (the main contents) of the embed. \brief Sets the description (the main contents) of the embed.
-		/// \param descriptionNew The contents of the description to set.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setDescription(const jsonifier::string& descriptionNew) {
-			this->description = descriptionNew;
-			return *this;
-		}
+		/// @brief Adds a field to the embed.
+		/// @param name the title of the embed field.
+		/// @param value the contents of the embed field.
+		/// @param Inline is it inline with the rest of the fields on the embed?
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& addField(jsonifier::string_view name, jsonifier::string_view value, bool Inline = true);
 
-		/// Sets the color of the embed, by applying a hex-color value. \brief Sets the color of the embed, by applying a hex-color value.
-		/// \param hexColorValueNew A jsonifier::string containing a hex-number value (Between 0x00 0xFFFFFF).
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setColor(const jsonifier::string& hexColorValueNew) {
-			this->hexColorValue = hexColorValueNew;
-			return *this;
-		}
+		/// @brief Sets the description (the main contents) of the embed.
+		/// @param descriptionNew the contents of the description to set.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setDescription(jsonifier::string_view descriptionNew);
 
-		/// Sets the thumbnail of the embed. \brief Sets the thumbnail of the embed.
-		/// \param thumbnailUrl The url to the thumbnail to be used.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setThumbnail(const jsonifier::string& thumbnailUrl) {
-			this->thumbnail.url = thumbnailUrl;
-			return *this;
-		}
+		/// @brief Sets the color of the embed, by applying a hex-color value.
+		/// @param hexColorValueNew a string containing a hex-number value (between 0x00 0xFFFFFF).
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setColor(jsonifier::string_view hexColorValueNew);
 
-		/// Sets the title of the embed. \brief Sets the title of the embed.
-		/// \param titleNew A jsonifier::string containing the desired title.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setTitle(const jsonifier::string& titleNew) {
-			this->title = titleNew;
-			return *this;
-		}
+		/// @brief Sets the thumbnail of the embed.
+		/// @param thumbnailUrl the url to the thumbnail to be used.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setThumbnail(jsonifier::string_view thumbnailUrl);
 
-		/// Sets the image of the embed. \brief Sets the image of the embed.
-		/// \param imageUrl The url of the image to be set on the embed.
-		/// \returns EmbedData& A reference to this embed.
-		EmbedData& setImage(const jsonifier::string& imageUrl) {
-			this->image.url = imageUrl;
-			return *this;
-		}
+		/// @brief Sets the title of the embed.
+		/// @param titleNew a string containing the desired title.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setTitle(jsonifier::string_view titleNew);
+
+		/// @brief Sets the image of the embed.
+		/// @param imageUrl the url of the image to be set on the embed.
+		/// @return embed_data& A reference to this embed_data instance.
+		embed_data& setImage(jsonifier::string_view imageUrl);
 	};
 
-	/// Message reference data.\brief Message reference data.
-	struct MessageReferenceData {
-		bool failIfNotExists{ false };///< Fail if the Message doesn't exist?
-		jsonifier::string messageId{};///< Id of the Message to reference.
-		jsonifier::string channelId{};///< Id of the Channel that the referenced Message was sent in.
-		jsonifier::string guildId{};///< Id of the Guild that the referenced Message was sent in.
+	/// @brief Message reference data.
+	struct message_reference_data {
+		bool failIfNotExists{};///< Fail if the message doesn't exist?
+		snowflake messageId{};///< snowflake of the message to reference.
+		snowflake channelId{};///< snowflake of the channel_data that the referenced message was sent in.
+		snowflake guildId{};///< snowflake of the guild that the referenced message was sent in.
 	};
 
-	enum class MediaType { png = 0, gif = 1, jpeg = 2, mpeg = 3, mp3 = 4 };
+	enum class media_type : uint8_t { png = 0, gif = 1, jpeg = 2, mpeg = 3, mp3 = 4 };
 
-	/// Data representing a file to be sent via multipart-form data. \brief Data representing a file to be sent via multipart-form data.
-	struct File {
+	/// @brief Data representing a file to be sent via multipart-form data.
+	struct file {
 		jsonifier::string fileName{};///< The name of the file.
 		jsonifier::string data{};///< The data of the file.
 	};
 
-	/// Permission overwrites types. \brief Permission overwrites types.
-	enum class PermissionOverwritesType {
-		Role = 0,///< Role.
-		User = 1///< User.
+	/// @brief The sorting order, for guild forum channels.
+	enum class sort_order_types {
+		Latest_Activity = 0,///< Sort forum posts by activity.
+		Creation_Date	= 1///< Sort forum posts by creation time(from most recent to oldest).
 	};
 
-	/// A Permission overwrite, for a given Channel. \brief A Permission overwrite, for a given Channel.
-	class OverWriteData : public DiscordEntity {
+	/// @brief Channel_data types.
+	enum class channel_type : uint8_t {
+		Guild_Text			= 0,///< A text channel within a server.
+		Dm					= 1,///< A direct message between users.
+		Guild_Voice			= 2,///< A voice channel within a server.
+		Group_DM			= 3,///< A direct message between multiple users.
+		Guild_Category		= 4,///< An organizational category that contains up to 50 channels.
+		Guild_Announcement	= 5,///< A channel that users can follow and crosspost into their own server (formerly news channels).
+		Announcement_Thread = 10,///< A temporary sub-channel within a GUILD_ANNOUNCEMENT channel.
+		Public_Thread		= 11,///< A temporary sub-channel within a GUILD_TEXT or GUILD_FORUM channel.
+		Private_Thread		= 12,///< A temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission.
+		Guild_Stage_Voice	= 13,///< A voice channel for hosting events with an audience.
+		Guild_Directory		= 14,///< The channel in a hub containing the listed servers.
+		Guild_Forum			= 15///< channel_data that can only contain threads.
+	};
+
+	/// @brief Meta data for a thread_data type of channel_data.
+	struct thread_metadata_data {
+		jsonifier::string archiveTimestamp{};///< (where applicable) the time at which this thread_data was archived.
+		uint64_t autoArchiveDuration{};///< How int64_t before archiving this thread_data.
+		bool invitable{};///< The id of the individual who archived this thread_data.
+		bool archived{};///< Whether or not this thread_data is currently archived.
+		bool locked{};///< Whether or not this thread_data is currently locked.
+	};
+
+	/// @brief Data for a single member of a thread_data.
+	class thread_member_data {
 	  public:
-		PermissionOverwritesType type{};///< Role or User type.
-		jsonifier::string channelId{};///< Channel id for which Channel this overwrite belongs to.
+		jsonifier::string joinTimestamp{};///< The time at which the member joined this thread_data.
+		snowflake userId{};///< The user_data's id.
+		uint64_t flags{};///< Flags.
+		snowflake id{};///< This threadmemberdata's id.
 
-		virtual ~OverWriteData() = default;
+		inline thread_member_data() = default;
 	};
 
-	/// Channel types. \brief Channel types.
-	enum class ChannelType : int8_t {
-		Guild_Text = 0,///< Guild text.
-		Dm = 1,///< Direct-Message.
-		Guild_Voice = 2,/// Guild voice.
-		Group_Dm = 3,///< Group direct-Message.
-		Guild_Category = 4,///< Guild category.
-		Guild_News = 5,///< Guild news.
-		Guild_Store = 6,///< Guild store.
-		Guild_News_Thread = 10,///< Guild news Thread.
-		Guild_Public_Thread = 11,///< Guild public Thread.
-		Guild_Private_Thread = 12,///< Guild protected Thread.
-		Guild_Stage_Voice = 13,///< Guild stage-voice.
-		Guild_Directory = 14,///< The channel in a hub containing the listed servers.
-		Guild_Forum = 15///< A channel that can only contain threads.
+	/// @brief Thread_data types.
+	enum class thread_type : uint8_t {
+		Guild_News_Thread	 = 10,///< Guild news thread_data.
+		Guild_Public_Thread	 = 11,///< Guild public thread_data.
+		Guild_Private_Thread = 12///< Guild protected thread_data.
 	};
 
-	/// Meta data for a Thread type of Channel. \brief Meta data for a Thread type of Channel.
-	struct ThreadMetadataData {
-		int32_t autoArchiveDuration{ 0 };///< How uint64_t before archiving this Thread.
-		TimeStamp archiveTimestamp{ "" };///< (Where applicable) the time at which this Thread was archived.
-		bool invitable{ false };///< The id of the individual who archived this Thread.
-		bool archived{ false };///< Whether or not this Thread is currently archived.
-		bool locked{ false };///< Whether or not this Thread is currently locked.
+	/// @brief Voice state data.
+	struct voice_state_data_light {
+		snowflake channelId{};///< The channel_data id this user_data is connected to.
+		snowflake guildId{};///< The guild id this voice state is for.
+		snowflake userId{};///< The user_data id this voice state is for.
+
+		virtual inline ~voice_state_data_light() = default;
 	};
 
-	/// Data for a single member of a Thread. \brief Data for a single member of a Thread.
-	class ThreadMemberData : public DiscordEntity {
-	  public:
-		TimeStamp joinTimestamp{ "" };///< The time at which the member joined this Thread.
-		int32_t flags{ 0 };///< Flags.
-		jsonifier::string userId{};///< The User's id.
-
-		virtual ~ThreadMemberData() = default;
+	struct voice_server_update_data {
+		jsonifier::string endpoint{};
+		snowflake guildId{};
+		jsonifier::string token{};
 	};
 
-	/// Thread types. \brief Thread types.
-	enum class ThreadType {
-		Guild_News_Thread = 10,///< Guild news Thread.
-		Guild_Public_Thread = 11,///< Guild public Thread.
-		Guild_Private_Thread = 12///< Guild protected Thread.
-	};
-
-	/// Automatic Thread archiving durations. \brief Automatic Thread archiving durations.
-	enum class ThreadAutoArchiveDuration : int32_t {
-		Shortest = 60,///< Shortest.
-		Short = 1440,///< Short.
-		Long = 4320,///< Long.
-		Longest = 10080///< Longest.
-	};
-
-	enum class ChannelFlags : int8_t { NSFW = 1 << 0 };
-
-	/// Data structure representing a single Channel. \brief Data structure representing a single Channel.
-	class ChannelData : public DiscordEntity {
-	  public:
-		std::unordered_map<jsonifier::string, OverWriteData> permissionOverwrites{};///< Permission overwrites for the given Channel.
-		std::unordered_map<jsonifier::string, UserData> recipients{};///< Recipients, in the case of a group Dm or Dm.
-		int32_t defaultAutoArchiveDuration{ 0 };///< Default time it takes to archive a thread.
-		ThreadMetadataData threadMetadata{};///< Metadata in the case that this Channel is a Thread.
-		ChannelType type{ ChannelType::Dm };///< The type of the Channel.
-		TimeStamp lastPinTimestamp{ "" };///< Timestamp of the last pinned Message.
-		int32_t videoQualityMode{ 0 };///< Video quality mode.
-		int32_t rateLimitPerUser{ 0 };///< Amount of seconds a User has to wait before sending another Message.
-		jsonifier::string lastMessageId{};///< Id of the last Message.
-		ThreadMemberData member{};///< Thread member object for the current User, if they have joined the Thread.
-		int32_t messageCount{ 0 };///< An approximate count of Messages in a Thread stops counting at 50.
-		jsonifier::string permissions{};///< Computed permissions for the invoking user in the channel, including overwrites.
-		jsonifier::string applicationId{};///< Application id of the current application.
-		int32_t memberCount{ 0 };///< Count of members active in the Channel.
-		jsonifier::string rtcRegion{};///< Real-time clock region.
-		jsonifier::string parentId{};///< Id of the Channel's parent Channel/category.
-		int32_t userLimit{ 0 };///< User limit, in the case of voice channels.
-		jsonifier::string ownerId{};///< Id of the Channel's owner.
-		int32_t position{ 0 };///< The position of the Channel, in the Guild's Channel list.
-		jsonifier::string guildId{};///< Id of the Channel's Guild, if applicable.
-		int32_t bitrate{ 0 };///< Bitrate of the Channel, if it is a voice Channel.
-		jsonifier::string topic{};///< The Channel's topic.
-		int8_t flags{ 0 };///< Channel flags combined as a bitfield.
-		jsonifier::string icon{};///< Icon for the Channel, if applicable.
-		jsonifier::string name{};///< Name of the Channel.
-
-		virtual ~ChannelData() = default;
-	};
-
-	enum class GuildMemberFlags : int8_t { Pending = 1 << 0, Deaf = 1 << 1, Mute = 1 << 2 };
-
-	/// Data structure representing a single GuildMember. \brief Data structure representing a single GuildMember.
-	class GuildMemberData : public DiscordEntity {
-	  public:
-		TimeStamp communicationDisabledUntil{
-			""
-		};///< When the user's timeout will expire and the user will be able to communicate in the guild again.
-		jsonifier::vector<jsonifier::string> roles{};///< The Guild roles that they have.
-		jsonifier::string premiumSince{};///< If applicable, when they first boosted the server.
-		jsonifier::string permissions{};
-		TimeStamp joinedAt{ "" };///< When they joined the Guild.
-		jsonifier::string userAvatar{};///< This GuildMember's User Avatar.
-		jsonifier::string userName{};///< This GuildMember's UserName.
-		jsonifier::string guildId{};///< The current Guild's id.
-		jsonifier::string avatar{};///< The member's guild avatar hash.
-		jsonifier::string nick{};///< Their nick/display name.
-		int8_t flags{ 0 };///< GuildMember flags.
-		UserData user{};
-		bool pending{};
-		bool mute{};
-		bool deaf{};
-
-		virtual ~GuildMemberData() = default;
-	};
-
-	/// Voice state data. \brief Voice state data.
-	struct VoiceStateData {
-		TimeStamp requestToSpeakTimestamp{ "" };///< The time at which the User requested to speak.
-		bool selfStream{ false };///< Whether this User is streaming using "Go Live".
-		GuildMemberData member{};///< The Guild member id this voice state is for.
+	/// @brief Voice state data.
+	struct voice_state_data : public voice_state_data_light {
+		jsonifier::string requestToSpeakTimestamp{};///< The time at which the user_data requested to speak.
 		jsonifier::string sessionId{};///< The session id for this voice state.
-		bool selfVideo{ false };///< Whether this User's camera is enabled.
-		bool selfDeaf{ false };///< Whether this User is locally deafened.
-		bool selfMute{ false };///< Whether this User is locally muted.
-		bool suppress{ false };///< Whether this User is muted by the current User.
-		jsonifier::string channelId{};///< The Channel id this User is connected to.
-		bool deaf{ false };///< Whether this User is deafened by the server.
-		bool mute{ false };///< Whether this User is muted by the server.
-		jsonifier::string guildId{};///< The Guild id this voice state is for.
-		jsonifier::string userId{};///< The User id this voice state is for.
+		bool selfStream{};///< Whether this user_data is streaming using "go live".
+		bool selfVideo{};///< Whether this user_data's camera is enabled.
+		bool selfDeaf{};///< Whether this user_data is locally deafened.
+		bool selfMute{};///< Whether this user_data is locally muted.
+		bool suppress{};///< Whether this user_data is muted by the current user_data.
+		bool deaf{};///< Whether this user_data is deafened by the server.
+		bool mute{};///< Whether this user_data is muted by the server.
 	};
 
-	/// Data representing an active Thread. \brief Data representing an active Thread.
-	struct ActiveThreadsData {
-		jsonifier::vector<ThreadMemberData> members{};
-		jsonifier::vector<ChannelData> threads{};
-		bool hasMore{ false };
-	};
+	/// @brief Automatic thread_data archiving durations.
+	enum class thread_auto_archive_duration : uint16_t {
+		Shortest = 60,///< Shortest.
+		Short	 = 1440,///< Short.
+		Long	 = 4320,///< Long.
+		Longest	 = 10080///< Longest.
+	};	
 
-	/// Data representing an archived Thread. \brief Data representing an archived Thread.
-	struct ArchivedThreadsData : public ActiveThreadsData {};
+	enum class role_flags : uint8_t { mentionable = 1 << 0, managed = 1 << 1, hoist = 1 << 2 };
 
-	/// Application command-option types. \brief Application command-option types.
-	enum class ApplicationCommandOptionType {
-		Sub_Command = 1,///< Sub-command.
-		Sub_Command_Group = 2,///< Sub-command group.
-		String = 3,///< jsonifier::string.
-		Integer = 4,///< Integer.
-		boolean = 5,///< boolean.
-		User = 6,///< User.
-		Channel = 7,///< Channel.
-		Role = 8,///< Role.
-		Mentionable = 9,///< Mentionable.
-		Number = 10,///< Number.
-		Attachment = 11///< Attachment.
-	};
-
-	/// Application command permission-types. \brief Application command permission-types.
-	enum class ApplicationCommandPermissionType {
-		Role = 1,///< Role.
-		User = 2,///< User.
-		Channel = 3///< Channel.
-	};
-
-	/// Permissions data for an ApplicationCommand. \brief Permissions data for an ApplicationCommand.
-	class ApplicationCommandPermissionData : public DiscordEntity {
+	/// @brief A single user_data.
+	class user_data : public get_user_image_url<user_data>, public flag_entity<user_data> {
 	  public:
-		ApplicationCommandPermissionType type{ ApplicationCommandPermissionType::Role };///< The type of Permission.
-		bool permission{ false };///< Whether the Permission is active or not.
+		template<typename value_type> friend struct jsonifier::core;
+		friend class get_user_image_url<user_data>;
 
-		virtual ~ApplicationCommandPermissionData() = default;
+		jsonifier::string avatarDecoration{};///< The user's avatar decoration hash.
+		jsonifier::string discriminator{};///< The user's discord-tag.
+		jsonifier::string globalName{};///< The user's display name, if it is set. for bots, this is the application name.
+		jsonifier::string userName{};///< The user's username, not unique across the platform.
+		jsonifier::string locale{};///< The user's chosen language option.
+		jsonifier::string banner{};///< The user's banner hash.
+		jsonifier::string avatar{};///< The user's avatar hash.
+		jsonifier::string email{};///< The user's email.
+		uint64_t accentColor{};///< The user's banner color encoded as an integer representation of hexadecimal color code.
+		int32_t premiumType{};///< The type of nitro subscription on a user's account.
+		int32_t publicFlags{};///< The public flags on a user's account.
+		bool mfaEnabled{};///< Whether the user has two-factor enabled on their account.
+		user_flags flags{};///< The flags on a user's account.
+		bool verified{};///< Whether the email on this account has been verified.
+		snowflake id{};///< The user's id.
+		bool system{};///< Whether the user is an official discord system user (part of the urgent message system).
+		bool bot{};///< Whether the user belongs to an oauth2 application.
+
+		inline user_data() = default;
+
+		user_data(snowflake);
 	};
 
-	/// Represents the Permissions for accessing an ApplicationCommand from within a Guild. \brief Represents the Permissions for accessing an ApplicationCommand from within a Guild.
-	class GuildApplicationCommandPermissionsData : public DiscordEntity {
+	/// @brief A single user_data.
+	class user_cache_data : public get_user_image_url<user_cache_data>, public flag_entity<user_cache_data> {
 	  public:
-		jsonifier::vector<ApplicationCommandPermissionData> permissions{};///< The Permissions.
-		jsonifier::string applicationId{};///< The application's id.
-		jsonifier::string guildId{};///< The Guild's id.
+		template<typename value_type> friend struct jsonifier::core;
+		friend class get_user_image_url<user_cache_data>;
 
-		virtual ~GuildApplicationCommandPermissionsData() = default;
+		jsonifier::string avatarDecoration{};///< The user's avatar decoration hash.
+		jsonifier::string discriminator{};///< The user's 4-digit discord-tag identify.
+		jsonifier::string globalName{};///< The user's global name.
+		jsonifier::string userName{};///< The user's username.
+		jsonifier::string avatar{};///< The user's avatar hash.
+		jsonifier::string banner{};///< The user's banner hash.
+		premium_type premiumType{};///< The type of nitro subscription on a user's account.
+		uint64_t accentColor{};///< The user's banner color encoded as an integer representation of hexadecimal color code.
+		user_flags flags{};///< The public flags on a user's account.
+		snowflake id{};///< This user's id.
+
+		inline user_cache_data() = default;
+
+		user_cache_data& operator=(user_data&& other) noexcept;
+		user_cache_data(user_data&& other) noexcept;
+
+		user_cache_data& operator=(const user_data& other);
+		user_cache_data(const user_data& other);
+
+		operator user_data();
+
+
+		inline bool operator==(const snowflake& other) const {
+			return id == other;
+		}
 	};
 
-	/// Data structure representing a single emoji. \brief Data structure representing a single emoji.
-	class EmojiData : public DiscordEntity {
+
+	/// @brief Permissions_base class, for representing and manipulating permission values.
+	template<typename value_type> class permissions_base {
 	  public:
-		std::wstring unicodeName{ L"" };///< What is its unicode name?
-		jsonifier::vector<RoleData> roles{};///< Roles that are allowed to use this emoji.
-		bool requireColons{ false };///< Require colons to render it?
-		bool available{ true };///< Is it available to be used?
-		bool animated{ false };///< Is it animated?
-		bool managed{ false };///< Is it managed?
+		/// @brief Returns a string containing all of a given user's permissions_base for a given channel.
+		/// @param guildMember the guild_member_data who's permissions_base to analyze.
+		/// @param channel the channel_data withint which to check for permissions_base.
+		/// @return jsonifier::string a string containing the final permission's value for a given channel.
+		inline static jsonifier::string getCurrentChannelPermissions(const guild_member_data& guildMember, const channel_data& channel) {
+			return computePermissions(guildMember, channel);
+		}
+
+		/// @brief Checks for a given permission in a chosen channel_data, for a specific user_data.
+		/// @param guildMember the guild_member_data who to check the permissions_base of.
+		/// @param channel the channel_data within which to check for the permission's presence.
+		/// @param permission a permission to check the current channel_data for.
+		/// @return bool a bool suggesting the presence of the chosen permission.
+		inline bool checkForPermission(const guild_member_data& guildMember, const channel_data& channel, permission permission) {
+			if ((jsonifier::strToUint64(computePermissions(guildMember, channel).data()) & static_cast<uint64_t>(permission)) ==
+				static_cast<uint64_t>(permission)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		/// @brief Returns a string containing the currently held permissions_base in a given guild.
+		/// @param guildMember the guild_member_data who's permissions_base are to be evaluated.
+		/// @return jsonifier::string a string containing the current permissions_base.
+		inline static jsonifier::string getCurrentGuildPermissions(const guild_member_data& guildMember) {
+			permissions_base setValue(computeBasePermissions(guildMember));
+			return static_cast<value_type*>(setValue);
+		}
+
+		/// @brief Removes one or more permissions_base from the current permissions_base value.
+		/// @param permissionsToRemove a vector containing the permissions_base you wish to remove.
+		inline void removePermissions(const jsonifier::vector<permission>& permissionsToRemove) {
+			uint64_t permissionsInteger = *static_cast<value_type*>(this);
+			for (auto valueNew: permissionsToRemove) {
+				permissionsInteger &= ~static_cast<uint64_t>(valueNew);
+			}
+			std::stringstream sstream{};
+			sstream << permissionsInteger;
+			*static_cast<value_type*>(this) = jsonifier::string{ sstream.str() };
+		}
+
+		/// @brief Adds one or more permissions_base to the current permissions_base value.
+		/// @param permissionsToAdd a vector containing the permissions_base you wish to add.
+		inline void addPermissions(const jsonifier::vector<permission>& permissionsToAdd) {
+			uint64_t permissionsInteger = *static_cast<value_type*>(this);
+			for (auto valueNew: permissionsToAdd) {
+				permissionsInteger |= static_cast<uint64_t>(valueNew);
+			}
+			std::stringstream sstream{};
+			sstream << permissionsInteger;
+			*static_cast<value_type*>(this) = jsonifier::string{ sstream.str() };
+		}
+
+		/// @brief Displays the currently present permissions_base in a string, and returns A vector with each of them stored in string format.
+		/// @return jsonifier::vector a vector full of strings of the permissions_base that are in the input jsonifier::string's value.
+		inline jsonifier::vector<jsonifier::string> displayPermissions() {
+			jsonifier::vector<jsonifier::string> returnVector{};
+			uint64_t permissionsInteger = *static_cast<value_type*>(this);
+			if (permissionsInteger & (1ll << 3)) {
+				for (int64_t x = 0; x < 46; ++x) {
+					permissionsInteger |= 1ll << x;
+				}
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Create_Instant_Invite)) {
+				returnVector.emplace_back("create instant invite");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Kick_Members)) {
+				returnVector.emplace_back("kick members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Ban_Members)) {
+				returnVector.emplace_back("ban members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::administrator)) {
+				returnVector.emplace_back("administrator");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Channels)) {
+				returnVector.emplace_back("manage channels");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Guild)) {
+				returnVector.emplace_back("manage guild");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Add_Reactions)) {
+				returnVector.emplace_back("add reactions");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::View_Audit_Log)) {
+				returnVector.emplace_back("view audit log");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Priority_Speaker)) {
+				returnVector.emplace_back("priority speaker");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::stream)) {
+				returnVector.emplace_back("stream");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::View_Channel)) {
+				returnVector.emplace_back("view channel");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Send_Messages)) {
+				returnVector.emplace_back("send messages");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Send_TTS_Messages)) {
+				returnVector.emplace_back("send tts messages");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Messages)) {
+				returnVector.emplace_back("manage messages");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Embed_Links)) {
+				returnVector.emplace_back("embed links");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Attach_Files)) {
+				returnVector.emplace_back("attach files");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Read_Message_History)) {
+				returnVector.emplace_back("read message history");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Mention_Everyone)) {
+				returnVector.emplace_back("mention everyone");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_External_Emojis)) {
+				returnVector.emplace_back("use external emoji");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::View_Guild_Insights)) {
+				returnVector.emplace_back("view guild insights");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::connect)) {
+				returnVector.emplace_back("connect");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::speak)) {
+				returnVector.emplace_back("speak");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Mute_Members)) {
+				returnVector.emplace_back("mute members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Deafen_Members)) {
+				returnVector.emplace_back("deafen members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Move_Members)) {
+				returnVector.emplace_back("move members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_VAD)) {
+				returnVector.emplace_back("use vad");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Change_Nickname)) {
+				returnVector.emplace_back("change nickname");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Nicknames)) {
+				returnVector.emplace_back("manage nicknames");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Roles)) {
+				returnVector.emplace_back("manage roles");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Webhooks)) {
+				returnVector.emplace_back("manage webhooks");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Guild_Expressions)) {
+				returnVector.emplace_back("manage emojis and stickers");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_Application_Commands)) {
+				returnVector.emplace_back("use application commands");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Request_to_Speak)) {
+				returnVector.emplace_back("request to speak");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Events)) {
+				returnVector.emplace_back("manage events");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Manage_Threads)) {
+				returnVector.emplace_back("manage threads");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Create_Public_Threads)) {
+				returnVector.emplace_back("create public threads");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Create_Private_Threads)) {
+				returnVector.emplace_back("create private threads");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_External_Stickers)) {
+				returnVector.emplace_back("use external stickers");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Send_Messages_in_Threads)) {
+				returnVector.emplace_back("send messages in threads");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_Embedded_Activities)) {
+				returnVector.emplace_back("start embedded activities");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Moderate_Members)) {
+				returnVector.emplace_back("moderate members");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::View_Creator_Monetization_Analytics)) {
+				returnVector.emplace_back("view creator monetization analytics");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_Soundboard)) {
+				returnVector.emplace_back("use soundboard");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Use_External_Sounds)) {
+				returnVector.emplace_back("use external sounds");
+			}
+			if (permissionsInteger & static_cast<uint64_t>(permission::Send_Voice_Messages)) {
+				returnVector.emplace_back("send voice messages");
+			}
+			return returnVector;
+		}
+
+		/// @brief Returns a string containing the currently held permissions_base.
+		/// @return jsonifier::string a string containing the current permissions_base.
+		inline jsonifier::string getCurrentPermissionString() {
+			jsonifier::string returnString = *static_cast<value_type*>(this);
+			return returnString;
+		}
+
+		/// @brief Returns a string containing all of the possible permissions_base.
+		/// @return jsonifier::string a string containing all of the possible permissions_base.
+		inline static jsonifier::string getAllPermissions() {
+			uint64_t allPerms{};
+			for (int64_t x = 0; x < 46; ++x) {
+				allPerms |= 1ll << x;
+			}
+			std::stringstream stream{};
+			stream << allPerms;
+			return jsonifier::string{ stream.str() };
+		}
+
+	  protected:
+		inline permissions_base() = default;
+
+		static jsonifier::string computeOverwrites(jsonifier::string_view basePermissions, const guild_member_data& guildMember,
+			const channel_data& channel);
+
+		inline static jsonifier::string computePermissions(const guild_member_data& guildMember, const channel_data& channel) {
+			jsonifier::string permissions = computeBasePermissions(guildMember);
+			permissions = computeOverwrites(permissions, guildMember, channel);
+			return permissions;
+		}
+
+		static jsonifier::string computeBasePermissions(const guild_member_data& guildMember);
+	};
+
+	class permissions_parse : public permissions_base<permissions_parse>, public jsonifier::string {
+	  public:
+		template<typename value_type> friend class permissions_base;
+
+		inline permissions_parse() = default;
+
+		inline permissions_parse& operator=(jsonifier::string_view valueNew) {
+			resize(valueNew.size());
+			std::memcpy(data(), valueNew.data(), size());
+			return *this;
+		}
+
+		inline permissions_parse(jsonifier::string_view valueNew) {
+			*this = valueNew;
+		}
+
+		inline permissions_parse& operator=(uint64_t valueNew) {
+			*this = jsonifier::toString(valueNew);
+			return *this;
+		}
+
+		inline permissions_parse(uint64_t valueNew) {
+			*this = valueNew;
+		}
+
+		inline permissions_parse substr(uint64_t offset, uint64_t count) const {
+			return substr(offset, count);
+		}
+
+		inline uint64_t size() const {
+			return jsonifier::string::size();
+		}
+
+		inline char* data() const {
+			return jsonifier::string::data();
+		}
+
+		inline operator uint64_t() const {
+			return jsonifier::strToUint64(data());
+		}
+	};
+
+	class permissions : public permissions_base<permissions> {
+	  public:
+		template<typename value_type> friend class permissions_base;
+
+		inline permissions() = default;
+
+		inline permissions& operator=(const permissions_parse& other) {
+			value = other.operator uint64_t();
+			return *this;
+		}
+
+		inline permissions(const permissions_parse& other) {
+			*this = other;
+		}
+
+		inline permissions& operator=(jsonifier::string_view valueNew) {
+			value = jsonifier::strToUint64(valueNew.data());
+			return *this;
+		}
+
+		inline permissions(jsonifier::string_view valueNew) {
+			*this = valueNew;
+		}
+
+		inline permissions& operator=(jsonifier::string&& valueNew) {
+			value = jsonifier::strToUint64(valueNew.data());
+			return *this;
+		}
+
+		inline permissions(jsonifier::string&& valueNew) {
+			*this = std::move(valueNew);
+		}
+
+		inline permissions& operator=(uint64_t valueNew) {
+			value = valueNew;
+			return *this;
+		}
+
+		inline permissions(uint64_t valueNew) {
+			*this = valueNew;
+		}
+
+		inline operator uint64_t() const {
+			return value;
+		}
+
+		inline operator jsonifier::string() const {
+			return jsonifier::toString(value);
+		}
+
+	  protected:
+		uint64_t value{};
+	};
+
+	/// a single role_data.
+	class role_data : public flag_entity<role_data> {
+	  public:
+		jsonifier::string unicodeEmoji{};///< Role unicode emoji. (optional)
+		permissions_parse permissions{};///< Permission bit set.
+		jsonifier::string name{};///< Role name.
+		jsonifier::string icon{};///< Role icon hash. (optional).
+		role_tags_data tags{};///< Role tags object. (optional)
+		uint32_t position{};///< Position of this role.
+		bool mentionable{};///< Whether this role is mentionable.
+		role_flags flags{};///< Role flags combined as a bitfield.
+		uint32_t color{};///< Integer representation of hexadecimal color code.
+		snowflake id{};///< Role id.
+		bool managed{};///< Whether this role is managed by an integration.
+		bool hoist{};///< Whether this role is pinned in the user listing.
+
+		inline role_data() = default;
+
+		role_data(snowflake);
+	};
+
+	/// @brief Data structure representing a single role_data.
+	class role_cache_data : public flag_entity<role_cache_data> {
+	  public:
+		friend class guild_data;
+
+		jsonifier::string unicodeEmoji{};///< Emoji representing the role_data.
+		permissions permissionsVal{};///< The role_data's base guild permissions.
+		jsonifier::string name{};///< The role_data's name.
+		snowflake guildId{};///< The id of the guild that this role_data is from.
+		uint32_t position{};///< Its position amongst the rest of the guild's roles.
+		role_flags flags{};///< Role_data flags.
+		uint32_t color{};///< The role_data's color.
+		snowflake id{};///< This role's id.
+
+		inline role_cache_data() = default;
+
+		role_cache_data& operator=(role_data&& other) noexcept;
+		role_cache_data(role_data&& other) noexcept;
+
+		role_cache_data& operator=(const role_data&);
+		role_cache_data(const role_data&);
+
+		operator role_data();
+
+		inline bool operator==(const snowflake& other) const {
+			return id == other;
+		}
+	};
+
+	/// @brief Data structure representing a single emoji.
+	class partial_emoji_data {
+	  public:
+		friend class emoji_data;
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< Excluding keys from parsing/serializing.
 		jsonifier::string name{};///< What is its name?
-		UserData user{};///< User that created this emoji.
+		bool animated{};///< Is it animated?
+		snowflake id{};///< This emoji's id.
 
-		virtual ~EmojiData() = default;
+		inline partial_emoji_data() = default;
+
+		void generateExcludedKeys();
 	};
 
-	/// For updating/modifying a given Channel's properties. \brief For updating/modifying a given Channel's properties.
-	struct UpdateChannelData {
-		std::unordered_map<uint64_t, OverWriteData> permissionOverwrites{};
-		int32_t defaultAutoArchiveDuration{ 10080 };
-		int32_t videoQualityMode{ 1 };
-		int32_t rateLimitPerUser{ 0 };
-		int32_t bitrate{ 48000 };
+	/// @brief Data structure representing a single emoji.
+	class emoji_data : public partial_emoji_data {
+	  public:
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< Excluding keys from parsing/serializing.
+		jsonifier::vector<role_data> roles{};///< Roles that are allowed to use this emoji.
+		std::wstring unicodeName{ L"" };///< What is its unicode name?
+		bool available{ true };///< Is it available to be used?
+		bool requireColons{};///< Require colons to render it?
+		user_data user{};///< User_data that created this emoji.
+		bool managed{};///< Is it managed?
+
+		void generateExcludedKeys();
+	};
+
+	enum class presence_update_flags : uint8_t {
+		Desktop_Online = 0b00000001,
+		Desktop_Idle   = 0b00000010,
+		Desktop_Dnd	   = 0b000000011,
+		Mobile_Online  = 0b00000010,
+		Mobile_Idle	   = 0b00000100,
+		Mobile_Dnd	   = 0b00000110,
+		Web_Online	   = 0b00000100,
+		Web_Idle	   = 0b00001000,
+		Web_Dnd		   = 0b00001100,
+		Status_Online  = 0b00001000,
+		Status_Idle	   = 0b00010000,
+		Status_Dnd	   = 0b00011000
+	};
+
+	struct client_status {
+		jsonifier::string desktop{};///< User_data's status set for an active desktop (windows, linux, mac) application session.
+		jsonifier::string mobile{};///< User_data's status set for an active mobile (iOS, android) application session.
+		jsonifier::string web{};///< User_data's status set for an active web (browser, bot account) application session.
+	};
+
+	/// @brief Presence update data.
+	struct presence_update_data {
+		client_status clientStatus{};///< 	user_data's platform-dependent status
+		jsonifier::string status{};///< Either "idle", "dnd", "online", or "offline".
+		snowflake guildId{};///< snowflake id of the guild.
+		user_data user{};///< User_data object user_data whose presence is being updated.
+	};
+
+	enum class guild_member_flags : uint8_t { Pending = 1 << 0, Deaf = 1 << 1, Mute = 1 << 2 };
+
+	class user_id_base {
+	  public:
+		snowflake id{};
+
+		inline user_id_base() = default;
+	};
+
+	class guild_data;
+	class guild_member_cache_data;
+
+	/// @brief Data structure representing a single guild_member_data.
+	class guild_member_data : public flag_entity<guild_member_data>, public get_guild_member_image_url<guild_member_data> {
+	  public:
+		template<typename value_type> friend class get_guild_member_image_url;
+		template<typename value_type> friend struct jsonifier::core;
+		template<typename value_type> friend struct event_data;
+		friend class guild_data;
+
+		time_stamp communicationDisabledUntil{};///< Iso8601 timestamp when the user's timeout will expire.
+		jsonifier::vector<snowflake> roles{};///< Array of role object ids.
+		jsonifier::string premiumSince{};///< Iso8601 timestamp when the user started boosting the guild.
+		permissions_parse permissions{};///< Total permissions of the member in the channel, including overwrites.
+		jsonifier::string avatar{};///< The member's guild avatar hash.
+		guild_member_flags flags{};///< Guild member flags represented as a bit set, defaults to 0.
+		jsonifier::string nick{};///< This user's guild nickname.
+		time_stamp joinedAt{};///< Iso8601 timestamp when the user joined the guild.
+		snowflake guildId{};///< The guild that this member belongs to.
+		user_data user{};///< The user this guild member represents.
+		bool pending{};///< Whether the user has not yet passed the guild's membership screening requirements.
+		bool deaf{};///< Whether the user is deafened in voice channels.
+		bool mute{};///< Whether the user is muted in voice channels.
+
+		inline guild_member_data() = default;
+
+		voice_state_data_light getVoiceStateData();
+
+		user_cache_data getUserData();
+	};
+
+	class icon_hash {
+	  public:
+		icon_hash() = default;
+
+		icon_hash& operator=(jsonifier::string_view string);
+
+		icon_hash(jsonifier::string_view string);
+
+		bool operator==(jsonifier::string_view rhs) const;
+
+		bool operator==(const icon_hash& rhs) const;
+
+		friend jsonifier::string operator+(const icon_hash& lhs, jsonifier::string rhs);
+
+		operator jsonifier::string() const;
+
+	  protected:
+		uint64_t highBits{};
+		uint64_t lowBits{};
+	};
+
+	/// @brief Data structure representing a single guild_member_data.
+	class guild_member_cache_data : public flag_entity<guild_member_cache_data>, public get_guild_member_image_url<guild_member_cache_data> {
+	  public:
+		template<typename value_type> friend struct jsonifier::core;
+		template<typename value_type> friend struct std::hash;
+		template<typename value_type> friend struct event_data;
+		friend class guild_data;
+
+		jsonifier::vector<snowflake> roles{};///< The guild roGuildMemberDatales that they have.
+		permissions permissionsVal{};///< Their base-level permissions in the guild.
+		guild_member_flags flags{};///< Guild_member_data flags.
+		jsonifier::string nick{};///< Their nick/display name.
+		time_stamp joinedAt{};///< When they joined the guild.
+		user_id_base user{};///< The user id for this guild_member_data.
+		snowflake guildId{};///< The current guild's id.
+		icon_hash avatar{};///< This guild_member_data's guild avatar.
+
+		guild_member_cache_data() = default;
+
+		guild_member_cache_data& operator=(guild_member_data&& other) noexcept;
+		guild_member_cache_data(guild_member_data&& other) noexcept;
+
+		guild_member_cache_data& operator=(const guild_member_data&);
+		guild_member_cache_data(const guild_member_data&);
+
+		operator guild_member_data();
+
+		voice_state_data_light getVoiceStateData();
+
+		user_cache_data getUserData();
+
+		inline guild_member_cache_data(uint64_t snowFlake) {
+			user.id = snowFlake;
+		}
+	};
+
+	/// @brief Permission_types overwrites types.
+	enum class permission_overwrites_type : uint8_t {
+		role_data = 0,///< Role_data.
+		user_data = 1///< User_data.
+	};
+
+	/// @brief A permission_types overwrite, for a given channel.
+	class over_write_data {
+	  public:
+		permission_overwrites_type type{};///< Role_data or user_data type.
+		permissions_parse allow{};///< collection of permissions to allow.
+		permissions_parse deny{};///< collection of permissions to deny.
+		snowflake id{};///< This overwrite's id.
+	};
+
+	enum class channel_flags : uint8_t { nsfw = 1 << 0, managed = 1 << 1 };
+
+	struct default_reaction_data {
+		jsonifier::string emojiName{};///< The unicode character of the emoji.
+		snowflake emojiId{};///< The id of a guild's custom emoji.
+	};
+
+	/// forum tags.
+	struct forum_tag_data {
+		jsonifier::string emojiName{};///< The unicode character of the emoji.
+		jsonifier::string name{};///< The name of the tag(0 - 20 characters).
+		snowflake emojiId{};///< The id of a guild's custom emoji.
+		bool moderated{};///< Whether this tag can only be added to or removed from threads by a member with the MANAGE_THREADS permission.
+		snowflake id{};///< snowflake of the tag.
+	};
+
+	/// forum layout types.
+	enum class forum_layout_types {
+		Not_set		 = 0,///< No default has been set for forum channel.
+		List_View	 = 1,///< Display posts as a list.
+		Gallery_View = 2,///< Display posts as a collection of tiles.
+	};
+
+	/// @brief A channel_data object.
+	class channel_data : public flag_entity<channel_data> {
+	  public:
+		jsonifier::vector<over_write_data> permissionOverwrites{};///< Explicit permission overwrites for members and roles.
+		jsonifier::vector<forum_tag_data> availableTags{};///< The set of tags that can be used in a GUILD_FORUM channel.
+		default_reaction_data defaultReactionEmoji{};///< The emoji to show in the add reaction button on a thread in a G
+		jsonifier::vector<snowflake> appliedTags{};///< The ids of the set of tags that have been applied to a thread in a GUILD_FORUM channel.UILD_FORUM channel.
+		jsonifier::vector<user_data> recipients{};///< The recipients of the dm.
+		uint32_t defaultThreadRateLimitPerUser{};/// the initial rate_limit_per_user to set on newly created threads in a channel.
+		forum_layout_types defaultForumLayout{};///< The default forum layout view used to display posts in GUILD_FORUM channels. defaults to 0.
+		uint32_t defaultAutoArchiveDuration{};///< Default duration, copied onto newly created threads, in minutes.
+		thread_metadata_data threadMetadata{};///< Metadata in the case that this channel_data is a thread_data.
+		jsonifier::string lastPinTimestamp{};///< When the last pinned message was pinned. this may be null in certain events.
+		sort_order_types defaultSortOrder{};///< The default sort order type used to order posts in GUILD_FORUM channels. defaults to null.
+		permissions_parse permissions{};///< computed permissions for the invoking user in the channel, including overwrites.
+		jsonifier::string rtcRegion{};///< Voice region id for the voice channel, automatic when set to null.
+		uint32_t totalMessageSent{};///< Number of messages ever sent in a thread, it's similar to messageCount on message creation.
+		uint32_t rateLimitPerUser{};///< Amount of seconds a user has to wait before sending another message (0-21600); bots.
+		uint32_t videoQualityMode{};///< The camera video quality mode of the voice channel, 1 when not present.
+		thread_member_data member{};///< Thread_data member object for the current user, if they have joined the
+		jsonifier::string topic{};///< The channel topic (0-4096 characters for GUILD_FORUM channels, 0-1024 characters for all others). thread.
+		snowflake lastMessageId{};///< The id of the last message sent in this channel (or thread for GUILD_FORUM channels).
+		snowflake applicationId{};///< Application id of the group dm creator if it is bot-created.
+		jsonifier::string name{};///< The name of the channel (1-100 characters).
+		jsonifier::string icon{};///< Icon hash of the group dm.
+		uint32_t messageCount{};///< Number of messages (not including the initial message or deleted messages) in a thread.
+		uint32_t memberCount{};///< An approximate count of users in a thread, stops counting at 50.
+		channel_flags flags{};///< channel flags combined as a bitfiel
+		snowflake parentId{};///< For guild channels: id of the parent category for a channel (each parent category can contain up to 50 channels).d.
+		uint32_t userLimit{};///< The user limit of the voice channel.
+		snowflake ownerId{};///< Id of the creator of the group dm or thread.
+		snowflake guildId{};///< The id of the guild (may be missing for some channel objects received over gateway guild dispatches).
+		uint32_t position{};///< Sorting position of the channel.
+		channel_type type{};///< The type of channel.
+		uint32_t bitrate{};///< The bitrate (in bits) of the voice channel.
+		snowflake id{};///< The id of this channel.
+		bool managed{};///< For group dm channels: whether the channel is managed by an application via the gdm.join oauth2 scope.
+		bool nsfw{};///< Whether the channel is nsfw.
+
+		inline channel_data() = default;
+
+		channel_data(snowflake);
+
+		jsonifier::string getIconUrl();
+	};
+
+	/// @brief Data structure representing a single channel_data.
+	class channel_cache_data : public flag_entity<channel_cache_data> {
+	  public:
+		friend class guild_data;
+
+		jsonifier::vector<over_write_data> permissionOverwrites{};///< Permission overwrites.
+		channel_type type{ channel_type::Dm };///< The type of the channel_data.
+		jsonifier::string topic{};///< channel_data topic.
+		jsonifier::string name{};///< Name of the channel_data.
+		uint32_t memberCount{};///< count of members active in the channel_data.
+		snowflake parentId{};///< snowflake of the channel_data's parent channel_data/category.
+		channel_flags flags{};///< Flags combined as a bitmask.
+		uint32_t position{};///< The position of the channel_data, in the guild's channel_data list.
+		snowflake ownerId{};///< snowflake of the channel_data's owner.
+		snowflake guildId{};///< snowflake of the channel_data's guild, if applicable.
+		snowflake id{};///< This channel's id.
+
+		inline channel_cache_data() = default;
+
+		channel_cache_data& operator=(channel_data&& other) noexcept;
+		channel_cache_data(channel_data&& other) noexcept;
+
+		channel_cache_data& operator=(const channel_data& snowFlake);
+		channel_cache_data(const channel_data& snowFlake);
+
+		/// @brief For converting this into a channel_data instance.
+		operator channel_data();
+
+		inline bool operator==(const snowflake& other) const {
+			return id == other;
+		}
+	};
+
+	/// @brief Data representing an active thread_data.
+	struct active_threads_data {
+		jsonifier::vector<thread_member_data> members{};
+		jsonifier::vector<channel_data> threads{};
+		bool hasMore{};
+	};
+
+	/// @brief Data representing an archived thread_data.
+	struct archived_threads_data {
+		jsonifier::vector<thread_member_data> members{};
+		jsonifier::vector<channel_data> threads{};
+		bool hasMore{};
+	};
+
+	/// @brief Application command-option types.
+	enum class application_command_option_type : uint8_t {
+		Sub_Command		  = 1,///< Sub-command.
+		Sub_Command_Group = 2,///< Sub-command group.
+		String			  = 3,///< Jsonifier::string.
+		Integer			  = 4,///< Integer.
+		Boolean			  = 5,///< Boolean.
+		User_Data		  = 6,///< User_data.
+		Channel_Data	  = 7,///< channel_data.
+		Role_Data		  = 8,///< Role_data.
+		Mentionable		  = 9,///< Mentionable.
+		Number			  = 10,///< Number.
+		Attachment		  = 11///< Attachment.
+	};
+
+	/// @brief Application command permission-types.
+	enum class application_command_permission_type : uint8_t {
+		Role_Data	 = 1,///< Role_data.
+		User_Data	 = 2,///< User_data.
+		Channel_Data = 3///< channel_data.
+	};
+
+	/// @brief Event types for auto-moderation.
+	enum class event_type : uint8_t {
+		Message_Send = 1,///< When a member sends or edits a message in the guild.
+	};
+
+	/// @brief Trigger types for auto-moderation.
+	enum class trigger_type : uint8_t {
+		Keyword		   = 1,///< check if content contains words from a user defined list of keywords.
+		Spam		   = 3,///< check if content represents generic spam.
+		Keyword_Preset = 4,///< check if content contains words from internal pre-defined wordsets.
+		Mention_Spam   = 5///< check if content contains more unique mentions than allowed.
+	};
+
+	/// @brief Keyword preset types for auto-moderation.
+	enum class keyword_preset_type : uint8_t {
+		Profanity	   = 1,///< Words that may be considered forms of swearing or cursing.
+		Sexual_Content = 2,///< Words that refer to sexually explicit behavior or activity
+		Slurs		   = 3///< Personal insults or words that may be considered hate speech.
+	};
+
+	/// @brief Action types for auto-moderation.
+	enum class action_type : uint8_t {
+		Block_Message	   = 1,///< Blocks the content of a message according to the rule.
+		Send_Alert_Message = 2,///< Logs user content to a specified channel.
+		Timeout			   = 3///< Timeout user for a specified duration.
+	};
+
+	/// @brief Action metadata for auto-moderation-rules.
+	struct action_meta_data {
+		int64_t durationSeconds{};///< Timeout duration in seconds.
+		snowflake channelId{};///< channel_data to which user content should be logged.
+	};
+
+	/// @brief Trigger metadata for auto-moderation-rules.
+	struct trigger_meta_data {
+		jsonifier::vector<jsonifier::string> regexPatterns{};///< Array of strings** keyword regular expression patterns which will be matched against content.
+		jsonifier::vector<jsonifier::string> keywordFilter{};///< Substrings which will be searched for in content.keyword_filter	array of strings.
+		jsonifier::vector<jsonifier::string> allowList{};///< Substrings which will be exempt from triggering the preset trigger type.
+		jsonifier::vector<keyword_preset_type> presets{};///< The internally pre-defined wordsets which will be searched for in content.
+		bool mentionRaidProtectionEnabled{};///< MENTION_SPAM whether to automatically detect mention raids.
+		uint64_t mentionTotalLimit{};///< Total number of unique role and user mentions allowed per message (maximum of 50).
+	};
+
+	/// @brief For representing a single auto-moderation-rule-action.
+	struct action_data {
+		action_meta_data metadata{};///< Additional metadata needed during execution for this specific action type.
+		action_type type{};///< The type of action.
+	};
+
+	/// @brief Represents an auto-moderation-rule.
+	class auto_moderation_rule_data {
+	  public:
+		jsonifier::vector<snowflake> exemptChannels{};///< The channel ids that should not be affected by the rule(maximum of 50).
+		jsonifier::vector<snowflake> exemptRoles{};///< The role ids that should not be affected by the rule(maximum of 20).
+		jsonifier::vector<action_data> actions{};///< Actions which will execute when the rule is triggered.
+		trigger_meta_data triggerMetaData{};///< The rule trigger metadata actions array of action objects the.
+		trigger_type triggerType{};///< The rule trigger type.
+		jsonifier::string name{};///< The rule name.
+		event_type eventType{};///< The rule event type.
+		snowflake creatorId{};///< The user which first created this rule.
+		snowflake guildId{};///< The guild which this rule belongs to.
+		bool enabled{};///< Whether the rule is enabled.
+		snowflake id{};
+
+		inline auto_moderation_rule_data() = default;
+	};
+
+	/// @brief Permissions data for an application_command_data.
+	class application_command_permission_data {
+	  public:
+		application_command_permission_type type{ application_command_permission_type::Role_Data };///< The type of permission_types.
+		bool permission{};///< Whether the permission_types is active or not.
+		snowflake id{};
+	};
+
+	/// @brief Represents the permissions for accessing an application_command_data from within a guild.
+	class guild_application_command_permissions_data {
+	  public:
+		jsonifier::vector<application_command_permission_data> permissions{};///< The permissions.
+		snowflake applicationId{};///< The application's id.
+		snowflake guildId{};///< The guild's id.
+		snowflake id{};
+
+		inline guild_application_command_permissions_data() = default;
+	};
+
+	/// @brief For updating/modifying a given channel's properties.
+	struct update_channel_data {
+		jsonifier::vector<over_write_data> permissionOverwrites{};
+		uint64_t defaultAutoArchiveDuration{ 10080 };
+		uint64_t videoQualityMode{ 1 };
 		jsonifier::string parentId{};
 		jsonifier::string rtcRgion{};
-		int32_t userLimit{ 0 };
-		int32_t position{ 0 };
+		uint64_t rateLimitPerUser{};
+		uint64_t bitrate{ 48000 };
 		jsonifier::string topic{};
 		jsonifier::string name{};
-		ChannelType type{};
-		bool nsfw{ false };
+		uint64_t userLimit{};
+		uint64_t position{};
+		channel_type type{};
+		bool nsfw{};
 	};
 
-	/// Data structure representing a single reaction. \brief/// Data structure representing a single reaction.
-	class ReactionData : public DiscordEntity {
+	/// @brief/// data structure representing a single reaction.
+	class reaction_data {
 	  public:
-		GuildMemberData member{};///< The GuildMember who placed the reaction.
-		jsonifier::string channelId{};///< The id of the Channel where it was placed.
-		jsonifier::string messageId{};///< The id of the Message upon which it was placed.
-		jsonifier::string guildId{};///< The id of the Guild where it was placed.
-		int32_t count{ 0 };///< The number of times this particular emoji was placed as a reaction to the given Message.
-		EmojiData emoji{};///< The emoji that was placed as a reaction.
-		uint64_t userId{};///< The id of the User who placed the reaction.
-		bool me{ false };///< Whether or not I (The bot) placed it.
+		guild_member_data member{};///< The guild_member_data who placed the reaction.
+		snowflake channelId{};///< The id of the channel_data where it was placed.
+		snowflake messageId{};///< The id of the message upon which it was placed.
+		snowflake guildId{};///< The id of the guild where it was placed.
+		snowflake userId{};///< The id of the user_data who placed the reaction.
+		emoji_data emoji{};///< The emoji that was placed as a reaction.
+		uint64_t count{};///< The number of times this particular emoji was placed as a reaction to the given message_data.
+		snowflake id{};
+		bool me{};///< Whether or not i (the bot) placed it.
 
-		virtual ~ReactionData() = default;
+		inline reaction_data() = default;
 	};
 
-	/// Structure representing Voice Region Data. \brief Structure representing Voice Region Data.
-	struct VoiceRegionData {
-		bool deprecated{ false };///< Whether this is a deprecated voice region(avoid switching to these).
-		bool optimal{ false };///< True for a single server that is closest to the current User's client.
-		bool custom{ false };///< Whether this is a custom voice region(used for events / etc).
+	/// @brief Structure representing voice region data.
+	struct voice_region_data {
 		jsonifier::string name{};///< Name of the region.
-		jsonifier::string id{};///< Unique ID for the region.
+		bool deprecated{};///< Whether this is a deprecated voice region(avoid switching to these).
+		snowflake id{};///< Unique id for the region.
+		bool optimal{};///< True for a single server that is closest to the current user_data's client.
+		bool custom{};///< Whether this is a custom voice region(used for events / etc).
 	};
 
-	/// Message activity types. \brief Message activity types.
-	enum class MessageActivityType {
-		Join = 1,///< Join.
-		Spectate = 2,///< Spectate.
-		Listen = 3,///< Listen.
+	/// @brief Message activity types.
+	enum class message_activity_type : uint8_t {
+		Join		 = 1,///< Join.
+		Spectate	 = 2,///< Spectate.
+		Listen		 = 3,///< Listen.
 		Join_Request = 5///< Join-request.
 	};
 
-	/// Message activity data. \brief Message activity data.
-	struct MessageActivityData {
-		MessageActivityType type{ MessageActivityType::Join };///< Message activity type.
+	/// @brief Message activity data.
+	struct message_activity_data {
+		message_activity_type type{ message_activity_type::Join };///< Message activity type.
 		jsonifier::string partyId{};///< Party id.
 	};
 
-	/// Ban data. \brief Ban data.
-	struct BanData {
-		bool failedDueToPerms{ false };///< Failed due to perms?
+	/// @brief Ban data.
+	struct ban_data {
+		bool failedDueToPerms{};///< Failed due to perms?
 		jsonifier::string reason{};///< Reason for the ban.
-		UserData user{};///< User that was banned.
+		user_data user{};///< User_data that was banned.
 	};
 
-	/// Team members object data. \brief Team members object data.
-	struct TeamMembersObjectData {
-		int32_t membershipState{ 0 };///< Current state.
-		jsonifier::string teamId{};///< Id of the current team.
-		UserData user{};///< User data of the current User.
+	/// @brief Team members object data.
+	struct team_members_object_data {
+		jsonifier::vector<permissions_parse> permissions{};///< Permissions for the team.
+		uint64_t membershipState{};///< current state.
+		snowflake teamId{};///< snowflake of the current team.
+		user_data user{};///< User_data data of the current user_data.
 	};
 
-	/// For updating the current voice state. \brief For updating the current voice state.
-	struct UpdateVoiceStateData {
-		bool selfMute{ false };///< Whether or not we self-mute ourselves.
-		bool selfDeaf{ false };///< Whether or not we self-deafen ourselves.
-		jsonifier::string channelId{};///< Id of the desired voice Channel. Leave blank to disconnect.
-		jsonifier::string guildId{};///< The id of the Guild fo which we would like to establish a voice connection.
+	/// @brief For updating the current voice state.
+	struct update_voice_state_data {
+		snowflake channelId{};///< snowflake of the desired voice channel_data. leave blank to disconnect.
+		snowflake guildId{};///< The id of the guild fo which we would like to establish a voice connection.
+		bool selfMute{};///< Whether or not we self-mute ourselves.
+		bool selfDeaf{};///< Whether or not we self-deafen ourselves.
+
+		operator etf_serializer();
 	};
 
-	/// Team object data. \brief Team object data.
-	class TeamObjectData : public DiscordEntity {
+	/// @brief For updating the current voice state.
+	struct update_voice_state_data_dc {
+		std::nullptr_t channelId{ nullptr };///< snowflake of the desired voice channel_data. leave blank to disconnect.
+		snowflake guildId{};///< The id of the guild fo which we would like to establish a voice connection.
+		bool selfDeaf{};///< Whether or not we self-deafen ourselves.
+		bool selfMute{};///< Whether or not we self-mute ourselves.
+
+		operator etf_serializer();
+	};
+
+	/// @brief Team object data.
+	class team_object_data {
 	  public:
-		jsonifier::vector<TeamMembersObjectData> members{};///< Array of team members object data.
-		jsonifier::string ownerUserId{};///< User id of the team owner.
+		jsonifier::vector<team_members_object_data> members{};///< Array of team members object data.
+		snowflake ownerUserId{};///< User_data id of the team owner.
 		jsonifier::string icon{};///< Icon for the team.
+		snowflake id{};
 
-		virtual ~TeamObjectData() = default;
+		inline team_object_data() = default;
 	};
 
-	/// Application flags, for the ApplicationData structure.
-	enum class ApplicationFlags {
-		Gateway_Presence = 1 << 12,///< Intent required for bots in 100 or more servers to receive presence_update events.
-		Gateway_Presence_Limited =
-			1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in Bot Settings.
-		Gateway_Guild_Members = 1 << 14,///< Intent required for bots in 100 or more servers to receive member-related events like guild_member_add.
-		Gateway_Guild_Members_Limited =
-			1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in Bot Settings.
+	/// application flags, for the application_data structure.
+	enum class application_flags : uint32_t {
+		Gateway_Presence				 = 1 << 12,///< Intent required for bots in 100 or more servers to receive presence_update events.
+		Gateway_Presence_Limited		 = 1 << 13,///< Intent required for bots in under 100 servers to receive presence_update events, found in bot settings.
+		Gateway_Guild_Members			 = 1 << 14,///< Intent required for bots in 100 or more servers to receive member-related events like guild_member_add.
+		Gateway_Guild_Members_Limited	 = 1 << 15,///< Intent required for bots in under 100 servers to receive member-related events like guild_member_add, found in bot settings.
 		Verificatino_Pending_Guild_Limit = 1 << 16,///< Indicates unusual growth of an app that prevents verification
-		Embedded = 1 << 17,///< Indicates if an app is embedded within the Discord client (currently unavailable publicly)
-		Gateway_Message_Content = 1 << 18,///< Intent required for bots in 100 or more servers to receive message content
-		Gateway_Message_Content_Limited =
-			1 << 19///< Intent required for bots in under 100 servers to receive message content, found in Bot Settings};
+		embedded						 = 1 << 17,///< Indicates if an app is embedded within the discord client (currently unavailable publicly)
+		Gateway_Message_Content			 = 1 << 18,///< Intent required for bots in 100 or more servers to receive message content
+		Gateway_Message_Content_Limited	 = 1 << 19///< Intent required for bots in under 100 servers to receive message content, found in bot settings};
 	};
 
-	/// Install params data, for application data. \brief Install params data, for application data.
-	struct InstallParamsData {
+	/// @brief Install params data, for application data.
+	struct install_params_data {
 		jsonifier::vector<jsonifier::string> scopes{};///< The scopes to add the application to the server with.
-		jsonifier::string permissions{};///< The permissions to request for the bot role.
+		permissions_parse permissions{};///< The permissions to request for the bot role.
 	};
 
-	/// Application data. \brief Application data.
-	class ApplicationData : public DiscordEntity {
+	/// @brief Application data.
+	class application_data {
 	  public:
-		jsonifier::vector<jsonifier::string> rpcOrigins{};///< Array of RPC origin strings.
-		bool botRequireCodeGrant{ false };///< Does the bot require a code grant?
+		jsonifier::vector<jsonifier::string> rpcOrigins{};///< Array of rpc origin strings.
 		jsonifier::vector<jsonifier::string> tags{};///< Up to 5 tags describing the content and functionality of the application install_params.
-		jsonifier::string termsOfServiceUrl{};///< Terms of service Url.
-		jsonifier::string privacyPolicyUrl{};///< Privacy policy Url.
-		ApplicationFlags flags{ 0 };///< Application flags.
-		InstallParamsData params{};///< Settings for the application's default in-app authorization link, if enabled jsonifier::string customInstallUrl{};
-		jsonifier::string primarySkuId{};///< Primary SKU Id.
+		jsonifier::string termsOfServiceUrl{};///< Terms of service url.
+		jsonifier::string privacyPolicyUrl{};///< Privacy policy url.
+		jsonifier::string customInstallUrl{};
+		jsonifier::string primarySkuId{};///< Primary sku snowflake.
 		jsonifier::string description{};///< Description of the application.
 		jsonifier::string coverImage{};///< The cover image.
-		bool botPublic{ false };///< Is the bot public?
 		jsonifier::string verifyKey{};///< The verification key.
+		install_params_data params{};///< Settings for the application's default in-app authorization link, if enabled.
 		jsonifier::string summary{};///< Summary of the application.
-		TeamObjectData team{};///< Team object data.
-		jsonifier::string guildId{};///< Guild id.
+		bool botRequireCodeGrant{};///< Does the bot require a code grant?
+		application_flags flags{};///< Application flags.
 		jsonifier::string slug{};///< Sluhg.
 		jsonifier::string name{};///< Application's name.
 		jsonifier::string icon{};///< Application's icon.
-		UserData owner{};///< Application's owner.
+		team_object_data team{};///< Team object data.
+		snowflake guildId{};///< Guild id.
+		user_data owner{};///< Application's owner.
+		bool botPublic{};///< Is the bot public?
+		snowflake id{};
 
-		virtual ~ApplicationData() = default;
+		inline application_data() = default;
 	};
 
-	/// Authorization info structure. \brief Authorization info structure.
-	struct AuthorizationInfoData {
-		jsonifier::vector<jsonifier::string> scopes{};///< Array of strings - the scopes the User has authorized the application for.
-		ApplicationData application{};///< Partial application object the current application.
+	/// @brief Authorization info structure.
+	struct authorization_info_data {
+		jsonifier::vector<jsonifier::string> scopes{};///< Array of strings - the scopes the user_data has authorized the application for.
+		application_data application{};///< Partial application object the current application.
 		jsonifier::string expires{};///< When the access token expires.
-		UserData user{};/// The User who has authorized, if the User has authorized with the identify scope.
+		user_data user{};/// the user_data who has authorized, if the user_data has authorized with the identify scope.
 	};
 
-	/// Account data. \brief Account data.
-	class AccountData : public DiscordEntity {
+	/// @brief Account data.
+	class account_data {
 	  public:
 		jsonifier::string name{};///< Name of the account.
+		snowflake id{};
+
+		inline account_data() = default;
 	};
 
-	/// Guild Widget Data. \brief Guild Widget Data.
-	struct GuildWidgetData {
-		bool enabled{ false };///< Whether the widget is enabled.
-		jsonifier::string channelId{};///< The widget Channel id.
+	/// @brief Guild widget data.
+	struct guild_widget_data {
+		snowflake channelId{};///< The widget channel_data id.
+		bool enabled{};///< Whether the widget is enabled.
 	};
 
-	/// Get Guild Widget Data. \brief Get Guild Widget Data.
-	struct GetGuildWidgetObjectData : public DiscordEntity {
-		jsonifier::vector<ChannelData> channels{};///< Voice and stage channels which are accessible by everyone.
-		jsonifier::vector<UserData> members{};///< Special widget user objects that includes users presence (Limit 100).
+	/// @brief Get guild widget data.
+	struct get_guild_widget_object_data {
+		jsonifier::vector<channel_data> channels{};///< Voice and stage channels which are accessible by everyone.
+		jsonifier::vector<user_data> members{};///< Special widget user objects that includes users presence (limit 100).
 		jsonifier::string instantInvite{};///< Instant invite for the guilds specified widget invite channel.
-		int32_t presence_count{ 0 };///< Number of online members in this guild.
+		uint64_t presenceCount{};///< Number of online members in this guild.
 		jsonifier::string name{};///< Guild name (2-100 characters).
+		snowflake id{};
 	};
 
-	/// Widget style options. \brief Widget style options.
-	enum class WidgetStyleOptions {
-		Shield = 0,///< Shield
+	/// @brief Widget style options.
+	enum class widget_style_options : uint8_t {
+		Shield	= 0,///< Shield
 		Banner1 = 1,///< Banner1
 		Banner2 = 2,///< Banner2
 		Banner3 = 3,///< Banner3
 		Banner4 = 4///< Banner4
 	};
 
-	/// Guild widget image data. \brief Guild widget image data.
-	struct GuildWidgetImageData {
+	/// @brief Guild widget image data.
+	struct guild_widget_image_data {
 		jsonifier::string url{};
 	};
 
-	/// Integration data. \brief Integration data.
-	class IntegrationData : public DiscordEntity {
+	/// @brief Integration data.
+	class integration_data {
 	  public:
-		int32_t expireGracePeriod{ 0 };///< How uint64_t before the integration expires.
-		ApplicationData application{};///< Application data.
-		int32_t subscriberCount{ 0 };///< Number of current subscribers.
+		application_data application{};///< Application data.
+		jsonifier::string syncedAt{};///< Time it was last synced at.
 		bool enableEmoticons{ true };///< Emoticons enabled?
-		int32_t expireBehavior{ 0 };///< What to do upon expiry.
-		TimeStamp syncedAt{ "" };///< Time it was last synced at.
-		bool enabled{ false };///< Enabled?
-		bool syncing{ false };///< Is it syncing?
-		AccountData account{};///< Account data.
-		bool revoked{ false };///< Has it been revoked?
+		uint64_t expireGracePeriod{};///< How int64_t before the integration expires.
+		uint64_t subscriberCount{};///< Number of current subscribers.
+		uint64_t expireBehavior{};///< What to do upon expiry.
 		jsonifier::string name{};///< Name of the integration.
 		jsonifier::string type{};///< Type of integration.
-		uint64_t roleId{};///< Role Id.
-		UserData user{};///< User data for the integration.
+		account_data account{};///< Account data.
+		snowflake roleId{};///< Role_data snowflake.
+		user_data user{};///< User_data data for the integration.
+		bool revoked{};///< Has it been revoked?
+		bool enabled{};///< Enabled?
+		bool syncing{};///< Is it syncing?
+		snowflake id{};
 
-		virtual ~IntegrationData() = default;
+		inline integration_data() = default;
 	};
 
-	/// Audit log events. \brief Audit log events.
-	enum class AuditLogEvent {
-		Guild_Update = 1,///< Guild update.
-		Channel_Create = 10,///< Channel create.
-		Channel_Update = 11,///< Channel update.
-		Channel_Delete = 12,///< Channel delete.
-		Channel_Overwrite_Create = 13,///< Channel overwrite create.
-		Channel_Overwrite_Update = 14,///< Channel overwrite update.
-		Channel_Overwrite_Delete = 15,///< Channel overwrite delete.
-		Member_Kick = 20,///< Member kick.
-		Member_Prune = 21,///< Member prune.
-		Member_Ban_Add = 22,///< Member ban add.
-		Member_Ban_Remove = 23,///< Member ban remove.
-		Member_Update = 24,///< Member update.
-		Member_Role_Update = 25,///< Member role update.
-		Member_Move = 26,///< Member move.
-		Member_Disconnect = 27,///< Member disconnect.
-		Bot_Add = 28,///< Bot add.
-		Role_Create = 30,///< Role create.
-		Role_Update = 31,///< Role update.
-		Role_Delete = 32,///< Role delete.
-		Invite_Create = 40,///< Invite create.
-		Invite_Update = 41,///< Invite update.
-		Invite_Delete = 42,///< Invite delete.
-		Webhook_Create = 50,///< Webhook create.
-		Webhook_Update = 51,///< Webhook update.
-		Webhook_Delete = 52,///< Webhook delete.
-		Emoji_Create = 60,///< Emoji create.
-		Emoji_Update = 61,///< Emoji update.
-		Emoji_Delete = 62,///< Emoji delete.
-		Message_Delete = 72,///< Message delete.
-		Message_Bulk_Delete = 73,///< Message bulk delete.
-		Message_Pin = 74,///< Message pin.
-		Message_Unpin = 75,///< Message unpin.
-		Integration_Create = 80,///< Integration create.
-		Integration_Update = 81,///< Integration update.
-		Integration_Delete = 82,///< Integration delete.
-		Stage_Instance_Create = 83,///< Stage-Instance create.
-		Stage_Instance_Update = 84,///< Stage-Instance update.
-		Stage_Instance_Delete = 85,///< Stage-Instance delete.
-		Sticker_Create = 90,///< Sticker create.
-		Sticker_Update = 91,///< Sticker update.
-		Sticker_Delete = 92,///< Sticker delete.
-		Guild_Scheduled_Event_Create = 100,///< Guild-scheduled-event create.
-		Guild_Scheduled_Event_Update = 101,///< Guild-scheduled-event update.
-		Guild_Scheduled_Event_Delete = 102,///< Guild-scheduled-event delete.
-		Thread_Create = 110,///< Thread create.
-		Thread_Update = 111,///< Thread update.
-		Thread_Delete = 112,///< Thread delete.
-		Application_Command_Permission_Update = 121///< Permissions were updated for a command.
+	/// @brief Audit log events.
+	enum class audit_log_event : uint8_t {
+		Guild_Update						  = 1,///< Guild update.
+		Channel_Create						  = 10,///< channel_data create.
+		Channel_Update						  = 11,///< channel_data update.
+		Channel_Delete						  = 12,///< channel_data delete.
+		Channel_Overwrite_Create			  = 13,///< channel_data overwrite create.
+		Channel_Overwrite_Update			  = 14,///< channel_data overwrite update.
+		Channel_Overwrite_Delete			  = 15,///< channel_data overwrite delete.
+		Member_Kick							  = 20,///< Member kick.
+		Member_Prune						  = 21,///< Member prune.
+		Member_Ban_Add						  = 22,///< Member ban add.
+		Member_Ban_Remove					  = 23,///< Member ban erase.
+		Member_Update						  = 24,///< Member update.
+		Member_Role_Update					  = 25,///< Member role update.
+		Member_Move							  = 26,///< Member move.
+		Member_Disconnect					  = 27,///< Member disconnect.
+		Bot_Add								  = 28,///< Bot add.
+		Role_Create							  = 30,///< Role_data create.
+		Role_Update							  = 31,///< Role_data update.
+		Role_Delete							  = 32,///< Role_data delete.
+		Invite_Create						  = 40,///< Invite create.
+		Invite_Update						  = 41,///< Invite update.
+		Invite_Delete						  = 42,///< Invite delete.
+		Webhook_Create						  = 50,///< Webhook create.
+		Webhook_Update						  = 51,///< Webhook update.
+		Webhook_Delete						  = 52,///< Webhook delete.
+		Emoji_Create						  = 60,///< Emoji create.
+		Emoji_Update						  = 61,///< Emoji update.
+		Emoji_Delete						  = 62,///< Emoji delete.
+		Message_Delete						  = 72,///< Message delete.
+		Message_Bulk_Delete					  = 73,///< Message bulk delete.
+		Message_Pin							  = 74,///< Message pin.
+		Message_Unpin						  = 75,///< Message unpin.
+		Integration_Create					  = 80,///< Integration create.
+		Integration_Update					  = 81,///< Integration update.
+		Integration_Delete					  = 82,///< Integration delete.
+		Stage_Instance_Create				  = 83,///< Stage-instance create.
+		Stage_Instance_Update				  = 84,///< Stage-instance update.
+		Stage_Instance_Delete				  = 85,///< Stage-instance delete.
+		Sticker_Create						  = 90,///< Sticker_data create.
+		Sticker_Update						  = 91,///< Sticker_data update.
+		Sticker_Delete						  = 92,///< Sticker_data delete.
+		Guild_Scheduled_Event_Create		  = 100,///< Guild-scheduled-event create.
+		Guild_Scheduled_Event_Update		  = 101,///< Guild-scheduled-event update.
+		Guild_Scheduled_Event_Delete		  = 102,///< Guild-scheduled-event delete.
+		Thread_Create						  = 110,///< Thread_data create.
+		Thread_Update						  = 111,///< Thread_data update.
+		Thread_Delete						  = 112,///< Thread_data delete.
+		Application_Command_Permission_Update = 121,///< Permissions were updated for a command.
+		Auto_Moderation_Rule_Create			  = 140,///< Auto moderation rule was created.
+		Auto_Moderation_Rule_Update			  = 141,///< Auto moderation rule was updated.
+		Auto_Moderation_Rule_Delete			  = 142,///< Auto moderation rule was deleted.
+		Auto_Moderation_Block_Message		  = 143///< Message was blocked by auto_mod (according to a rule).
 	};
 
-	/// Audit log entry info data \brief Audit log entry info data.
-	class OptionalAuditEntryInfoData : public DiscordEntity {
+	/// audit log entry info data @brief Audit log entry info data.
+	class optional_audit_entry_info_data {
 	  public:
-		jsonifier::string deleteMemberDays{};///< Number of days for which the member's Messages were deleted.
+		jsonifier::string deleteMemberDays{};///< Number of days for which the member's messages were deleted.
 		jsonifier::string membersRemoved{};///< Number of members that were removed upon a prune.
-		jsonifier::string applicationId{};///< ID of the app whose permissions were targeted APPLICATION_COMMAND_PERMISSION_UPDATE.
-		jsonifier::string roleName{};///< Role name.
-		jsonifier::string channelId{};///< Channel Id.
-		jsonifier::string messageId{};///< Message Id.
-		jsonifier::string count{};///< Count.
+		jsonifier::string roleName{};///< Role_data name.
+		snowflake applicationId{};///< Id of the app whose permissions were targeted APPLICATION_COMMAND_PERMISSION_UPDATE.
+		jsonifier::string count{};///< count.
 		jsonifier::string type{};///< Type.
+		snowflake channelId{};///< channel_data snowflake.
+		snowflake messageId{};///< Message snowflake.
+		snowflake id{};
 
-		virtual ~OptionalAuditEntryInfoData() = default;
+		inline optional_audit_entry_info_data() = default;
 	};
 
-	/// Audit log change data. \brief Audit log change data.
-	struct AuditLogChangeData {
+	/// @brief Audit log change data.
+	struct audit_log_change_data {
 		jsonifier::string newValue{};///< New value.
 		jsonifier::string oldValue{};///< Old value.
 		jsonifier::string key{};///< The key of the audit log change.
 	};
 
-	/// Guild prune count data. \brief Guild prune count data.
-	struct GuildPruneCountData {
-		int32_t count{ 0 };
+	/// @brief Guild prune count data.
+	struct guild_prune_count_data {
+		uint64_t count{};
 	};
 
-	/// Audit log entry data. \brief Audit log entry data.
-	class AuditLogEntryData : public DiscordEntity {
+	/// @brief Audit log entry data.
+	class audit_log_entry_data {
 	  public:
-		jsonifier::vector<AuditLogChangeData> changes{};///< Array of audit log change data.
-		OptionalAuditEntryInfoData options{};///< Audit log entry info data.
-		jsonifier::string createdTimeStamp{};///< Time at which this entry was created.
-		AuditLogEvent actionType{};///< Audit log action type.
+		jsonifier::vector<audit_log_change_data> changes{};///< Array of audit log change data.
+		optional_audit_entry_info_data options{};///< Audit log entry info data.
+		time_stamp createdTimeStamp{};///< Time at which this entry was created.
+		audit_log_event actionType{};///< Audit log action type.
 		jsonifier::string reason{};///< The reason that was entered for the given change.
-		uint64_t targetId{};///< Id of the target User.
-		uint64_t userId{};///< Id of the executing User.
-
-		virtual ~AuditLogEntryData() = default;
+		snowflake targetId{};///< snowflake of the target user_data.
+		snowflake userId{};///< snowflake of the executing user_data.
+		snowflake id{};
 	};
 
-	/// Party data. \brief Party data.
-	class PartyData : public DiscordEntity {
-	  public:
-		jsonifier::vector<int32_t> size{ 0, 0 };///< The size of the party.
-
-		virtual ~PartyData() = default;
-	};
-
-	/// Assets data. \brief Party data.
-	struct AssetsData {
-		jsonifier::string largeImage{};///< Keyname of an asset to display.
-		jsonifier::string smallImage{};///< Keyname of an asset to display.
-		jsonifier::string largeText{};///< Hover text for the large image.
-		jsonifier::string smallText{};///< Hover text for the small image.
-	};
-
-	/// Secrets data. \brief Secrets data.
-	struct SecretsData {
-		jsonifier::string spectate{};///< Unique hash for the given match context.
-		jsonifier::string match{};///< Unique hash for Spectate button.
-		jsonifier::string join{};///< Unique hash for chat invitesand Ask to Join.
-	};
-
-	/// Timestamp data. \brief Timestamp data.
-	struct TimestampData {
-		uint64_t start{ 0 };///< Unix timestamp - Send this to have an "elapsed" timer.
-		uint64_t end{ 0 };///< Unix timestamp - send this to have a "remaining" timer.
-	};
-
-	/// Button data. \brief Button data.
-	struct ButtonData {
-		jsonifier::string label{};///< Visible label of the button.
-		jsonifier::string url{};///< Url to display on the button.
-	};
-
-	/// Activity types. \brief Activity types.
-	enum class ActivityType {
-		Game = 0,///< Game.
-		Streaming = 1,///< Streaming.
-		Listening = 2,///< Listening.
-		Watching = 3,///< Watching.
-		Custom = 4,///< Custom.
-		Competing = 5///< Competing.
-	};
-
-	/// Activity data. \brief Activity data.
-	struct ActivityData {
-		jsonifier::string applicationId{};///< Application id for the current application.
-		TimestampData timestamps{};///< Timestamp data.
-		int32_t createdAt{ 0 };///< Timestamp of when the activity began.
-		bool instance{ false };///< Whether this activity is an instanced context, like a match.
-		SecretsData secrets{};///< Secrets data.
-		jsonifier::string details{};///< Details about the activity.
-		ButtonData buttons{};///< Button Data.
-		ActivityType type{};///< Activity data.
-		AssetsData assets{};///< Assets data.
-		jsonifier::string state{};///< The player's current party status.
-		jsonifier::string name{};///< Name of the activity.
-		int32_t flags{ 0 };///< Flags.
-		jsonifier::string url{};///< Url associated with the activity.
-		EmojiData emoji{};///< Emoji associated with the activity.
-		PartyData party{};///< Party data.
-	};
-
-	/// Client status data. \brief Client status data.
-	struct ClientStatusData {
-		jsonifier::string desktop{};///< Desktop name.
-		jsonifier::string mobile{};///< Mobile name.
-		jsonifier::string web{};///< Web link.
-	};
-
-	/// Premium tier levels. \brief Premium tier levels.
-	enum class PremiumTier {
-		None = 0,///< None.
+	/// @brief Premium tier levels.
+	enum class premium_tier : uint8_t {
+		None   = 0,///< None.
 		Tier_1 = 1,///< Tier 1.
 		Tier_2 = 2,///< Tier 2.
 		Tier_3 = 3///< Tier 3.
 	};
 
-	/// Default Message notification levels. \brief Default Message notification
+	/// @brief Default message notification
 	/// levels.
-	enum class DefaultMessageNotificationLevel {
-		All_Messages = 0,///< All messages.
+	enum class default_message_notification_level : uint8_t {
+		All_Messages  = 0,///< All messages.
 		Only_Mentions = 1///< Only mentions.
 	};
 
-	/// Explicit content filter levels. \brief Explicit content filter levels.
-	enum class ExplicitContentFilterLevel {
-		Disabled = 0,///< Disabled.
+	/// @brief Explicit content filter levels.
+	enum class explicit_content_filter_level : uint8_t {
+		Disabled			  = 0,///< Disabled.
 		Members_Without_Roles = 1,///< Members without roles.
-		All_Members = 2///< All members.
+		All_Members			  = 2///< All members.
 	};
 
-	/// MFA levels. \brief MFA levels.
-	enum class MFALevel {
-		None = 0,///< None.
+	/// @brief Mfa levels.
+	enum class mfalevel : uint8_t {
+		None	 = 0,///< None.
 		Elevated = 1///< Elevated.
 	};
 
-	/// Verification levels. \brief/// Verification levels.
-	enum class VerificationLevel {
-		None = 0,///< None.
-		Low = 1,///< Low.
-		Medium = 2,///< Medium.
-		High = 3,///< High.
+	/// @brief/// verification levels.
+	enum class verification_level : uint8_t {
+		None	  = 0,///< None.
+		Low		  = 1,///< Low.
+		Medium	  = 2,///< Medium.
+		High	  = 3,///< High.
 		Very_High = 4///< Very high.
 	};
 
-	/// Welcome screen Channel data. \brief Welcome screen Channel data.
-	struct WelcomeScreenChannelData {
-		jsonifier::string description{};///< Description of the welcome Channel.
-		jsonifier::string emojiName{};///< Emoji name for the Channel.
-		jsonifier::string channelId{};///< Id of the welcome Channel.
-		uint64_t emojiId{};///< Emoji id for the Channel.
+	/// @brief Welcome screen channel_data data.
+	struct welcome_screen_channel_data {
+		jsonifier::string description{};///< Description of the welcome channel_data.
+		jsonifier::string emojiName{};///< Emoji name for the channel_data.
+		snowflake channelId{};///< snowflake of the welcome channel_data.
+		snowflake emojiId{};///< Emoji id for the channel_data.
 	};
 
-	/// Welcome screen data. \brief Welcome screen data.
-	struct WelcomeScreenData {
-		jsonifier::vector<WelcomeScreenChannelData> welcomeChannels{};///< Welcome screen Channel data.
+	/// @brief Welcome screen data.
+	struct welcome_screen_data {
+		jsonifier::vector<welcome_screen_channel_data> welcomeChannels{};///< Welcome screen channel_data data.
 		jsonifier::string description{};///< Description of the welcome screen.
 	};
 
-	/// Presence update data. \brief Presence update data.
-	struct PresenceUpdateData {
-		jsonifier::vector<ActivityData> activities{};///< Array of activities.
-		ClientStatusData clientStatus{};///< Current client status.
-		jsonifier::string status{};///< Status of the current presence.
-		jsonifier::string guildId{};///< Guild id for the current presence.
-		UserData user{};///< User data for the current presence.
-	};
-
-	/// Stage instance privacy levels. \brief Stage instance privacy levels.
-	enum class StageInstancePrivacyLevel {
-		Public = 1,///< Public.
+	/// @brief Stage instance privacy levels.
+	enum class stage_instance_privacy_level : uint8_t {
+		Public	   = 1,///< Public.
 		Guild_Only = 2///< Guild only.
 	};
 
-	/// Stage instance data. \brief Stage instance data.
-	class StageInstanceData : public DiscordEntity {
+	/// @brief Stage instance data.
+	class stage_instance_data {
 	  public:
-		StageInstancePrivacyLevel privacyLevel{ 0 };///< Privacy level of the Channel.
-		bool discoverableDisabled{ false };///< Is it discoverable?
-		jsonifier::string channelId{};///< The Channel's id.
-		jsonifier::string topic{};///< The topic of the StageInstance.
-		jsonifier::string guildId{};///< The Guild id for which the Channel exists in.
+		stage_instance_privacy_level privacyLevel{};///< Privacy level of the channel_data.
+		bool discoverableDisabled{};///< Is it discoverable?
+		jsonifier::string topic{};///< The topic of the stage_instance_data.
+		snowflake channelId{};///< The channel_data's id.
+		snowflake guildId{};///< The guild id for which the channel_data exists in.
+		snowflake id{};
 
-		virtual ~StageInstanceData() = default;
+		inline stage_instance_data() = default;
 	};
 
-	/// Sticker types. \brief Sticker types.
-	enum class StickerType {
+	/// @brief Sticker_data types.
+	enum class sticker_type : uint8_t {
 		Standard = 1,///< Standard.
-		Guild = 2///< Guild.
+		Guild	 = 2///< Guild.
 	};
 
-	enum class StickerFlags { Available = 1 << 0 };
+	enum class sticker_flags : uint8_t { Available = 1 << 0 };
 
-	/// Data representing a single Sticker. \brief Data representing a single Sticker.
-	class StickerData : public DiscordEntity {
+	/// @brief Data representing a single sticker_data.
+	class sticker_data {
 	  public:
-		void setAvailable(bool enabled) {
-			if (enabled) {
-				this->stickerFlags |= static_cast<int8_t>(StickerFlags::Available);
-			} else {
-				this->stickerFlags &= ~static_cast<int8_t>(StickerFlags::Available);
-			}
-		}
+		jsonifier::string description{};///< Description of the sticker_data.
+		sticker_format_type formatType{};///< Format type.
+		jsonifier::string packId{};///< Pack id of the sticker_data.
+		jsonifier::string asset{};///< Asset value for the sticker_data
+		jsonifier::string name{};///< The sticker_data's name.
+		jsonifier::string tags{};///< Tags for the sticker_data to use.
+		sticker_flags flags{};///< Sticker_data flags.
+		uint64_t nsfwLevel{};///< Nsfw warning level.
+		uint64_t sortValue{};///< Where in the stack of stickers it resides.
+		snowflake guildId{};///< The guild id for which the sticker_data exists in.
+		sticker_type type{};///< The type of sticker_data.
+		user_data user{};///< The user_data that uploaded the guild sticker_data.
+		snowflake id{};
 
-		bool getAvailable() {
-			return this->stickerFlags & static_cast<int8_t>(StickerFlags::Available);
-		}
-
-		StickerFormatType formatType{};///< Format type.
-		jsonifier::string description{};///< Description of the Sticker.
-		int8_t stickerFlags{ 0 };///< Sticker flags.
-		int32_t nsfwLevel{ 0 };///< NSFW warning level.
-		int32_t sortValue{ 0 };///< Where in the stack of stickers it resides.
-		jsonifier::string guildId{};///< The Guild id for which the Sticker exists in.
-		jsonifier::string packId{};///< Pack id of the Sticker.
-		jsonifier::string asset{};///< Asset value for the Sticker.
-		jsonifier::string name{};///< The Sticker's name.
-		jsonifier::string tags{};///< Tags for the Sticker to use.
-		StickerType type{};///< The type of Sticker.
-		UserData user{};///< The User that uploaded the Guild Sticker.
-
-		virtual ~StickerData() = default;
+		inline sticker_data() = default;
 	};
 
-	/// Data representing a single Guild preview. \brief Data representing a single Guild preview.
-	struct GuildPreviewData {
-		int32_t approximatePresenceCount{ 0 };
+	/// @brief Data representing a single guild preview.
+	struct guild_preview_data {
 		jsonifier::vector<jsonifier::string> features{};
-		jsonifier::vector<StickerData> stickers{};
-		int32_t approximateMemberCount{ 0 };
-		jsonifier::vector<EmojiData> emojis{};
+		jsonifier::vector<sticker_data> stickers{};
+		jsonifier::vector<emoji_data> emojis{};
 		jsonifier::string discoverySplash{};
+		uint64_t approximatePresenceCount{};
+		uint64_t approximateMemberCount{};
 		jsonifier::string description{};
 		jsonifier::string splash{};
 		jsonifier::string name{};
 		jsonifier::string icon{};
-		jsonifier::string id{};
+		snowflake id{};
 	};
 
-	/// Afk timeout durations. \brief Afk timeout durations.
-	enum class AfkTimeOutDurations {
+	/// @brief Afk timeout durations.
+	enum class afk_time_out_durations : uint16_t {
 		Shortest = 60,///< Shortest.
-		Short = 300,///< Short.
-		Medium = 900,///< Medium.
-		Long = 1800,///< Long.
-		Longest = 3600///< Longest.
+		Short	 = 300,///< Short.
+		Medium	 = 900,///< Medium.
+		Long	 = 1800,///< Long.
+		Longest	 = 3600///< Longest.
 	};
 
-	/// Guild NSFW level. \brief Guild NSFW level.
-	enum class GuildNSFWLevel {
-		Default = 0,///< Default.
-		Explicit = 1,///< Explicit.
-		Safe = 2,///< Safe.
+	/// @brief Guild nsfw level.
+	enum class guild_nsfwlevel : uint8_t {
+		Default		   = 0,///< Default.
+		Explicit	   = 1,///< Explicit.
+		Safe		   = 2,///< Safe.
 		Age_Restricted = 3///< Age restricted.
 	};
 
-	/// System channel flags. \brief System channel flags.
-	enum class SystemChannelFlags {
-		Suppress_Join_Notifications = 1 << 0,///< Suppress member join notifications.
-		Suppress_Premium_Subscriptions = 1 << 1,///< Suppress server boost notifications.
+	/// @brief System channel flags.
+	enum class system_channel_flags : uint8_t {
+		Suppress_Join_Notifications			  = 1 << 0,///< Suppress member join notifications.
+		Suppress_Premium_Subscriptions		  = 1 << 1,///< Suppress server boost notifications.
 		Suppress_Guild_Reminder_Notifications = 1 << 2,///< Suppress server setup tips.
-		Suppress_Join_Notification_Replies = 1 << 3///< Hide member join sticker reply buttons.
+		Suppress_Join_Notification_Replies	  = 1 << 3///< Hide member join sticker reply buttons.
 	};
 
-	/// Guild flags. \brief Guild flags.
-	enum class GuildFlags : int8_t {
-		WidgetEnabled = 1 << 0,///< Widget enabled.
-		Unavailable = 1 << 1,///< Unavailable.
-		Owner = 1 << 2,///< Owner.
-		Large = 1 << 3,///< Large.
-		Premium_Progress_Bar_Enabled = 1 << 4///< Premium progress bar enabled
-	};
+	class guild_cache_data;
+	class guild;
 
-	/// Data structure representing a single Guild. \brief Data structure representing a single Guild.
-	class GuildData : public DiscordEntity {
-	  public:
-		DefaultMessageNotificationLevel defaultMessageNotifications{};///< Default Message notification level.
-		std::unordered_map<jsonifier::string, PresenceUpdateData> presences{};///< Array of presences for each GuildMember.
-		std::unordered_map<jsonifier::string, VoiceStateData> voiceStates{};///< Array of Guild-member voice-states.
-		jsonifier::vector<std::unique_ptr<GuildMemberData>> members{};///< Array of GuildMembers.
-		jsonifier::vector<std::unique_ptr<ChannelData>> channels{};///< Array of Guild channels.
-		GuildNSFWLevel nsfwLevel{ GuildNSFWLevel::Default };///< NSFW warning level.
-		ExplicitContentFilterLevel explicitContentFilter{};///< Explicit content filtering level, y default.
-		jsonifier::vector<std::unique_ptr<RoleData>> roles{};///< Array of Guild roles.
-		SystemChannelFlags systemChannelFlags{};///< System Channel flags.
-		int32_t premiumSubscriptionCount{ 0 };///< Premium subscription count.
-		int32_t approximatePresenceCount{ 0 };///< Approximate quantity of presences.
-		VerificationLevel verificationLevel{};///< Verification level required.
-		jsonifier::string publicUpdatesChannelId{};///< Id of the public updates Channel.
-		jsonifier::vector<jsonifier::string> features{};///< List of Guild features.
-		int32_t approximateMemberCount{ 0 };///< Approximate member count.
-		WelcomeScreenData welcomeScreen{};///< Welcome screen for the Guild.
-		int32_t maxVideoChannelUsers{ 0 };///< Maximum quantity of users per video Channel.
-		AfkTimeOutDurations afkTimeOut{};///< Time for an individual to time out as afk.
-		jsonifier::string discoverySplash{};///< Link to the discovery image's splash.
-		jsonifier::string preferredLocale{};///< Preferred locale, for voice chat servers.
-		jsonifier::string widgetChannelId{};///< Channel id for the Guild's widget.
-		jsonifier::string systemChannelId{};///< Channel id for the Guild's system Channel.
-		jsonifier::string rulesChannelId{};///< Channel id for the Guild's rules Channel.
-		jsonifier::string applicationId{};///< The current application id.
-		jsonifier::string vanityUrlCode{};///< Vanity Url code, if applicable.
-		jsonifier::string afkChannelId{};///< Channel if of the "afk" Channel.
-		jsonifier::string description{};///< Description of the Guild.
-		jsonifier::string permissions{};///< Current Permissions for the bot in the Guild.
-		PremiumTier premiumTier{};///< What is the premium tier?
-		int32_t maxPresences{ 0 };///< Max number of presences allowed.
-		TimeStamp joinedAt{ "" };///< When the bot joined this Guild.
-		int32_t memberCount{ 0 };///< Member count.
-		int32_t maxMembers{ 0 };///< Max quantity of members.
-		jsonifier::string iconHash{};///< Url to the Guild's icon.
-		jsonifier::string ownerId{};///< User id of the Guild's owner.
-		jsonifier::string region{};///< Region of the world where the Guild's servers are.
-		jsonifier::string splash{};///< Url to the Guild's splash.
-		jsonifier::string banner{};///< Url to the Guild's banner.
-		MFALevel mfaLevel{};///< MFA level.
-		jsonifier::string icon{};///< Url to the Guild's icon.
-		jsonifier::string name{};///< The Guild's name.
-		int8_t flags{ 0 };///< Guild flags.
-
-		GuildData() = default;
-
-		void initialize(bool doWeShowIt);
-
-		virtual ~GuildData() = default;
-	};
-
-	/// Guild scheduled event privacy levels. \brief Guild scheduled event privacy levels.
-	enum class GuildScheduledEventPrivacyLevel {
-		Public = 1,///< Public.
+	/// @brief Guild scheduled event privacy levels.
+	enum class guild_scheduled_event_privacy_level : uint8_t {
+		Public	   = 1,///< Public.
 		Guild_Only = 2///< Guild only.
 	};
 
-	/// GuildScheduledEventStatus. \brief GuildScheduledEventStatus.
-	enum class GuildScheduledEventStatus {
+	/// @brief Guild_scheduled_event_status.
+	enum class guild_scheduled_event_status : uint8_t {
 		Scheduled = 1,///< Scheduled.
-		Active = 2,///< Active.
-		Completed = 3,///< Completed.
-		Canceled = 4///< Cancelled.
+		Active	  = 2,///< Active.
+		Completed = 3,///< completed.
+		Canceled  = 4///< cancelled.
 	};
 
-	/// Guild scheduled event entity types. \brief Guild scheduled event entity types.
-	enum class GuildScheduledEventEntityType {
-		None = 0,///< None.
+	/// @brief Guild scheduled event entity types.
+	enum class guild_scheduled_event_entity_type : uint8_t {
+		None		   = 0,///< None.
 		State_Instance = 1,///< Stage instance.
-		Voice = 2,///< Voice.
-		External = 3///< External.
+		Voice		   = 2,///< Voice.
+		External	   = 3///< External.
 	};
 
-	/// Guild scheduled event entity metadata. \brief Guild scheduled event entity metadata.
-	struct GuildScheduledEventMetadata {
+	/// @brief Guild scheduled event entity metadata.
+	struct guild_scheduled_event_metadata {
 		jsonifier::string location{};
 	};
 
-	/// Data representing a Guild Scheduled Event. \brief Data representing a Guild Scheduled Event.
-	class GuildScheduledEventData : public DiscordEntity {
+	/// @brief Data representing a guild scheduled event.
+	class guild_scheduled_event_data {
 	  public:
-		GuildScheduledEventPrivacyLevel privacyLevel{};///< The privacy level of the scheduled event.
-		GuildScheduledEventMetadata entityMetadata{};///< Additional metadata for the Guild scheduled event.
-		GuildScheduledEventEntityType entityType{};///< The type of the scheduled event.
-		GuildScheduledEventStatus status{};///< The status of the scheduled event.
+		guild_scheduled_event_privacy_level privacyLevel{};///< The privacy level of the scheduled event.
+		guild_scheduled_event_metadata entityMetadata{};///< Additional metadata for the guild scheduled event.
+		guild_scheduled_event_entity_type entityType{};///< The type of the scheduled event.
 		jsonifier::string scheduledStartTime{};///< The time the scheduled event will start.
-		jsonifier::string scheduledEndTime{};///< The time the scheduled event will end, required if entity_type is External.
+		jsonifier::string scheduledEndTime{};///< The time the scheduled event will end, required if entity_type is external.
+		guild_scheduled_event_status status{};///< The status of the scheduled event.
 		jsonifier::string description{};///< The description of the scheduled event(1 - 1000 characters.
-		uint32_t userCount{ 0 };///< The number of users subscribed to the scheduled event.
-		jsonifier::string creatorId{};///< The id of the User that created the scheduled event *.
-		jsonifier::string channelId{};///< The Channel id in which the scheduled event will be hosted, or null if scheduled entity type is External.
-		jsonifier::string entityId{};///< The id of an entity associated with a Guild scheduled event.
-		jsonifier::string guildId{};///< The Guild id which the scheduled event belongs to.
 		jsonifier::string name{};///< The name of the scheduled event(1 - 100 characters).
-		UserData creator{};///< The User that created the scheduled event.
+		snowflake creatorId{};///< The id of the user_data that created the scheduled event *.
+		snowflake channelId{};///< The channel_data id in which the scheduled event will be hosted, or null if scheduled entity type is external.
+		snowflake entityId{};///< The id of an entity associated with a guild scheduled event.
+		uint32_t userCount{};///< The number of users subscribed to the scheduled event.
+		snowflake guildId{};///< The guild id which the scheduled event belongs to.
+		user_data creator{};///< The user_data that created the scheduled event.
+		snowflake id{};
 
-		virtual ~GuildScheduledEventData() = default;
+		inline guild_scheduled_event_data() = default;
 	};
 
-	/// Data representing a single GuildScheduledEventUser. \brief Data representing a single GuildScheduledEventUser.
-	struct GuildScheduledEventUserData {
-		jsonifier::string guildScheduledEventId{};///< The scheduled event id which the User subscribed to/
-		GuildMemberData member{};///< Guild member data for this User for the Guild which this event belongs to, if any.
-		UserData user{};///< User which subscribed to an event.
+	/// @brief Data representing a single guild_scheduled_event_user.
+	struct guild_scheduled_event_user_data {
+		snowflake guildScheduledEventId{};///< The scheduled event id which the user_data subscribed to/
+		guild_member_data member{};///< Guild member data for this user_data for the guild which this event belongs to, if any.
+		user_data user{};///< User_data which subscribed to an event.
 	};
 
-	/// Invite data. \brief Invite data.
-	struct InviteData {
-		GuildScheduledEventData guildScheduledEvent{};///< Scheduled Guild event.
-		int32_t approximatePresenceCount{ 0 };///< Approximate presence count.
-		ApplicationData targetApplication{};///< Application data.
-		int32_t approximateMemberCount{ 0 };///< Approximate member count.
-		StageInstanceData stageInstance{};///< Stage instance data.
-		TimeStamp createdAt{ "" };///< Time it was created at.
-		TimeStamp expiresAt{ "" };///< When the invite expires.
-		int32_t targetType{ 0 };///< Target type.
-		bool temporary{ false };///< Is it temporary?
-		UserData targetUser{};///< Target User of the invite.
-		ChannelData channel{};///< Channel data of the Channel that the invite is for.
-		jsonifier::string guildId{};///< The Guild this invite is for.
-		int32_t maxUses{ 0 };///< Max number of uses.
-		int32_t maxAge{ 0 };///< Maximum age of the invite.
-		jsonifier::string code{};///< Unique invite code.
-		UserData inviter{};///< The User who created the invite.
-		GuildData guild{};///< Guild data of the Channel that the invite is for.
-		int32_t uses{ 0 };///< The current number of uses.
-	};
-
-	/// Represents a Guild Template. \brief Represents a Guild Template.
-	struct GuildTemplateData {
-		GuildData serializedSourceGuild{};///< The Guild snapshot this template contains.
-		jsonifier::string sourceGuildId{};///< The ID of the Guild this template is based on.
-		jsonifier::string description{};///< The description for the template.
-		uint32_t usageCount{ 0 };///< Number of times this template has been used.
-		jsonifier::string creatorId{};///< The ID of the User who created the template.
-		jsonifier::string createdAt{};///< When this template was created.
-		jsonifier::string updatedAt{};///< When this template was last synced to the source Guild.
-		bool isDirty{ false };///< Whether the template has unsynced changes.
-		jsonifier::string code{};///< The template code(unique ID).
-		jsonifier::string name{};///< Template name.
-		UserData creator{};///< The User who created the template.
-	};
-
-	/// Invite target types. \brief Invite target types.
-	enum class InviteTargetTypes {
-		Stream = 1,///< Stream.
+	/// @brief Invite target types.
+	enum class invite_target_types : uint8_t {
+		Stream				 = 1,///< Stream.
 		Embedded_Application = 2///< Embedded application.
 	};
 
-	/// WebHook types. \brief WebHook types.
-	enum class WebHookType {
-		Incoming = 1,///< Incoming.
-		Channel_Follower = 2,///< Channel follower.
-		Application = 3///< Application.
+	/// @brief Web_hook_data types.
+	enum class web_hook_type : uint8_t {
+		Incoming		 = 1,///< Incoming.
+		Channel_Follower = 2,///< channel_data follower.
+		Application		 = 3///< Application.
 	};
 
-	/// WebHook data. \brief WebHook data.
-	class WebHookData : public DiscordEntity {
-	  public:
-		ChannelData sourceChannel{};///< Channel for which th WebHook was issued.
-		jsonifier::string applicationId{};///< Application id.
-		GuildData sourceGuild{};///< Source Guild id.
-		jsonifier::string channelId{};///< Channel id for which the WebHook was issued.
-		WebHookType type{ 0 };///< Type of WebHook.
-		jsonifier::string guildId{};///< Guild id for which the WebHook was issued.
-		jsonifier::string avatar{};///< Avatar of the WebHook.
-		jsonifier::string token{};///< Token of the WebHook.
-		jsonifier::string name{};///< Name of the WebHook.
-		jsonifier::string url{};///< Url of the WebHook.
-		UserData user{};///< User which create the WebHook.
-
-		virtual ~WebHookData() = default;
+	/// @brief For removing a reaction.
+	struct reaction_remove_data {
+		snowflake channelId{};
+		snowflake messageId{};
+		snowflake guildId{};
+		snowflake userId{};
+		emoji_data emoji{};
 	};
 
-	/// Audit log data. \brief Audit log data.
-	class AuditLogData {
-	  public:
-		auto getAuditLogData(const jsonifier::string& userIdOfChanger, AuditLogEvent auditLogType) {
-			for (auto& value: this->auditLogEntries) {
-				if (value.id == userIdOfChanger && value.actionType == auditLogType) {
-					return value;
-				}
-			}
-			return AuditLogEntryData();
-		}
-		auto getAuditLogData(AuditLogEvent auditLogType, const uint64_t& userIdOfTarget) {
-			for (auto& value: this->auditLogEntries) {
-				if (value.targetId == userIdOfTarget && value.actionType == auditLogType) {
-					return value;
-				}
-			}
-			return AuditLogEntryData();
-		}
-		jsonifier::vector<GuildScheduledEventData> guildScheduledEvents{};///< Array of guild scheduled event objects.
-		jsonifier::vector<AuditLogEntryData> auditLogEntries{};///< Array of audit log entry objects.
-		jsonifier::vector<IntegrationData> integrations{};///< Array of partial integration objects.
-		jsonifier::vector<WebHookData> webhooks{};///< Array of webhook objects.
-		jsonifier::vector<ChannelData> threads{};///< Array of thread-specific channel objects.
-		jsonifier::vector<UserData> users{};///< Array of user objects.
-	};
-
-	/// For removing a reaction. \brief For removing a reaction.
-	struct ReactionRemoveData {
-		jsonifier::string channelId{};
-		jsonifier::string messageId{};
-		jsonifier::string guildId{};
-		uint64_t userId{};
-		EmojiData emoji{};
-	};
-
-	/// For storing Interaction-related values. \brief For storing Interaction-related values.
-	struct InteractionPackageData {
+	/// @brief For storing interaction-related values.
+	struct interaction_package_data {
 		jsonifier::string interactionToken{};
-		jsonifier::string applicationId{};
-		jsonifier::string interactionId{};
+		snowflake applicationId{};
+		snowflake interactionId{};
 	};
 
-	/// For storing Message-related values. \brief For storing Message-related values.
-	struct MessagePackageData {
-		jsonifier::string channelId{};
-		jsonifier::string messageId{};
+	/// @brief For storing message_data-related values.
+	struct message_package_data {
+		snowflake channelId{};
+		snowflake messageId{};
 	};
 
-	/// Data structure representing an ApplicationCommand's option choice. \brief Data structure representing an ApplicationCommand's option choice.
-	struct ApplicationCommandOptionChoiceData {
-		std::unordered_map<jsonifier::string, jsonifier::string>
-			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for the name field.
-		jsonifier::string value{};///< The value of the option.
+	/// @brief Data structure representing an application_command_data's option choice.
+	class application_command_option_choice_data {
+	  public:
+		unordered_map<jsonifier::string, jsonifier::string> nameLocalizations{};///< Dictionary with keys in available locales localization dictionary for the name.
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+		jsonifier::raw_json_data value{};///< The value of the option.
 		jsonifier::string name{};///< The name of the current choice.
+
+		void generateExcludedKeys();
+
+		bool operator==(const application_command_option_choice_data&) const;
 	};
 
-	/// Data structure representing an ApplicationCommand's option. \brief Data structure representing an ApplicationCommand's option.
-	struct ApplicationCommandOptionData {
-		std::unordered_map<jsonifier::string, jsonifier::string> descriptionLocalizations{};///< Dictionary for the description localizations field.
-		std::unordered_map<jsonifier::string, jsonifier::string> nameLocalizations{};///< Dictionary for the name localizations field.
-		jsonifier::vector<ApplicationCommandOptionChoiceData> choices{};///< A jsonifier::vector of possible choices for the current ApplicationCommand option.
-		jsonifier::vector<ApplicationCommandOptionData> options{};///< A jsonifier::vector of possible options for the current ApplicationCommand option.
-		jsonifier::vector<ChannelType> channelTypes{};///< Set when the ApplicationCommand option type is set to Channel.
-		ApplicationCommandOptionType type{};///< The type of command option.
-		bool autocomplete{ false };///< If autocomplete interactions are enabled for this STRING, INTEGER, or NUMBER type option.
-		jsonifier::string description{};///< A description of the current ApplicationCommand option.
-		bool required{ false };///< If the parameter is required or optional -- default false.
-		int32_t minValue{ 0 };///< If the option is an INTEGER or NUMBER type, the minimum value permitted.
-		int32_t maxValue{ 0 };///< If the option is an INTEGER or NUMBER type, the maximum value permitted.
-		jsonifier::string name{};///< Name of the current ApplicationCommand option.
+	/// @brief Data structure representing an application_command_data's option.
+	struct application_command_option_data {
+		unordered_map<jsonifier::string, jsonifier::string> descriptionLocalizations{};///< Dictionary for the description localizations field.
+		unordered_map<jsonifier::string, jsonifier::string> nameLocalizations{};///< Dictionary for the name localizations field.
+		jsonifier::vector<application_command_option_choice_data> choices{};///< A vector of possible choices for the current application_command_data option.
+		jsonifier::vector<application_command_option_data> options{};///< A vector of possible options for the current application_command_data option.
+		int64_t minValue{ std::numeric_limits<int64_t>::max() };///< If the option is an integer or number type, the minimum value permitted.
+		int64_t maxValue{ std::numeric_limits<int64_t>::min() };///< If the option is an integer or number type, the maximum value permitted.
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+		jsonifier::vector<channel_type> channelTypes{};///< Set when the application_command_data option type is set to channel_data.
+		application_command_option_type type{};///< The type of command option.
+		jsonifier::string description{};///< A description of the current application_command_data option.
+		jsonifier::string name{};///< Name of the current application_command_data option.
+		bool autocomplete{};///< If autocomplete interactions are enabled for this string, integer, or number type option.
+		bool required{};///< If the parameter is required or optional-- default false.
+
+		void generateExcludedKeys();
+
+		bool operator==(const application_command_option_data&) const;
 	};
 
-	/// Representing "TypingStart" data. \brief Representing "TypingStart" data.
-	struct TypingStartData {
-		GuildMemberData member{};
-		int32_t timestamp{ 0 };
-		jsonifier::string channelId{};
-		jsonifier::string guildId{};
-		uint64_t userId{};
+	/// @brief Representing "typing_start" data.
+	struct typing_start_data {
+		guild_member_data member{};
+		time_stamp timeStamp{};
+		snowflake channelId{};
+		snowflake guildId{};
+		snowflake userId{};
 	};
 
-	/// YouTube format data. \brief YouTube format data.
-	struct YouTubeFormat {
+	struct you_tube_format {
 		jsonifier::string signatureCipher{};
 		jsonifier::string audioSampleRate{};
-		int32_t averageBitrate{ 0 };
-		uint64_t contentLength{ 0 };
-		bool doWeGetSaved{ false };
 		jsonifier::string audioQuality{};
 		jsonifier::string downloadUrl{};
 		jsonifier::string signature{};
@@ -2130,576 +2800,1097 @@ namespace discord_core_loader {
 		jsonifier::string quality{};
 		jsonifier::string codecs{};
 		jsonifier::string aitags{};
-		int32_t bitrate{ 0 };
-		int32_t height{ 0 };
-		int32_t width{ 0 };
-		int32_t itag{ 0 };
-		int32_t fps{ 0 };
+		uint64_t averageBitrate{};
+		int64_t contentLength{};
+		uint64_t bitrate{};
+		uint64_t height{};
+		uint64_t width{};
+		uint64_t itag{};
+		uint64_t fps{};
 	};
 
-	/// Application command types. \brief Application command types.
-	enum class ApplicationCommandType {
-		Chat_Input = 1,///< Chat input.
-		User = 2,///< User.
-		Message = 3///< Message.
+	/// @brief Application command types.
+	enum class application_command_type : uint8_t {
+		Chat_Input = 1,///< chat input.
+		User_Data  = 2,///< User_data.
+		Message	   = 3///< Message.
 	};
 
-	/// User command Interaction data. \brief User command Interaction data.
-	struct UserCommandInteractionData {
-		jsonifier::string targetId{};///< The target User's id.
+	/// @brief Component types.
+	enum class component_type : uint8_t {
+		Action_Row		   = 1,///< container for other components.
+		Button			   = 2,///< Button object.
+		String_Select	   = 3,///< Select menu for picking from defined text options.
+		Text_Input		   = 4,///< Text input object.
+		User_Select		   = 5,///< Select menu for users.
+		Role_Select		   = 6,///< Select menu for roles.
+		Mentionable_Select = 7,///< Select menu for mentionables (users and roles).
+		Channel_Select	   = 8,///< Select menu for channels.
 	};
 
-	/// Message command interacction data. \brief Message command interacction data.
-	struct MessageCommandInteractionData {
-		jsonifier::string targetId{};///< The target Message's id.
+	enum class select_menu_type : uint8_t { String_Select = 3, User_Select = 5, Role_Select = 6, Mentionable_Select = 7, Channel_Select = 8 };
+
+	enum class select_default_value_type { user = 0, role = 1, channel = 2 };
+
+	class select_default_value_data {
+	  public:
+		inline select_default_value_data() = default;
+
+		inline select_default_value_data(select_default_value_type typeNew) {
+			switch (typeNew) {
+				case select_default_value_type::user: {
+					type = "user";
+					break;
+				}
+				case select_default_value_type::role: {
+					type = "role";
+					break;
+				}
+				case select_default_value_type::channel: {
+					type = "channel";
+					break;
+				}
+			}
+		}
+		jsonifier::string type{};
+		snowflake id{};
 	};
 
-	/// Component types. \brief Component types.
-	enum class ComponentType {
-		ActionRow = 1,///< A container for other components.
-		Button = 2,///< A button object.
-		SelectMenu = 3,///< A select menu for picking from choices.
-		TextInput = 4///< A text input object
+	/// @brief Allowable mentions for a message.
+	class allowed_mentions_data {
+	  public:
+		jsonifier::vector<jsonifier::string> parse{};///< A vector of allowed mention types to parse from the content.
+		jsonifier::vector<jsonifier::string> roles{};///< Array of role_ids to mention (max size of 100)
+		jsonifier::vector<jsonifier::string> users{};///< Array of user_ids to mention (max size of 100)
+		bool repliedUser{};///< For replies, whether to mention the author of the message being replied to (default false).
 	};
 
-	/// Component Interaction data. \brief Component Interaction data.
-	struct ComponentInteractionData {
-		jsonifier::vector<jsonifier::string> values{};///< The values of the components.
-		ComponentType componentType{};///< The type of component.
-		jsonifier::string customId{};///< The custom id of the Interaction entity.
-	};
-
-	/// Modal interaction data, for inputs from text modals. \brief Modal interaction data, for inputs from text modals.
-	struct ModalInteractionData {
-		jsonifier::string customIdSmall{};///< The custom id of a particular modal input.
-		jsonifier::string customId{};///< The custom id of the Interaction entity.
-		jsonifier::string value{};///< The input value of the modal.
-	};
-
-	/// Allowable mentions for a Message. \brief Allowable mentions for a Message.
-	struct AllowedMentionsData {
-		jsonifier::vector<jsonifier::string> parse{};///< A jsonifier::vector of allowed mention types to parse from the content.
-		jsonifier::vector<jsonifier::string> roles{};///< Array of role_ids to mention (Max size of 100)
-		jsonifier::vector<jsonifier::string> users{};///< Array of user_ids to mention (Max size of 100)
-		bool repliedUser{ false };///< For replies, whether to mention the author of the Message being replied to (default false).
-	};
-
-	/// Interaction types. \brief Interaction types.
-	enum class InteractionType {
-		Ping = 1,///< Ping.
-		Application_Command = 2,///< Application command.
-		Message_Component = 3,///< Message component.
+	/// @brief Interaction types.
+	enum class interaction_type : uint8_t {
+		Ping							 = 1,///< Ping.
+		Application_Command				 = 2,///< Application command.
+		Message_Component				 = 3,///< Message component.
 		Application_Command_Autocomplete = 4,///< Application command autocomplete.
-		Modal_Submit = 5///< Modal submission.
+		Modal_Submit					 = 5///< Modal submission.
 	};
 
-	/// Represents a single selection from a select-menu. \brief Represents a single selection from a select-menu.
-	struct SelectOptionData {
+	/// @brief Represents a single selection from a select-menu.
+	class select_option_data {
+	  public:
 		jsonifier::string description{};///< Description of the select-menu-option.
-		bool _default{ false };///< Is it the default option?
+		partial_emoji_data emoji{};///< An optional emoji to put on it.
 		jsonifier::string label{};///< A visible label for the select-menu-option.
 		jsonifier::string value{};///< A value for identifying the option.
-		EmojiData emoji{};///< An optional emoji to put on it.
+		bool _default{};///< Is it the default option?
 	};
 
-	/// Button styles. \brief Button styles.
-	enum class ButtonStyle {
-		Primary = 1,///< Primary.
-		Success = 3,///< Success.
+	/// @brief Button styles.
+	enum class button_style : uint8_t {
+		Primary	  = 1,///< Primary.
+		Success	  = 3,///< Success.
 		Secondary = 2,///< Secondary.
-		Danger = 4,///< Danger.
-		Link = 5///< Link.
+		Danger	  = 4,///< Danger.
+		Link	  = 5///< Link.
 	};
 
-	/// Represents a single Message-component. \brief Represents a single Message-component.
-	struct ComponentData {
-		jsonifier::vector<SelectOptionData> options{};///< Aray of select options the choices in the select, max 25.
-		jsonifier::string placeholder{};///< Custom placeholder text if nothing is selected, max 100 characters.
-		jsonifier::string customId{};///< A developer-defined identifier for the component, max 100 characters.
-		int32_t minValues{ 0 };///< The minimum number of items that must be chosen; default 1, min 0, max 25.
-		int32_t maxValues{ 0 };///< The maximum number of items that can be chosen; default 1, max 25.
-		bool disabled{ false };///< Whether the component is disabled, default false.
-		int32_t minLength{ 0 };///< The minimum input size for a text input.
-		int32_t maxLength{ 0 };///< The maximum input size for a text input.
-		bool required{ false };///< Whether this component is required to be filled.
-		ComponentType type{};///< Integer component type.
-		jsonifier::string label{};///< The label for this component.
-		jsonifier::string value{};///< A pre-filled value for this component.
-		jsonifier::string title{};///< Url, for url types.
-		jsonifier::string url{};///< Url, for url types.
-		EmojiData emoji{};///< Emoji name, id, and animated.
-		int32_t style{};///< One of button styles.
+	struct component_data {
+		jsonifier::vector<select_default_value_data> defaultValues{};
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+		jsonifier::vector<select_option_data> options{};
+		jsonifier::vector<channel_type> channelTypes{};
+		jsonifier::string placeholder{};
+		jsonifier::string customId{};
+		partial_emoji_data emoji{};
+		jsonifier::string label{};
+		jsonifier::string value{};
+		jsonifier::string title{};
+		jsonifier::string url{};
+		component_type type{};
+		uint64_t minValues{};
+		uint64_t maxValues{};
+		uint64_t minLength{};
+		uint64_t maxLength{};
+		uint64_t style{};
+		bool disabled{};
+		bool required{};
+
+		void generateExcludedKeys();
 	};
 
-	/// Action row data of Message components. \brief Action row data of Message components.
-	struct ActionRowData {
-		jsonifier::vector<ComponentData> components{};///< Array of components to make up the action-row.
+	/// @brief Action row data of message components.
+	class action_row_data {
+	  public:
+		component_type type{ component_type::Action_Row };
+		jsonifier::vector<component_data> components{};///< Array of components to make up the action-row.
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+
+		void generateExcludedKeys();
 	};
 
-	/// Interaction callback types. \brief Interaction callback types.
-	enum class InteractionCallbackType {
-		Pong = 1,///< ACK a Ping.
-		Channel_Message_With_Source = 4,///< Respond to an interaction with a message.
-		Deferred_Channel_Message_With_Source = 5,///< ACK an interaction and edit a response later, the user sees a loading state.
-		Deferred_Update_Message =
-			6,///< For components, ACK an interaction and edit the original message later; the user does not see a loading state.
-		Update_Message = 7,///< For components, edit the message the component was attached to.
+	/// @brief Interaction callback types.
+	enum class interaction_callback_type : uint8_t {
+		Pong									= 1,///< Ack a ping.
+		Channel_Message_With_Source				= 4,///< Respond to an interaction with a message.
+		Deferred_Channel_Message_With_Source	= 5,///< Ack an interaction and edit a response later, the user sees a loading state.
+		Deferred_Update_Message					= 6,///< For components, ack an interaction and edit the original message later; the user does not see a loading state.
+		Update_Message							= 7,///< For components, edit the message the component was attached to.
 		Application_Command_Autocomplete_Result = 8,///< Respond to an autocomplete interaction with suggested choices.
-		Modal = 9///< Respond to an interaction with a popup modal.
+		Modal									= 9///< Respond to an interaction with a popup modal.
 	};
 
-	/// Interaction ApplicationCommand callback data. \brief Interaction ApplicationCommand callback data.
-	struct InteractionCallbackData {
-		jsonifier::vector<ApplicationCommandOptionChoiceData> choices{};///< Autocomplete choices(max of 25 choices).
-		jsonifier::vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename and description.
-		jsonifier::vector<ActionRowData> components{};///< Message components.
-		AllowedMentionsData allowedMentions{};///< Allowed mentions data.
-		jsonifier::vector<EmbedData> embeds{};///< Message embeds.
-		jsonifier::vector<File> files{};///< Files for uploading.
+	/// @brief Interaction application_command_data callback data.
+	struct interaction_callback_data {
+		jsonifier::vector<application_command_option_choice_data> choices{};///< Autocomplete choices(max of 25 choices).
+		jsonifier::vector<attachment_data> attachments{};///< Array of partial attachment objects attachment objects with filename and description.
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< Keys to exclude from parsing/serializing.
+		jsonifier::vector<action_row_data> components{};///< Message components.
+		allowed_mentions_data allowedMentions{};///< Allowed mentions data.
+		jsonifier::vector<embed_data> embeds{};///< Message embeds.
+		jsonifier::vector<file> files{};///< Files for uploading.
 		jsonifier::string customId{};///< A developer-defined identifier for the component, max 100 characters.
 		jsonifier::string content{};///< Message content.
 		jsonifier::string title{};///< The title of the popup modal.
-		int32_t flags{ 0 };///< Flags.
-		bool tts{ false };///< Is it TTS?
+		uint64_t flags{};///< Flags.
+		bool tts{};///< Is it tts?
+
+		void generateExcludedKeys();
 	};
 
-	/// Data structure representing an ApplicationCommand. \brief Data structure representing an ApplicationCommand.
-	class ApplicationCommandData : public DiscordEntity {
+	struct create_application_command_data;
+
+	/// @brief Data structure representing an application_command_data.
+	class application_command_data {
 	  public:
-		std::unordered_map<jsonifier::string, jsonifier::string>
-			descriptionLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
-		std::unordered_map<jsonifier::string, jsonifier::string>
-			nameLocalizations{};///< Dictionary with keys in available locales Localization dictionary for name field.
-		jsonifier::vector<ApplicationCommandOptionData> options{};///< A jsonifier::vector of possible options for the current ApplicationCommand.
-		jsonifier::string defaultMemberPermissions{};///< Set of permissions represented as a bit set all
-		ApplicationCommandType type{};///< The type of ApplicationCommand.
-		jsonifier::string applicationId{};///< The current application id.
-		bool dmPermission{ false };///< Indicates whether the command is available in DMs with the app, only for globally - scoped commands.
-		jsonifier::string description{};///< A description of the current ApplicationCommand.
-		jsonifier::string guildId{};///< (Where applicable) a Guild id for which guild to assign this ApplicationCommand to.
+		unordered_map<jsonifier::string, jsonifier::string> descriptionLocalizations{};///< Dictionary with keys in available locales.
+		unordered_map<jsonifier::string, jsonifier::string> nameLocalizations{};///< Dictionary with keys in available locales.
+		jsonifier::vector<application_command_option_data> options{};///< A vector of possible options for the current application_command_data.
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};///< Keys to exclude at serialization time.
+		permission defaultMemberPermissions{};///< Set of permissions represented as a bit set all
+		jsonifier::string description{};///< A description of the current application_command_data.
+		application_command_type type{};///< The type of application_command_data.
 		jsonifier::string version{};///< An autoincremented version.
-		jsonifier::string name{};///< Name of the current ApplicationCommand.
+		snowflake applicationId{};///< The current application id.
+		jsonifier::string name{};///< Name of the current application_command_data.
+		bool dmPermission{};///< Indicates whether the command is available in dms with the app, only for globally - scoped commands.
+		snowflake guildId{};///< (where applicable) a guild id for which guild to assign this application_command_data to.
+		snowflake id{};
 
-		virtual ~ApplicationCommandData() = default;
+		inline application_command_data() = default;
+
+		void generateExcludedKeys();
+
+		bool operator==(const application_command_data&) const;
 	};
 
-	/// Function data for repeated functions to be loaded. \brief Function data for repeated functions to be loaded.
-	struct RepeatedFunctionData {
-		std::function<void(DiscordCoreClient*)> function{ nullptr };///< The std::function pointer to be loaded.
-		uint32_t intervalInMs{ 0 };///< The time interval at which to call the std::function.
-		bool repeated{ false };///< Whether or not the std::function is repeating.
-		uint64_t dummyArg{ 0 };
-	};
-
-	/// Channel mention data. \brief Channel mention data.
-	class ChannelMentionData : public DiscordEntity {
+	/// @brief Channel_data mention data.
+	class channel_mention_data {
 	  public:
-		jsonifier::string guildId{};///< The id of the Guild where it took place.
-		jsonifier::string name{};///< The name of the Channel that was mentioned.
-		ChannelType type{};///< The type of Channel that was mentioned.
-
-		virtual ~ChannelMentionData() = default;
+		snowflake guildId{};///< The id of the guild where it took place.
+		jsonifier::string name{};///< The name of the channel_data that was mentioned.
+		channel_type type{};///< The type of channel_data that was mentioned.
+		snowflake id{};
 	};
 
-	/// Data for when some Channel pins are updated. \brief Data for when some Channel pins are updated.
-	struct ChannelPinsUpdateEventData {
-		TimeStamp lastPinTimestamp{ "" };///< The time of the last pinned Message.
-		jsonifier::string channelId{};///< The id of the Channel within which the Message was pinned.
-		jsonifier::string guildId{};///< The id of the Guild within which the Message was pinned.
+	/// @brief Data for when some channel_data pins are updated.
+	struct channel_pins_update_event_data {
+		time_stamp lastPinTimeStamp{};///< The time of the last pinned message.
+		snowflake channelId{};///< The id of the channel_data within which the message was pinned.
+		snowflake guildId{};///< The id of the guild within which the message was pinned.
 	};
 
-	/// Data for when threads are synced. \brief Data for when threads are synced.
-	struct ThreadListSyncData {
-		jsonifier::vector<ThreadMemberData> members{};///< Array of members that are a part of the Thread.
-		jsonifier::vector<jsonifier::string>
-			channelIds{};///< The parent Channel ids whose threads are being synced. If omitted, then threads were synced for entire Guild.
-		jsonifier::vector<ChannelData> threads{};///< All active threads in the given channels that the current User can access.
-		jsonifier::string guildId{};///< The id of the Guild for which the threads are being synced.
+	/// @brief Data for when threads are synced.
+	struct thread_list_sync_data {
+		jsonifier::vector<jsonifier::string> channelIds{};///< The parent channel_data ids whose threads are being synced.
+		jsonifier::vector<thread_member_data> members{};///< Array of members that are a part of the thread_data.
+		jsonifier::vector<channel_data> threads{};///< All active threads in the given channels that the current user_data can access.
+		snowflake guildId{};///< The id of the guild for which the threads are being synced.
 	};
 
-	/// Represents a Thread-members-update. \brief Represents a Thread-members-update.
-	class ThreadMembersUpdateData : public DiscordEntity {
+	/// @brief Represents a thread_data-members-update.
+	class thread_members_update_data {
 	  public:
-		jsonifier::vector<ThreadMemberData> addedMembers{};///< New members added to the Thread.
 		jsonifier::vector<jsonifier::string> removedMemberIds{};///< Members who have been removed.
-		int32_t memberCount{ 0 };///< Number of Guild-members in the Thread.
-		jsonifier::string guildId{};///< Guild id of the Thread.
+		jsonifier::vector<thread_member_data> addedMembers{};///< New members added to the thread_data.
+		uint32_t memberCount{};///< Number of guild-members in the thread_data.
+		snowflake guildId{};///< Guild id of the thread_data.
+		snowflake id{};
 
-		virtual ~ThreadMembersUpdateData() = default;
+		inline thread_members_update_data() = default;
 	};
 
-	/// Message Interaction data. \brief Message Interaction data.
-	class MessageInteractionData : public DiscordEntity {
+	/// @brief Message interaction data.
+	class message_interaction_data {
 	  public:
-		GuildMemberData member{};
-		InteractionType type{};
+		guild_member_data member{};
 		jsonifier::string name{};
-		UserData user{};
+		interaction_type type{};
+		user_data user{};
+		snowflake id{};
 
-		virtual ~MessageInteractionData() = default;
+		inline message_interaction_data() = default;
 	};
 
-	/// Message types. \brief Message types.
-	enum class MessageType {
-		Default = 0,///< Default.
-		Recipient_Add = 1,///< Recipient add.
-		Recipient_Remove = 2,///< Recipient remove.
-		Call = 3,///< Call.
-		Channel_Name_Change = 4,///< Channel name change.
-		Channel_Icon_Change = 5,///< Channel icon change.
-		Channel_Pinned_Message = 6,///< Channel pinned Message.
-		Guild_Member_Join = 7,///< Guild memeber join.
-		User_Premium_Guild_Subscription = 8,///< User premium Guild subscription.
-		User_Premium_Guild_Subscription_Tier_1 = 9,///< User premium Guild subscription tier 1.
-		User_Premium_Guild_Subscription_Tier_2 = 10,///< User premium Guild subscription tier 2.
-		User_Premium_Guild_Subscription_Tier_3 = 11,///< User premium Guild subscription tier 3.
-		Channel_Follow_Add = 12,///< Channel follow add.
-		Guild_Discovery_Disqualified = 14,///< Guild discovery disqualified.
-		Guild_Discovery_Requalified = 15,///< Guild discovery requalified.
+	/// @brief Message types.
+	enum class message_type : uint8_t {
+		Default										 = 0,///< Default.
+		Recipient_Add								 = 1,///< Recipient add.
+		Recipient_Remove							 = 2,///< Recipient erase.
+		Call										 = 3,///< call.
+		Channel_Name_Change							 = 4,///< channel_data name change.
+		Channel_Icon_Change							 = 5,///< channel_data icon change.
+		Channel_Pinned_Message						 = 6,///< channel_data pinned message.
+		Guild_Member_Join							 = 7,///< Guild memeber join.
+		User_Premium_Guild_Subscription				 = 8,///< User_data premium guild subscription.
+		User_Premium_Guild_Subscription_Tier_1		 = 9,///< User_data premium guild subscription tier 1.
+		User_Premium_Guild_Subscription_Tier_2		 = 10,///< User_data premium guild subscription tier 2.
+		User_Premium_Guild_Subscription_Tier_3		 = 11,///< User_data premium guild subscription tier 3.
+		Channel_Follow_Add							 = 12,///< channel_data follow add.
+		Guild_Discovery_Disqualified				 = 14,///< Guild discovery disqualified.
+		Guild_Discovery_Requalified					 = 15,///< Guild discovery requalified.
 		Guild_Discovery_Grace_Period_Initial_Warning = 16,///< Guild discovery grade period initial warning.
-		Guild_Discovery_Grace_Period_Final_Warning = 17,///< Guild discovery grade period final warning.
-		Thread_Created = 18,///< Thread created.
-		Reply = 19,///< Reply.
-		Chat_Input_Command = 20,///< Chat input command.
-		Thread_Starter_Message = 21,///< Thread starter Message.
-		Guild_Invite_Reminder = 22,///< Guild invite reminder.
-		Context_Menu_Command = 23///< Context menu command.
+		Guild_Discovery_Grace_Period_Final_Warning	 = 17,///< Guild discovery grade period final warning.
+		Thread_Created								 = 18,///< Thread_data created.
+		Reply										 = 19,///< Reply.
+		Chat_Input_Command							 = 20,///< chat input command.
+		Thread_Starter_Message						 = 21,///< Thread_data starter message_data.
+		Guild_Invite_Reminder						 = 22,///< Guild invite reminder.
+		Context_Menu_Command						 = 23///< context menu command.
 	};
 
-	/// Message flags. \brief Message flags.
-	enum class MessageFlags {
-		Crossposted = 1ull << 0,///< Crossposted.
-		Is_Crosspost = 1ull << 1,///< Is crosspost.
-		Suppress_Embeds = 1ull << 2,///< Supress embeds.
-		Source_Message_Deleted = 1ull << 3,///< Source Message deleted.
-		Urgent = 1ull << 4,///< Urgent.
-		Has_Thread = 1ull << 5,///< Has Thread.
-		Ephemeral = 1ull << 6,///< Ephemeral.
-		Loading = 1ull << 7///< Loading.
+	/// @brief Message flags.
+	enum class message_flags : uint8_t {
+		Crossposted			   = 1 << 0,///< crossposted.
+		Is_Crosspost		   = 1 << 1,///< Is crosspost.
+		Suppress_Embeds		   = 1 << 2,///< Supress embeds.
+		Source_Message_Deleted = 1 << 3,///< Source message deleted.
+		Urgent				   = 1 << 4,///< Urgent.
+		Has_Thread			   = 1 << 5,///< Has thread_data.
+		Ephemeral			   = 1 << 6,///< Ephemeral.
+		Loading				   = 1 << 7///< Loading.
 	};
 
-	/// Sticker item types. \brief Sticker item types.
-	enum class StickerItemType {
-		Png = 1,///< Png.
-		Apng = 2,///< Apng.
-		Lottie = 3///< Lottie.
+	/// @brief Sticker_data item types.
+	enum class sticker_item_type : uint8_t {
+		png	   = 1,///< Png.
+		apng   = 2,///< Apng.
+		lottie = 3///< Lottie.
 	};
 
-	/// Represents a forum thread message. \brief Represents a forum thread message.
-	struct ForumThreadMessageData {
-		jsonifier::vector<AttachmentData> attachments{};///< Array of partial attachment objects attachment objects with filename.
-		jsonifier::vector<ActionRowData> components{};///< Array of message component objects the components to include with the message.
-		AllowedMentionsData allowedMentions{};///< Allowed mention object allowed mentions for the message.
-		jsonifier::vector<jsonifier::string> stickerIds{};///< Array of snowflakes IDs of up to 3 stickers in the server to send in the message.
-		jsonifier::vector<EmbedData> embeds{};///< Array of embed objects	embedded rich content (up to 6000 characters).
-		jsonifier::vector<File> files{};///< File contents the contents of the file being sent one of content, file, embed(s), sticker_ids.
+	/// @brief Represents a forum thread message.
+	struct forum_thread_message_data {
+		jsonifier::vector<jsonifier::string> stickerIds{};///< Array of snowflakes ids of up to 3 stickers in the server to send in the message.
+		jsonifier::vector<attachment_data> attachments{};///< Array of partial attachment objects attachment objects with filename.
+		jsonifier::vector<action_row_data> components{};///< Array of message component objects the components to include with the message.
+		allowed_mentions_data allowedMentions{};///< Allowed mention object allowed mentions for the message.
+		jsonifier::vector<embed_data> embeds{};///< Array of embed objects	embedded rich content (up to 6000 characters).
+		jsonifier::vector<file> files{};///< File contents the contents of the file being sent one of content, file, embed(s), sticker_ids.
 		jsonifier::string content{};///< The message contents (up to 2000 characters).
-		int32_t flags{ 0 };///< Flags to be set for the message.
+		uint64_t flags{};///< Flags to be set for the message.
 	};
 
-	/// Message Sticker item data. \brief Message Sticker item data.
-	class StickerItemData : public DiscordEntity {
+	/// @brief Message sticker_data item data.
+	class sticker_item_data {
 	  public:
-		StickerItemType formatType{};///< Message Sticker item type.
-		jsonifier::string name{};///< The name of the Sticker.
-
-		virtual ~StickerItemData() = default;
+		sticker_item_type formatType{};///< Message sticker_data item type.
+		jsonifier::string name{};///< The name of the sticker_data.
+		snowflake id{};
 	};
 
-	/// The core of a Message's data structure. \brief The core of a Message's data structure.
-	class MessageDataOld : public DiscordEntity {
+	/// @brief The core of a message's data structure.
+	class message_data {
 	  public:
-		jsonifier::vector<ChannelMentionData> mentionChannels{};///< array of Channel mention data.
-		jsonifier::vector<StickerItemData> stickerItems{};///< Array of Message Sticker item data.
-		jsonifier::vector<AttachmentData> attachments{};///< Array of attachment data.
-		MessageReferenceData messageReference{};///< Message reference data.
-		jsonifier::vector<jsonifier::string> mentionRoles{};///< jsonifier::vector of "mention roles" ids.
-		jsonifier::vector<ActionRowData> components{};///< Array of action row data.
-		jsonifier::vector<ReactionData> reactions{};//< Array of reaction data.
-		MessageInteractionData interaction{};///< Message Interaction data.
-		jsonifier::vector<StickerData> stickers{};///< Array of Message Sticker data.
-		jsonifier::vector<UserData> mentions{};///< Array of User data, for individual's that were mentioned.
-		jsonifier::vector<EmbedData> embeds{};///< Array of Message embeds.
-		TimeStamp editedTimestamp{ "" };///< The time at which it was edited.
-		MessageActivityData activity{};///< Message activity data.
-		bool mentionEveryone{ false };///< Does the Message mention everyone?
-		ApplicationData application{};///< Application data.
-		jsonifier::string applicationId{};///< Application id.
-		TimeStamp timestamp{ "" };///< The timestamp of when the Message was created.
-		GuildMemberData member{};///< The author's Guild member data.
-		jsonifier::string channelId{};///< The Channel it was sent in.
-		jsonifier::string guildId{};///< The id of the Guild the Message was sent in.
-		jsonifier::string content{};///< The Message's content.
-		uint64_t webhookId{};///< WebHook id of the Message, if applicable.
-		bool pinned{ false };///< Is it pinned?
-		ChannelData thread{};///< The Thread that the Message was sent in, if applicable.
+		jsonifier::vector<channel_mention_data> mentionChannels{};///< Array of channel_data mention data.
+		jsonifier::vector<jsonifier::string> mentionRoles{};///< Jsonifier::vector of "mention roles" ids.
+		jsonifier::vector<sticker_item_data> stickerItems{};///< Array of message sticker_data item data.
+		jsonifier::vector<attachment_data> attachments{};///< Array of attachment data.
+		jsonifier::vector<action_row_data> components{};///< Array of action row data.
+		jsonifier::vector<reaction_data> reactions{};//< array of reaction data.
+		jsonifier::vector<sticker_data> stickers{};///< Array of message sticker_data data.
+		message_reference_data messageReference{};///< Message reference data.
+		jsonifier::vector<user_data> mentions{};///< Array of user_data data, for individual's that were mentioned.
+		jsonifier::vector<embed_data> embeds{};///< Array of message embeds.
+		message_interaction_data interaction{};///< Message interaction data.
+		jsonifier::string editedTimestamp{};///< The time at which it was edited.
+		message_activity_data activity{};///< Message activity data.
+		application_data application{};///< A
+		jsonifier::string content{};///< The message's content.
+		guild_member_data member{};///< The author's guild member data.pplication data.
+		snowflake applicationId{};///< Application id.
 		jsonifier::string nonce{};///< Nonce.
-		int32_t flags{ 0 };///< Flags.
-		MessageType type{};///< Message type.
-		UserData author{};///< The author's User data.
-		bool tts{ false };///< Is it a text-to-speech Message?
+		time_stamp timeStamp{};///< The timeStamp of when the message was created.
+		bool mentionEveryone{};///< Does the message mention everyone?
+		snowflake channelId{};///< The channel_data it was sent in.
+		snowflake webHookId{};///< Web_hook id of the message_data, if applicable.
+		channel_data thread{};///< The thread_data that the message was sent in, if applicable.
+		snowflake guildId{};///< The id of the guild the message was sent in.
+		message_type type{};///< Message type.
+		user_data author{};///< The author's user_data data.
+		uint64_t flags{};///< Flags.
+		snowflake id{};
+		bool pinned{};///< Is it pinned?
+		bool tts{};///< Is it a text-to-speech message_data?
 
-		MessageDataOld() = default;
-
-		virtual ~MessageDataOld() = default;
+		virtual inline ~message_data() = default;
 	};
 
-	/// Data structure representing a single Message. \brief Data structure representing a single Message.
-	class MessageData : public MessageDataOld {
-	  public:
-		std::unique_ptr<MessageDataOld> referencedMessage{ std::make_unique<MessageDataOld>() };///< The referenced Message, to reply to.
-
-		MessageData& operator=(const MessageData& other) {
-			*this->referencedMessage = *other.referencedMessage;
-			this->messageReference = other.messageReference;
-			this->mentionEveryone = other.mentionEveryone;
-			this->mentionChannels = other.mentionChannels;
-			this->editedTimestamp = other.editedTimestamp;
-			this->applicationId = other.applicationId;
-			this->stickerItems = other.stickerItems;
-			this->mentionRoles = other.mentionRoles;
-			this->application = other.application;
-			this->interaction = other.interaction;
-			this->attachments = other.attachments;
-			this->components = other.components;
-			this->timestamp = other.timestamp;
-			this->channelId = other.channelId;
-			this->webhookId = other.webhookId;
-			this->reactions = other.reactions;
-			this->activity = other.activity;
-			this->mentions = other.mentions;
-			this->stickers = other.stickers;
-			this->content = other.content;
-			this->guildId = other.guildId;
-			this->member = other.member;
-			this->thread = other.thread;
-			this->pinned = other.pinned;
-			this->author = other.author;
-			this->embeds = other.embeds;
-			this->nonce = other.nonce;
-			this->flags = other.flags;
-			this->type = other.type;
-			this->tts = other.tts;
-			this->id = other.id;
-			return *this;
-		}
-
-		MessageData(const MessageData& other) {
-			*this = other;
-		}
-
-		MessageData() = default;
-
-		virtual ~MessageData() = default;
+	/// @brief Resolved data.
+	struct resolved_data {
+		unordered_map<snowflake, attachment_data> attachments{};///< Unordered_map of snowflakes to attachment objects the ids.
+		unordered_map<snowflake, guild_member_data> members{};///< Unordered_map full of guild_memeber_data.
+		unordered_map<snowflake, channel_data> channels{};///< Unordered_map full of channel_data.
+		unordered_map<snowflake, message_data> messages{};///< Unordered_map full of messageData.
+		unordered_map<snowflake, user_data> users{};///< Unordered_map full of user_data.
+		unordered_map<snowflake, role_data> roles{};///< Unordered_map full of role_data.
 	};
 
-	/// Resolved data. \brief Resolved data.
-	struct ResolvedData {
-		std::unordered_map<uint64_t, AttachmentData> attachments{};///< std::map of snowflakes to attachment objects the ids and attachment objects.
-		std::unordered_map<uint64_t, GuildMemberData> members{};///< std::map full of GuildMemeberData.
-		std::unordered_map<uint64_t, MessageData> messages{};///< std::map full of messageData->
-		std::unordered_map<uint64_t, ChannelData> channels{};///< std::map full of ChannelData.
-		std::unordered_map<uint64_t, UserData> users{};///< std::map full of UserData.
-		std::unordered_map<uint64_t, RoleData> roles{};///< std::map full of RoleData.
+	/// @brief Represents a sticker_data pack.
+	struct sticker_pack_data {
+		jsonifier::vector<sticker_data> stickers{};///< Array of sticker_data objects	the stickers in the pack.
+		jsonifier::string coverStickerId{};///< snowflake of a sticker_data in the pack which is shown as the pack's icon.
+		jsonifier::string bannerAssetId{};///< snowflake of the sticker_data pack's banner image.
+		jsonifier::string description{};///< Description of the sticker_data pack.
+		jsonifier::string skuId{};///< snowflake of the pack's sku.
+		jsonifier::string name{};///< Name of the sticker_data pack.
+		snowflake id{};///< snowflake of the sticker_data pack.
 	};
 
-	/// Represents a Sticker pack. \brief Represents a Sticker pack.
-	struct StickerPackData {
-		jsonifier::vector<StickerData> stickers{};///< Array of Sticker objects	the stickers in the pack.
-		jsonifier::string coverStickerId{};///< Id of a Sticker in the pack which is shown as the pack's icon.
-		jsonifier::string bannerAssetId{};///< Id of the Sticker pack's banner image.
-		jsonifier::string description{};///< Description of the Sticker pack.
-		jsonifier::string skuId{};///< Id of the pack's SKU.
-		jsonifier::string name{};///< Name of the Sticker pack.
-		jsonifier::string Id{};///< Id of the Sticker pack.
-	};
-
-	/// Connection visibility types. \brief Connection visibility types.
-	enum class ConnectionVisibilityTypes {
-		None = 0,///< None.
+	/// @brief Connection visibility types.
+	enum class connection_visibility_types : uint8_t {
+		None	 = 0,///< None.
 		Everyone = 1///< Everyone.
 	};
 
-	/// Represents a single User Connection. \brief Represents a single User Connection.
-	struct ConnectionData {
-		jsonifier::vector<IntegrationData> integrations{};///< An array of partial server integrations.
-		ConnectionVisibilityTypes visibility{};///< Visibility of this connection.
-		bool showActivity{ false };///< Whether activities related to this connection will be shown in presence updates.
-		bool friendSync{ false };///< Whether friend sync is enabled for this connection.
-		bool verified{ false };///< Whether the connection is verified.
-		bool revoked{ false };///< Whether the connection is revoked.
-		jsonifier::string name{};///< The userName of the connection account.
+	/// @brief Represents a single user_data connection.
+	struct connection_data {
+		jsonifier::vector<integration_data> integrations{};///< An array of partial server integrations.
+		connection_visibility_types visibility{};///< Visibility of this connecti
+		jsonifier::string name{};///< The username of the connection account.
 		jsonifier::string type{};///< The service of the connection(twitch, youtube).
-		jsonifier::string id{};///< Id of the connection account.
+		bool showActivity{};///< Whether activities related to this connection will be shown in presence updates.on.
+		bool friendSync{};///< Whether friend sync is enabled for this connection.
+		bool verified{};///< Whether the connection is verified.
+		bool revoked{};///< Whether the connection is revoked.
+		snowflake id{};///< snowflake of the connection account.
 	};
 
-	/// ApplicationCommand Interaction data option. \brief ApplicationCommand Interaction data option.
-	struct ApplicationCommandInteractionDataOption {
-		jsonifier::vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
-		ApplicationCommandOptionType type{};///< The type of ApplicationCommand options.
-		jsonifier::string valueString{};///< The value if it's a jsonifier::string.
-		bool valuebool{ false };///< the value if it's a bool.
-		int32_t valueInt{ 0 };///< The value if it's an int32_t.
-		bool focused{ false };///< 	True if this option is the currently focused option for autocomplete.
+	struct application_command_interaction_data_option;
+
+	/// @brief Application_command_data interaction data option.
+	struct application_command_interaction_data_option {
+		jsonifier::vector<application_command_interaction_data_option> options{};///< Application_command_data interaction data options.
+		application_command_option_type type{};///< The type of application_command_data options.
+		jsonifier::raw_json_data value{};///< The value.
 		jsonifier::string name{};///< The name of the current option.
+		bool focused{};///< True if this option is the currently focused option for autocomplete.
 	};
 
-	/// ApplicationCommand Interaction data. \brief ApplicationCommand Interaction data.
-	class ApplicationCommandInteractionData : public DiscordEntity {
-	  public:
-		jsonifier::vector<ApplicationCommandInteractionDataOption> options{};///< ApplicationCommand Interaction data options.
-		ApplicationCommandType type{};///< The type of ApplicationCommand.
-		ResolvedData resolved{};///< Resolved data.
-		jsonifier::string guildId{};///< The guild that the command took place in.
-		jsonifier::string name{};///< The name of the command.
-
-		virtual ~ApplicationCommandInteractionData() = default;
+	/// @brief Interaction data data.
+	struct interaction_data_data {
+		jsonifier::vector<application_command_interaction_data_option> options{};///< Application_command_data interaction data options.
+		jsonifier::vector<action_row_data> components{};///< Array of message componentsthe values submitted by the user.
+		jsonifier::vector<jsonifier::string> values{};///< Array of select option values the user selected in a select menu component.
+		application_command_type type{};///< The type of application_command.
+		component_type componentType{};///< The type of the component.
+		jsonifier::string customId{};///< The custom_id of the component.
+		jsonifier::string name{};///< The name of the invoked command.
+		resolved_data resolved{};///< Resolved data.
+		snowflake targetId{};///< The target message_data's id.
+		snowflake guildId{};///< The guild that the command took place in.
+		snowflake id{};///< The ID of the invoked command.
 	};
 
-	/// Interaction data data. \brief Interaction data data.
-	struct InteractionDataData {
-		ApplicationCommandInteractionData applicationCommandData{};///< ApplicationCommand Interaction data.
-		MessageCommandInteractionData messageInteractionData{};///< Message command Interaction data.
-		UserCommandInteractionData userInteractionData{};///< User command Interaction data.
-		ComponentInteractionData componentData{};///< Component Interaction data.
-		ModalInteractionData modalData{};///< Modal Interaction data.
+	/// @brief Data from the session_start info.
+	struct session_start_data {
+		uint32_t maxConcurrency{};///< The number of identify requests allowed per 5 seconds.
+		uint32_t resetAfter{};///< The number of milliseconds after which the limit resets.
+		uint32_t remaining{};///< The remaining number of session starts the current user_data is allowed.
+		uint32_t total{};///< The total number of session starts the current user_data is allowed.
 	};
 
-	/// Interaction data. \brief Interaction data.
-	class InteractionData : public DiscordEntity {
-	  public:
-		jsonifier::string applicationId{};///< The application's id.
-		InteractionDataData data{};///< The Interaction's data.
-		jsonifier::string guildLocale{};///< The guild's preferred locale, if invoked in a guild.
-		jsonifier::string rawData{};///< The Interaction's raw data.
-		GuildMemberData member{};///< The data of the Guild member who sent the Interaction, if applicable.
-		jsonifier::string channelId{};///< The Channel the Interaction was sent in.
-		InteractionType type{};///< The type of Interaction.
-		MessageData message{};///< The Message that the Interaction came through on, if applicable.
-		jsonifier::string guildId{};///< The Guild id of the Guild it was sent in.
-		int32_t version{ 0 };///< The Interaction version.
-		jsonifier::string locale{};///< The selected language of the invoking user.
-		jsonifier::string token{};///< The Interaction token.
-		UserData user{};///< The User data of the sender of the Interaction.
-
-		InteractionData() = default;
-
-		virtual ~InteractionData() = default;
+	/// @brief Data from the get_gateway_bot endpoint.
+	struct gateway_bot_data {
+		session_start_data sessionStartLimit{};///< Information on the current session start limit.
+		jsonifier::string url{};///< The wss url that can be used for connecting to the gateway.
+		uint32_t shards{};///< The recommended number of shards to use when connecting.
 	};
 
-	/// Data from the SessionStart info. \brief Data from the SessionStart info.
-	struct SessionStartData {
-		uint32_t maxConcurrency{ 0 };///< The number of identify requests allowed per 5 seconds.
-		uint32_t resetAfter{ 0 };///< The number of std::chrono::milliseconds after which the limit resets.
-		uint32_t remaining{ 0 };///< The remaining number of session starts the current User is allowed.
-		uint32_t total{ 0 };///< The total number of session starts the current User is allowed.
-	};
-
-	/// Data from the GetGatewatBot endpoint. \brief Data from the GetGatewatBot endpoint.
-	struct GatewayBotData {
-		SessionStartData sessionStartLimit{};///< Information on the current session start limit.
-		uint32_t shards{ 0 };///< The recommended number of shards to use when connecting.
-		jsonifier::string url{};///< The WSS Url that can be used for connecting to the gateway.
-	};
-
-	/// Text input style for modals. \brief Text input style for modals.
-	enum class TextInputStyle {
-		Short = 1,///< A single-line input.
+	/// @brief Text input style for modals.
+	enum class text_input_style : uint8_t {
+		Short	  = 1,///< A single-line input.
 		Paragraph = 2///< A multi-line input.
 	};
 
-	/// Input event response types. \brief Input event response types.
-	enum class InputEventResponseType {
-		Unset = 0,///< Unset.
-		Deferred_Response = 1,
-		Ephemeral_Deferred_Response = 2,///< Deferred ephemeral response.
-		Interaction_Response = 3,///< Interaction response.
-		Ephemeral_Interaction_Response = 4,///< Ephemeral Interaction response.
-		Edit_Interaction_Response = 5,///< Interaction response edit.
-		Follow_Up_Message = 6,///< Follow-up Message.
-		Ephemeral_Follow_Up_Message = 7,///< Ephemeral follow-up Message.
-		Edit_Follow_Up_Message = 8,///< Follow-up Message edit.
-		Application_Command_AutoComplete_Result = 9,///< Respond to an autocomplete interaction with suggested choices.
-		Modal_Interaction_Response = 10,///< Respond to an interaction with a popup modal.
+	/// @brief Data representing a guild emoji update event.
+	struct guild_emojis_update_event_data {
+		jsonifier::vector<emoji_data> emojis{};
+		snowflake guildId{};
 	};
 
-	/// Data representing a Guild Emoji Update event. \brief Data representing a Guild Emoji Update event.
-	struct GuildEmojisUpdateEventData {
-		jsonifier::vector<EmojiData> emojis{};
-		jsonifier::string guildId{};
+	/// @brief Data representing a guild stickers update event.
+	struct guild_stickers_update_event_data {
+		jsonifier::vector<sticker_data> stickers{};
+		snowflake guildId{};
 	};
 
-	/// Data representing a Guild Sticker Update event. \brief Data representing a Guild Stickers Update event.
-	struct GuildStickersUpdateEventData {
-		jsonifier::vector<StickerData> stickers{};
-		jsonifier::string guildId{};
-	};
-
-	struct GuildMembersChunkEventData {
-		jsonifier::vector<PresenceUpdateData> presences{};
-		jsonifier::vector<GuildMemberData> members{};
+	struct guild_members_chunk_event_data {
+		jsonifier::vector<presence_update_data> presences{};
 		jsonifier::vector<jsonifier::string> notFound{};
-		int32_t chunkIndex{ 0 };
-		int32_t chunkCount{ 0 };
-		jsonifier::string guildId{};
+		jsonifier::vector<guild_member_data> members{};
 		jsonifier::string nonce{};
+		uint64_t chunkIndex{};
+		uint64_t chunkCount{};
+		snowflake guildId{};
 	};
 
-	/// Interaction response data. \brief Interaction response data.
-	struct InteractionResponseData {
-		InteractionResponseData() = default;
-		InteractionCallbackData data{};///< Interaction ApplicationCommand callback data.
-		InteractionCallbackType type{};///< Interaction callback type.
-	};
-
-	/// Sharding options for the library. \brief Sharding options for the library.
-	struct ShardingOptions {
-		int32_t numberOfShardsForThisProcess{ 1 };///< The number of shards to launch on the current process.
-		int32_t startingShard{ 0 };///< The first shard to start on this process.
-	};
-
-	/// Logging options for the library. \brief Loggin options for the library.
-	struct LoggingOptions {
-		bool logWebSocketSuccessMessages{ false };///< Do we log the websocket success messages to cout?
-		bool logWebSocketErrorMessages{ false };///< Do we log the websocket error messages to cout?
-		bool logGeneralSuccessMessages{ false };///< Do we log general success messages to cout?
-		bool logFFMPEGSuccessMessages{ false };///< Do we log FFMPEG success messages to cout?
-		bool logGeneralErrorMessages{ false };///< Do we log general error messages to cout?
-		bool logHttpSuccessMessages{ false };///< Do we log Http response success messages to cout?
-		bool logFFMPEGErrorMessages{ false };///< Do we log FFMPEG error messages to cout?
-		bool logHttpErrorMessages{ false };///< Do we log Http response error messages to cout?
-	};
-
-	/// For selecting the caching style of the library. \brief For selecting the caching style of the library.
-	struct CacheOptions {
-		bool cacheGuildMembers{ true };///< Do we cache GuildMembers?
-		bool cacheChannels{ true };///< Do we cache Channels?
-		bool cacheGuilds{ true };///< Do we cache Guilds?
-		bool cacheRoles{ true };///< Do we cache Roles?
-		bool cacheUsers{ true };///< Do we cache Users?
-	};
-
-	/// Guild application command permissions data. \brief Guild application command permissions data.
-	class GuildApplicationCommandPermissionData : public DiscordEntity {
+	/// @brief A type of user_data, to represent the bot and some of its associated endpoints.
+	class bot_user : public user_data {
 	  public:
-		jsonifier::vector<ApplicationCommandPermissionData> permissions{};
-		jsonifier::string applicationId{};
-		jsonifier::string guildId{};
+		template<typename value_type> friend class get_user_image_url;
+		friend class discord_core_client;
 
-		virtual ~GuildApplicationCommandPermissionData() = default;
+		bot_user(user_data& dataPackage, discord_core_internal::base_socket_agent* pBaseBaseSocketAgentNew);
+
+		/// @brief Updates the bot's current voice-status. joins/leaves a channel, and/or self deafens/mutes.
+		/// @param dataPackage the new voice_state_data.
+		void updateVoiceStatus(update_voice_state_data dataPackage);
+
+		/// @brief Updates the bot's current activity status, to be viewed by others in the same server as the bot.
+		/// @param dataPackage the new presence data.
+		void updatePresence(update_presence_data dataPackage);
+
+	  protected:
+		bot_user() = default;
+
+		discord_core_internal::base_socket_agent* baseSocketAgent{};
+	};
+
+	/// @brief Guild flags.
+	enum class guild_flags : uint8_t {
+		Widget_enabled				 = 1 << 0,///< Widget enabled.
+		Unavailable					 = 1 << 1,///< Unavailable.
+		Owner						 = 1 << 2,///< Owner.
+		Large						 = 1 << 3,///< Is it a large guild?
+		Premium_Progress_Bar_Enabled = 1 << 4///< Premium progress bar enabled
+	};
+
+	template<guild_member_t value_type> two_id_key::two_id_key(const value_type& other) {
+		idOne = other.guildId;
+		idTwo = other.user.id;
+	}
+
+	template<voice_state_t value_type> two_id_key::two_id_key(const value_type& other) {
+		idOne = other.guildId;
+		idTwo = other.userId;
+	}
+
+	/// crtp-based struct for exposing the connectToVoice functionality of the guild-related classes.
+	template<typename value_type, typename discord_core_client_t, typename guild_members_type> struct connect_to_voice {
+		/// @brief For connecting to an individual voice channel.
+		/// @param guildMemberId an id of the guild member who's current voice channel to connect to.
+		/// @param channelId an id of the voice channel to connect to.
+		/// @param selfDeaf whether or not to self-deafen the bot.
+		/// @param selfMute whether or not to self-mute the bot.
+		/// @param streamInfoNew for usage with the vc-to-vc audio streaming option.
+		/// @return voice_connection* a pointer to the currently held voice connection, or nullptr if it failed to connect.
+		inline voice_connection& connectToVoice(const snowflake guildMemberId, const snowflake channelId = 0, bool selfDeaf = false, bool selfMute = false,
+			stream_info streamInfoNew = stream_info{}) {
+			if (static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())
+					->getVoiceConnection(static_cast<value_type*>(this)->id)
+					.areWeConnected()) {
+				return static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())->getVoiceConnection(static_cast<value_type*>(this)->id);
+			} else if (guildMemberId != 0 || channelId != 0) {
+				snowflake channelIdNew{};
+				if (guildMemberId != 0) {
+					voice_state_data_light dataLight{};
+					dataLight.guildId = static_cast<value_type*>(this)->id;
+					dataLight.userId  = guildMemberId;
+					guild_member_data getData{};
+					getData.guildId		= static_cast<value_type*>(this)->id;
+					getData.user.id		= guildMemberId;
+					auto voiceStateData = guild_members_type::getVoiceStateData(getData);
+					if (voiceStateData.channelId != 0) {
+						channelIdNew = voiceStateData.channelId;
+					}
+				} else {
+					channelIdNew = channelId;
+				}
+				int32_t theShardId{ static_cast<int32_t>((static_cast<value_type*>(this)->id.operator const uint64_t&() >> 22) %
+					static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())->getConfigManager().getTotalShardCount()) };
+				voice_connect_init_data voiceConnectInitData{};
+				voiceConnectInitData.currentShard = theShardId;
+				voiceConnectInitData.streamInfo	  = streamInfoNew;
+				voiceConnectInitData.channelId	  = channelIdNew;
+				voiceConnectInitData.guildId	  = static_cast<value_type*>(this)->id;
+				voiceConnectInitData.userId		  = static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())->getBotUser().id;
+				voiceConnectInitData.selfDeaf	  = selfDeaf;
+				voiceConnectInitData.selfMute	  = selfMute;
+				auto& voiceConnectionNew =
+					static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())->getVoiceConnection(static_cast<value_type*>(this)->id);
+				stop_watch<milliseconds> stopWatch{ milliseconds{ 10000 } };
+				stopWatch.reset();
+				voiceConnectionNew.connect(voiceConnectInitData);
+				while (!voiceConnectionNew.areWeConnected()) {
+					if (stopWatch.hasTimeElapsed()) {
+						break;
+					}
+					std::this_thread::sleep_for(1ms);
+				}
+				return voiceConnectionNew;
+			}
+			return static_cast<discord_core_client_t*>(static_cast<value_type*>(this)->getDiscordCoreClient())->getVoiceConnection(static_cast<value_type*>(this)->id);
+		}
+	};
+
+	/// @brief A discord guild. used to connect to/disconnect from voice.
+	class guild_data : public flag_entity<guild_data>,
+										  public get_guild_image_url<guild_data>,
+										  public connect_to_voice<guild_data, discord_core_client, guild_members> {
+	  public:
+		friend class guilds;
+
+		jsonifier::vector<guild_scheduled_event_data> guildScheduledEvents{};///< Scheduled events in the guild.
+		default_message_notification_level defaultMessageNotifications{};///< Default message notifications level.
+		jsonifier::vector<stage_instance_data> stageInstances{};///< Stage instances in the guild.
+		jsonifier::vector<voice_state_data_light> voiceStates{};///< Voice states for the current guild_members.
+		explicit_content_filter_level explicitContentFilter{};///< Explicit content filter level.
+		jsonifier::vector<presence_update_data> presences{};///< Presences of the members in the guild.
+		jsonifier::vector<jsonifier::string> features{};///< Enabled guild features.
+		jsonifier::vector<guild_member_data> members{};///< custom guild emojis.
+		jsonifier::vector<channel_data> channels{};///< custom guild emojis.
+		jsonifier::vector<sticker_data> stickers{};///< custom guild stickers.
+		jsonifier::vector<channel_data> threads{};///< All active threads in the guild that the current user has permission to view.
+		system_channel_flags systemChannelFlags{};///< System channel flags.
+		verification_level verificationLevel{};///< Verification level required for the guild.
+		jsonifier::vector<emoji_data> emoji{};///< custom guild emojis.
+		uint32_t maxStageVideoChannelUsers{};///< The maximum amount of users in a stage video channel.
+		jsonifier::vector<role_data> roles{};///< Roles in the guild.
+		uint32_t premiumSubscriptionCount{};///< The number of boosts this guild currently has.
+		jsonifier::string preferredLocale{};///< The preferred locale of a community guild; used in server discovery and notices from discord.
+		jsonifier::string discoverySplash{};///< Discovery splash hash; only present for guilds with the "discoverable" feature.
+		uint32_t approximatePresenceCount{};///< Approximate number of non-offline members in this guild, returned sometimes.
+		voice_connection* voiceConnection{};///< Voice connection potentially held by the current guild.
+		welcome_screen_data welcomeScreen{};///< The welcome screen of a community guild, shown to new members, returned in an invite's guild object.
+		snowflake publicUpdatesChannelId{};///< The id of the channel where admins and moderators of community guilds receive notices from discord.
+		snowflake safetyAlertsChannelId{};///< The id of the channel where admins and moderators of community guilds receive safety alerts.
+		uint32_t approximateMemberCount{};///< Approximate number of members in this guild, returned from the get /guilds/id and /users/me/guilds.
+		jsonifier::string vanityUrlCode{};///< The vanity url code for the guild.
+		bool premiumProgressBarEnabled{};///< Whether the guild has the boost progress bar enabled.
+		uint32_t maxVideoChannelUsers{};///< The maximum amount of users in a video channel.
+		jsonifier::string description{};///< The description of a guild.
+		permissions_parse permissions{};///< Total permissions for the user in the guild (excludes overwrites).
+		jsonifier::string discovery{};///< Url to the guild's icon.
+		snowflake systemChannelId{};///< The id of the channel where guild notices such as welcome messages and boost events are posted.
+		snowflake widgetChannelId{};///< The channel id that the widget will generate an invite to, or null if set to no invite.
+		guild_nsfwlevel nsfwLevel{};///< Guild nsfw level.
+		jsonifier::string splash{};///< Splash hash.
+		jsonifier::string banner{};///< Banner hash.
+		premium_tier premiumTier{};///< Premium tier (server boost level).
+		snowflake rulesChannelId{};///< The id of the channel where community guilds can display rules and/or guidelines.
+		snowflake applicationId{};///< Application id of the guild creator if it is bot-created.
+		snowflake afkChannelId{};///< Id of afk channel.
+		jsonifier::string name{};///< Guild name (2-100 characters, excluding trailing and leading whitespace).
+		jsonifier::string icon{};///< Icon hash.
+		uint32_t maxPresences{};///< The maximum number of presences for the guild (null is always returned, apart from the largest of guilds).
+		uint32_t memberCount{};///< The number of members in this guild.jsonifier::string region{};///< Voice region id for the guild (deprecated).
+		uint32_t maxMembers{};///< The maximum number of members for the guild.
+		uint32_t afkTimeout{};///< Afk timeout in seconds.
+		time_stamp joinedAt{};///< When the bot joined this guild.
+		bool widgetEnabled{};///< True if the server widget is enabled.
+		mfalevel mfaLevel{};///< Required mfa level for the guild.
+		snowflake ownerId{};///< Id of owner.
+		guild_flags flags{};/// the flags for this guild.
+		bool unavailable{};///< True if this guild is unavailable due to an outage.
+		snowflake id{};///< Guild id.
+		bool large{};///< True if this is considered a large guild.
+		bool owner{};///< True if the user is the owner of the guild.
+
+		inline guild_data() = default;
+
+		guild_data(snowflake snowflake);
+
+		discord_core_client* getDiscordCoreClient();
+
+		bool areWeConnected();
+
+		/// \brief For disconnecting from the current guild's voice channel.
+		void disconnect();
+	};
+
+	/// @brief Represents a single thread_data.
+	class thread_data : public channel_data {
+	  public:
+	};
+
+	/// @brief Data structure representing a single guild, for the purposes of populating the cache.
+	class guild_cache_data : public flag_entity<guild_cache_data>,
+												public get_guild_image_url<guild_cache_data>,
+												public connect_to_voice<guild_cache_data, discord_core_client, guild_members> {
+	  public:
+		jsonifier::vector<snowflake> channels{};///< Array of guild channels.
+		jsonifier::vector<snowflake> members{};///< Array of guild_members.
+		jsonifier::vector<snowflake> emoji{};///< Array of guild channels.
+		jsonifier::vector<snowflake> roles{};///< Array of guild roles.
+		voice_connection* voiceConnection{};///< A pointer to the voice_connection, if present.
+		icon_hash discoverySplash{};///< Url to the guild's icon.
+		jsonifier::string name{};///< The guild's name.
+		uint32_t memberCount{};///< Member count.
+		time_stamp joinedAt{};///< When the bot joined this guild.
+		icon_hash discovery{};///< Url to the guild's icon.
+		snowflake ownerId{};///< User_data id of the guild's owner.
+		guild_flags flags{};///< Guild flags.
+		icon_hash banner{};///< Url to the guild's icon.
+		icon_hash splash{};///< Url to the guild's icon.
+		icon_hash icon{};///< Url to the guild's icon.
+		snowflake id{};///< The id of this guild.
+
+		inline guild_cache_data() = default;
+
+		guild_cache_data(snowflake snowflakeNew);
+
+		guild_cache_data& operator=(guild_data&& data) noexcept;
+		guild_cache_data(guild_data&& data) noexcept;
+
+		guild_cache_data& operator=(const guild_data&);
+
+		guild_cache_data(const guild_data&);
+
+		operator guild_data();
+
+		discord_core_client* getDiscordCoreClient();
+
+		inline bool operator==(const snowflake& other) const {
+			return id == other;
+		}
+
+		bool areWeConnected();
+
+		/// \brief For disconnecting from the current guild's voice channel.
+		void disconnect();
+	};
+
+	/// @brief Interaction data.
+	class interaction_data {
+	  public:
+		jsonifier::string appPermissions{};
+		jsonifier::string guildLocale{};
+		interaction_data_data data{};
+		jsonifier::string locale{};
+		guild_member_data member{};
+		snowflake applicationId{};
+		jsonifier::string token{};
+		interaction_type type{};
+		message_data message{};
+		channel_data channel{};
+		snowflake channelId{};
+		snowflake guildId{};
+		guild_data guild{};
+		int64_t version{};
+		user_data user{};
+		snowflake id{};
+
+		inline interaction_data() = default;
+	};
+
+	class partial_guild_data {
+	  public:
+		bool unavailable{};
+		snowflake id{};
+	};
+
+	/// @brief Invite data.
+	struct invite_data {
+		guild_scheduled_event_data guildScheduledEvent{};///< Scheduled guild event.
+		application_data targetApplication{};///< Application data.
+		uint64_t approximatePresenceCount{};///< Approximate presence count.
+		stage_instance_data stageInstance{};///< Stage instance data.
+		uint64_t approximateMemberCount{};///< Approximate member count.
+		jsonifier::string expiresAt{};///< When the invite expires.
+		jsonifier::string createdAt{};///< Time it was created at.
+		partial_guild_data guild{};///< Guild data of the channel_data that the invite is for.
+		jsonifier::string code{};///< Unique invite code.
+		user_data targetUser{};///< Target user_data of the invite.
+		channel_data channel{};///< channel_data data of the channel_data that the invite is for.
+		uint64_t targetType{};///< Target type.
+		snowflake guildId{};///< The guild this invite is for.
+		user_data inviter{};///< The user_data who created the invite.
+		uint64_t maxUses{};///< Max number of uses.
+		uint64_t maxAge{};///< Maximum age of the invite.
+		bool temporary{};///< Is it temporary?
+		uint64_t uses{};///< The current number of uses.
+	};
+
+	/// @brief Represents a guild template.
+	struct guild_template_data {
+		guild_data serializedSourceGuild{};///< The guild snapshot this template contains.
+		jsonifier::string sourceGuildId{};///< The id of the guild this template is based on.
+		jsonifier::string description{};///< The description for the template.
+		jsonifier::string creatorId{};///< The id of the user_data who created the template.
+		jsonifier::string createdAt{};///< When this template was created.
+		jsonifier::string updatedAt{};///< When this template was last synced to the source guild.
+		jsonifier::string code{};///< The template code(unique id).
+		jsonifier::string name{};///< Template name.
+		uint32_t usageCount{};///< Number of times this template has been used.
+		user_data creator{};///< The user_data who created the template.
+		bool isDirty{};///< Whether the template has unsynced changes.
+	};
+
+	/// @brief Web_hook_data data.
+	class web_hook_data {
+	  public:
+		channel_data sourceChannel{};///< channel_data for which th web_hook_data was issued.
+		jsonifier::string avatar{};///< Avatar of the web_hook_data.
+		jsonifier::string token{};///< Token of the web_hook_data.
+		snowflake applicationId{};///< Application id.
+		jsonifier::string name{};///< Name of the web_hook_data.
+		guild_data sourceGuild{};///< Source guild id.
+		jsonifier::string url{};///< Url of the web_hook_data.
+		snowflake channelId{};///< channel_data id for which the web_hook_data was issued.
+		web_hook_type type{};///< Type of web_hook_data.
+		snowflake guildId{};///< Guild id for which the web_hook_data was issued.
+		user_data user{};///< User_data which create the web_hook_data.
+		snowflake id{};
+
+		inline web_hook_data() = default;
+	};
+
+	/// @brief Audit log data.
+	class audit_log_data {
+	  public:
+		jsonifier::vector<guild_scheduled_event_data> guildScheduledEvents{};///< Array of guild scheduled event objects.
+		jsonifier::vector<auto_moderation_rule_data> autoModerationRules{};///< List of auto moderation rules referenced in the audit log.
+		jsonifier::vector<audit_log_entry_data> auditLogEntries{};///< Array of audit log entry objects.
+		jsonifier::vector<integration_data> integrations{};///< Array of partial integration objects.
+		jsonifier::vector<web_hook_data> webhooks{};///< Array of webhook objects.
+		jsonifier::vector<channel_data> threads{};///< Array of thread-specific channel objects.
+		jsonifier::vector<user_data> users{};///< Array of user objects.
+
+		auto getAuditLogData(const snowflake userIdOfChanger, audit_log_event auditLogType);
+
+		auto getAuditLogData(audit_log_event auditLogType, const snowflake userIdOfTarget);
+	};
+
+	/// @brief Data representing an input-event, which is any message or interaction that is coming into the bot as an input.
+	class input_event_data {
+	  public:
+		template<typename value_type> friend struct jsonifier::core;
+		template<typename value_type> friend struct event_data;
+		friend struct on_interaction_creation_data;
+		friend struct base_function_arguments;
+
+		friend class discord_core_internal::websocket_client;
+		friend class discord_core_internal::base_socket_agent;
+		friend class respond_to_input_event_data;
+		friend class discord_core_client;
+		friend class command_data;
+		friend class input_events;
+
+		input_event_response_type responseType{};///< The type of response that this input value represents.
+
+		input_event_data& operator=(input_event_data&& other) noexcept;
+
+		input_event_data(input_event_data&& other) noexcept;
+
+		input_event_data& operator=(const input_event_data& other);
+
+		input_event_data(const input_event_data& other);
+
+		input_event_data& operator=(const interaction_data& other);
+
+		input_event_data(const interaction_data& interactionData);
+
+		inline input_event_data() = default;
+
+		/// @brief Returns the interaction data, if appplicable, of this input-event.
+		/// @return interaction_data a snowflake containing the interaction data.
+		const interaction_data& getInteractionData() const;
+
+		/// @brief Returns the guild_member_data of this input-event.
+		/// @return guild_member_data a guild_member_data containing the guild_member_data data.
+		const guild_member_data& getGuildMemberData() const;
+
+		/// @brief Returns the channel_data of this input-event.
+		/// @return channel_data a channel_data containing the channel_data data.
+		const channel_data& getChannelData() const;
+
+		/// @brief Returns the message data, if applicable, of this input-event.
+		/// @return message a message structure.
+		const message_data& getMessageData() const;
+
+		/// @brief Returns the user_data of this input-event.
+		/// @return user_data a user_data containing the user_data data.
+		const user_data& getUserData() const;
+
+	  protected:
+		unique_ptr<interaction_data> interactionData{ makeUnique<interaction_data>() };
+	};
+
+	struct move_through_message_pages_data;
+
+	/// @brief Data for responding to an input-event.
+	class respond_to_input_event_data {
+	  public:
+		friend struct delete_interaction_response_data;
+		friend struct delete_follow_up_message_data;
+		friend struct interaction_response_data;
+
+		friend move_through_message_pages_data moveThroughMessagePages(jsonifier::string_view userID, input_event_data originalEvent, uint32_t currentPageIndex,
+			const jsonifier::vector<embed_data>& messageEmbeds, bool deleteAfter, uint32_t waitForMaxMs, bool returnResult);
+
+		friend class create_ephemeral_interaction_response_data;
+		friend class create_deferred_interaction_response_data;
+		friend class create_ephemeral_follow_up_message_data;
+		friend class create_interaction_response_data;
+		friend class edit_interaction_response_data;
+		friend class create_follow_up_message_data;
+		friend class edit_follow_up_message_data;
+		friend class create_message_data;
+		friend class edit_message_data;
+		friend class input_events;
+		friend class send_dmdata;
+
+		operator interaction_callback_data() const;
+
+		inline respond_to_input_event_data() noexcept = default;
+
+		respond_to_input_event_data& operator=(const interaction_data dataPackage);
+
+		respond_to_input_event_data(const interaction_data dataPackage);
+
+		respond_to_input_event_data& operator=(const input_event_data dataPackage);
+
+		respond_to_input_event_data(const input_event_data dataPackage);
+
+		/// @brief Adds a button to the response message_data.
+		/// @param disabled whether the button is active or not.
+		/// @param customIdNew a custom id to give for identifying the button.
+		/// @param buttonLabel a visible label for the button.
+		/// @param buttonStyle the style of the button.
+		/// @param emojiName an emoji name, if desired.
+		/// @param emojiId an emoji id, if desired.
+		/// @param url a url, if applicable.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addButton(bool disabled, jsonifier::string_view customIdNew, jsonifier::string_view buttonLabel, button_style buttonStyle,
+			jsonifier::string_view emojiName = "", snowflake emojiId = snowflake{}, jsonifier::string_view url = "");
+
+		/// @brief Adds a select-menu to the response message_data.
+		/// @param disabled whether the select-menu is active or not.
+		/// @param customIdNew a custom id to give for identifying the select-menu.
+		/// @param options a vector of select-menu-options to offer.
+		/// @param placeholder custom placeholder text if nothing is selected, max 100 characters.
+		/// @param maxValues maximum number of selections that are possible.
+		/// @param minValues minimum required number of selections that are required.
+		/// @param type the type of select-menu that this is.
+		/// @param channelTypes types of channels that can be accepted if this is of the type channel_type.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addSelectMenu(bool disabled, jsonifier::string_view customIdNew, const jsonifier::vector<select_option_data>& options,
+			jsonifier::string_view placeholder, uint64_t maxValues, uint64_t minValues, select_menu_type type,
+			jsonifier::vector<channel_type> channelTypes = jsonifier::vector<channel_type>{});
+
+		/// @brief Adds a modal to the response message_data.
+		/// @param topTitleNew a title for the modal.
+		/// @param topCustomIdNew a custom id to give for the modal.
+		/// @param titleNew a title for the modal's individual input.
+		/// @param customIdNew a custom id to give for the modal's individual input.
+		/// @param required is it a required response?
+		/// @param minLength minimum length.
+		/// @param maxLength maximum length.
+		/// @param inputStyle the input style.
+		/// @param label a label for the modal.
+		/// @param placeholder a placeholder for the modal.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addModal(jsonifier::string_view topTitleNew, jsonifier::string_view topCustomIdNew, jsonifier::string_view titleNew,
+			jsonifier::string_view customIdNew, bool required, uint64_t minLength, uint64_t maxLength, text_input_style inputStyle, jsonifier::string_view label = "",
+			jsonifier::string_view placeholder = "");
+
+		/// @brief Adds a file to the current collection of files for this message response.
+		/// @param theFile the file to be added.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addFile(const file& theFile);
+
+		/// @brief For setting the allowable mentions in a response.
+		/// @param dataPackage an allowed_mentions_data structure.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addAllowedMentions(const allowed_mentions_data dataPackage);
+
+		/// @brief For setting the type of response to make.
+		/// @param typeNew an input_event_response_type.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& setResponseType(input_event_response_type typeNew);
+
+		/// @brief For setting the components in a response.
+		/// @param dataPackage an action_row_data structure.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addComponentRow(const action_row_data dataPackage);
+
+		/// @brief For setting the embeds in a response.
+		/// @param dataPackage an embed_data structure.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addMessageEmbed(const embed_data dataPackage);
+
+		/// @brief For setting the message content in a response.
+		/// @param dataPackage a string, containing the content.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& addContent(jsonifier::string_view dataPackage);
+
+		/// @brief For setting the tts status of a response.
+		/// @param enabledTTs a bool.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& setTTSStatus(bool enabledTTs);
+
+		/// @brief For setting the choices of an autocomplete response.
+		/// @param value an simdjson::ondemand::object value that is either a double, uint64_t or a string.
+		/// @param theName a string for the name of the choice.
+		/// @param theNameLocalizations a unordered_map<jsonifier::string, jsonifier::string> for the name localizations.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& setAutoCompleteChoice(discord_core_internal::etf_serializer value, jsonifier::string_view theName,
+			unordered_map<jsonifier::string, jsonifier::string> theNameLocalizations);
+
+		/// @brief For setting the direct-message_data user target of a response.
+		/// @param targetUserIdNew a string, containing the target user_data's id.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		respond_to_input_event_data& setTargetUserID(const snowflake targetUserIdNew);
+
+	  protected:
+		jsonifier::vector<application_command_option_choice_data> choices{};
+		jsonifier::vector<action_row_data> components{};
+		allowed_mentions_data allowedMentions{};
+		jsonifier::vector<embed_data> embeds{};
+		jsonifier::string interactionToken{};
+		input_event_response_type type{};///< The type of response to make.
+		jsonifier::vector<file> files{};
+		interaction_type eventType{};
+		jsonifier::string customId{};
+		jsonifier::string content{};
+		jsonifier::string title{};
+		snowflake interactionId{};
+		snowflake applicationId{};
+		snowflake targetUserId{};
+		snowflake channelId{};
+		snowflake messageId{};
+		uint64_t flags{};
+		bool tts{};
+	};
+
+	/// @brief Message response base, for responding to messages.
+	class message_response_base {
+	  public:
+		template<typename value_type> friend struct jsonifier::core;
+		/// @brief Adds a button to the response message_data.
+		/// @param disabled whether the button is active or not.
+		/// @param customIdNew a custom id to give for identifying the button.
+		/// @param buttonLabel a visible label for the button.
+		/// @param buttonStyle the style of the button.
+		/// @param emojiName an emoji name, if desired.
+		/// @param emojiId an emoji id, if desired.
+		/// @param url a url, if applicable.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addButton(bool disabled, jsonifier::string_view customIdNew, jsonifier::string_view buttonLabel, button_style buttonStyle,
+			jsonifier::string_view emojiName = "", snowflake emojiId = snowflake{}, jsonifier::string_view url = "");
+
+		/// @brief Adds a select-menu to the response message_data.
+		/// @param disabled whether the select-menu is active or not.
+		/// @param customIdNew a custom id to give for identifying the select-menu.
+		/// @param options a vector of select-menu-options to offer.
+		/// @param placeholder custom placeholder text if nothing is selected, max 100 characters.
+		/// @param maxValues maximum number of selections that are possible.
+		/// @param minValues minimum required number of selections that are required.
+		/// @param type the type of select-menu that this is.
+		/// @param channelTypes types of channels that can be accepted if this is of the type channel_type.
+		/// @return respond_to_input_event_data& a reference to this data structure.
+		message_response_base& addSelectMenu(bool disabled, jsonifier::string_view customIdNew, jsonifier::vector<select_option_data> options, jsonifier::string_view placeholder,
+			uint64_t maxValues, uint64_t minValues, select_menu_type type, jsonifier::vector<channel_type> channelTypes = jsonifier::vector<channel_type>{});
+
+		/// @brief Adds a modal to the response message_data.
+		/// @param topTitleNew a title for the modal.
+		/// @param topCustomIdNew a custom id to give for the modal.
+		/// @param titleNew a title for the modal's individual input.
+		/// @param customIdNew a custom id to give for the modal's individual input.
+		/// @param required is it a required response?
+		/// @param minLength minimum length.
+		/// @param maxLength maximum length.
+		/// @param inputStyle the input style.
+		/// @param label a label for the modal.
+		/// @param placeholder a placeholder for the modal.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addModal(jsonifier::string_view topTitleNew, jsonifier::string_view topCustomIdNew, jsonifier::string_view titleNew,
+			jsonifier::string_view customIdNew, bool required, uint64_t minLength, uint64_t maxLength, text_input_style inputStyle, jsonifier::string_view label = "",
+			jsonifier::string_view placeholder = "");
+
+		/// @brief Adds a file to the current collection of files for this message response.
+		/// @param theFile the file to be added.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addFile(file theFile);
+
+		/// @brief For setting the allowable mentions in a response.
+		/// @param dataPackage an allowed_mentions_data structure.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addAllowedMentions(const allowed_mentions_data dataPackage);
+
+		/// @brief For setting the components in a response.
+		/// @param dataPackage an action_row_data structure.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addComponentRow(const action_row_data dataPackage);
+
+		/// @brief For setting the embeds in a response.
+		/// @param dataPackage an embed_data structure.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addMessageEmbed(const embed_data dataPackage);
+
+		/// @brief For setting the message content in a response.
+		/// @param dataPackage a string, containing the content.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& addContent(jsonifier::string_view dataPackage);
+
+		/// @brief For setting the tts status of a response.
+		/// @param enabledTTs a bool.
+		/// @return message_response_base& a reference to this data structure.
+		message_response_base& setTTSStatus(bool enabledTTs);
+
+	  protected:
+		jsonifier::vector<action_row_data> components{};
+		allowed_mentions_data allowedMentions{};
+		jsonifier::vector<embed_data> embeds{};
+		jsonifier::vector<file> files{};
+		jsonifier::string customId{};
+		jsonifier::string content{};
+		jsonifier::string title{};
+		uint64_t flags{};
+		bool tts{};
+	};
+
+	/// @brief Interaction response data.
+	struct interaction_response_data {
+		interaction_callback_data data{};///< Interaction application_command_data callback data.
+		interaction_callback_type type{};///< Interaction callback type.
+
+		interaction_response_data& operator=(const respond_to_input_event_data& other);
+
+		interaction_response_data(const respond_to_input_event_data& other);
+
+		interaction_response_data() = default;
+	};
+
+	/// @brief Guild application command permissions data.
+	class guild_application_command_permission_data {
+	  public:
+		jsonifier::vector<application_command_permission_data> permissions{};
+		snowflake applicationId{};
+		snowflake guildId{};
+		snowflake id{};
 	};
 
 	/**@}*/
 
-	/// Song types. \brief Song types.
-	enum class SongType {
-		YouTube = 0,///< YouTube.
-		SoundCloud = 1///< SoundCloud.
+	/// @brief Song types.
+	enum class song_type : uint8_t {
+		Neutral	   = 0,///< For either type.
+		YouTube	   = 1,///< You_tube.
+		SoundCloud = 2///< Sound_cloud.
 	};
 
-	/// Represents a download Url. \brief Represents a download Url.
-	struct DownloadUrl {
-		int32_t contentSize{ 0 };
+	/// @brief Represents a download url.
+	struct download_url {
+		uint64_t contentSize{};
 		jsonifier::string urlPath{};
 	};
 
@@ -2708,87 +3899,217 @@ namespace discord_core_loader {
 	 * @{
 	 */
 
-	/// Represents a single frame of raw audio data. \brief Represents a single frame of raw audio data.
-	struct RawFrameData {
-		jsonifier::vector<int8_t> data{};///< The audio data.
-		int32_t sampleCount{ -1 };///< The number of samples per this frame.
-	};
+	class song {
+	  public:
+		friend class discord_core_internal::sound_cloud_request_builder;
+		friend class discord_core_internal::you_tube_request_builder;
+		friend class discord_core_internal::sound_cloud_api;
+		friend class discord_core_internal::you_tube_api;
+		friend class song_api;
 
-	/// Represents a single frame of encoded audio data. \brief Represents a single frame of encoded audio data.
-	struct EncodedFrameData {
-		jsonifier::vector<int8_t> data{};///< The audio data.
-		int32_t sampleCount{ -1 };///< The number of samples per this frame.
-	};
-
-	/// Audio frame types. \brief Audio frame types.
-	enum class AudioFrameType {
-		Unset = 0,///< Unset.
-		Encoded = 1,///< Encoded.
-		RawPCM = 2,///< Raw PCM.
-		Skip = 3///< Skip.
-	};
-
-	/// Represents a single frame of audio data. \brief Represents a single frame of audio data.
-	struct AudioFrameData {
-		AudioFrameType type{ AudioFrameType::Unset };///< The type of audio frame.
-		EncodedFrameData encodedFrameData{};///< To be filled if it's already encoded.
-		uint64_t guildMemberId{};///< The Id of the GuildMember from which it was sent.
-		RawFrameData rawFrameData{};///< To be filled if it's raw audio data.
-	};
-
-	/// A song from the various platforms. \brief A song from the various platforms.
-	struct Song {
-		friend class SoundCloudRequestBuilder;
-		friend class YouTubeRequestBuilder;
-		friend class SoundCloudAPI;
-		friend class YouTubeAPI;
-		friend class DataParser;
-		friend SongAPI;
-
-		SongType type{ SongType::SoundCloud };///< The type of song.
-
-		jsonifier::vector<DownloadUrl> finalDownloadUrls{};
+		jsonifier::vector<download_url> finalDownloadUrls{};
+		song_type type{ song_type::Neutral };///< The type of song.
 		jsonifier::string secondDownloadUrl{};
 		jsonifier::string firstDownloadUrl{};
-		jsonifier::string html5PlayerFile{};
-		jsonifier::string addedByUserName{};///< The User name of the individual who added this Song to the playlist.
-		int32_t contentLength{ 0 };
-		jsonifier::string thumbnailUrl{};///< The Url of the thumbnail image of this Song.
-		jsonifier::string html5Player{};
-		jsonifier::string description{};///< A description of the Song.
-		uint64_t addedByUserId{};///< The User id of the individual who added this Song to the playlist.
-		jsonifier::string songTitle{};///< The title of the Song.
-		jsonifier::string duration{};///< The duration of the Song.
-		jsonifier::string viewUrl{};///< The url for listening to this Song through a browser.
+		jsonifier::string addedByUserName{};///< The user_data name of the individual who added this song to the
+		jsonifier::string thumbnailUrl{};///< The url of the thumbnail image of this song.
+		jsonifier::string description{};///< A description of the song.
+		jsonifier::string songTitle{};///< The title of the song.
+		jsonifier::string duration{};///< The duration of the song.
+		jsonifier::string viewUrl{};///< The url for listening to this song through a browser.
 		jsonifier::string songId{};
-
-		virtual ~Song() = default;
-
-	  protected:
-		jsonifier::string trackAuthorization{};
-		jsonifier::string playerResponse{};
-		bool doWeGetSaved{ false };
-		YouTubeFormat format{};
+		snowflake addedByUserId{};///< The user_data id of the individual who added this song to the.
+		uint64_t contentLength{};
 	};
 
-	/// Song completion event data. \brief Song completion event data.
-	struct SongCompletionEventData {
-		GuildMemberData guildMember{};///< The sending GuildMember.
-		bool wasItAFail{ false };///< Is this a replay? (Did a track recently fail to play?)
-		Song previousSong{};///< The previously played Song.
-		GuildData guild{};///< The sending Guild.
+	/// @brief Song completion event data.
+	struct song_completion_event_data {
+		snowflake guildMemberId{};///< The sending guild_member_data.
+		snowflake guildId{};///< The sending guild.
+		bool wasItAFail{};///< Is this a replay? (did a track recently fail to play?)
 	};
 
-	/// Playlist of songs and other variables. \brief Playlist of songs and other variables.
-	struct Playlist {
-		bool isLoopSongEnabled{ false };///< Is looping of Songs currently enabled?
-		bool isLoopAllEnabled{ false };///< Is looping of the entire Playlist currently enabled?
-		jsonifier::vector<Song> songQueue{};///< The list of Songs that are stored to be played.
-		Song currentSong{};///< The current Song that is playing.
+	/// @brief Playlist of songs and other variables.
+	struct playlist {
+		jsonifier::vector<song> songQueue{};///< The list of songs that are stored to be played.
+		bool isLoopSongEnabled{};///< Is looping of songs currently enabled?
+		bool isLoopAllEnabled{};///< Is looping of the entire playlist currently enabled?
+		song currentSong{};///< The current song that is playing.
+
+		inline bool areThereAnySongs() {
+			if (isLoopAllEnabled) {
+				return songQueue.size() > 0 || currentSong.songId != "";
+			} else if (isLoopSongEnabled) {
+				return songQueue.size() > 0 || currentSong.songId != "";
+			} else {
+				return songQueue.size() > 0;
+			}
+		}
+
+		inline bool sendNextSong() {
+			if (isLoopSongEnabled) {
+				if (songQueue.size() > 0 && currentSong.songId == "") {
+					currentSong = songQueue.at(0);
+					songQueue.erase(songQueue.begin());
+					return true;
+				} else if (songQueue.size() == 0 && currentSong.songId == "") {
+					return false;
+				} else {
+					return true;
+				}
+			} else if (isLoopAllEnabled) {
+				if (songQueue.size() > 0 && currentSong.songId == "") {
+					currentSong = songQueue.at(0);
+					songQueue.erase(songQueue.begin());
+					return true;
+				} else if (songQueue.size() > 0 && currentSong.songId != "") {
+					song tempSong02 = currentSong;
+					currentSong		= songQueue.at(0);
+					songQueue.erase(songQueue.begin());
+					songQueue.emplace_back(tempSong02);
+					return true;
+				} else if (songQueue.size() == 0 && currentSong.songId == "") {
+					return false;
+				}
+			} else {
+				if (songQueue.size() > 0) {
+					currentSong = songQueue.at(0);
+					songQueue.erase(songQueue.begin());
+					return true;
+				} else if (songQueue.size() == 0) {
+					currentSong = song{};
+					return false;
+				}
+			}
+			return false;
+		}
+
+		inline void modifyQueue(uint64_t firstSongPosition, uint64_t secondSongPosition) {
+			song tempSong					 = songQueue.at(firstSongPosition);
+			songQueue.at(firstSongPosition)	 = songQueue.at(secondSongPosition);
+			songQueue.at(secondSongPosition) = tempSong;
+		}
 	};
 
 	/**@}*/
 
-};// namespace discord_core_loader
+	/**
+	* \addtogroup utilities
+	* @{
+	*/
 
-/**@}*/
+	struct serializer_value {
+		unordered_map<jsonifier::string, json_string_value> values{};
+	};
+
+	/// @brief Command data, for functions executed by the command_controller.
+	class command_data {
+	  public:
+		template<typename value_type> friend struct event_data;
+		friend struct on_interaction_creation_data;
+
+		command_data() = default;
+
+		command_data& operator=(command_data&&) = default;
+
+		command_data(command_data&&) = default;
+
+		command_data& operator=(const command_data&);
+
+		command_data(const command_data&);
+
+		command_data(const input_event_data& inputEventData);
+
+		/// @brief Returns the interaction data, if appplicable, of this input-event.
+		/// @return interaction_data a snowflake containing the interaction data.
+		const interaction_data& getInteractionData() const;
+
+		/// @brief Returns the guild_member_data of this input-event.
+		/// @return guild_member_data a guild_member_data containing the guild_member_data data.
+		const guild_member_data& getGuildMemberData() const;
+
+		/// @brief Returns the channel_data of this input-event.
+		/// @return channel_data a channel_data containing the channel_data data.
+		const channel_data& getChannelData() const;
+
+		/// @brief Returns the message data, if applicable, of this input-event.
+		/// @return message a message structure.
+		const message_data& getMessageData() const;
+
+		/// @brief Returns the user_data of this input-event.
+		/// @return user_data a user_data containing the user_data data.
+		const user_data& getUserData() const;
+
+		/// @brief Returns the name of this entered command.
+		/// @return jsonifier::string a string containing the name of this command.
+		jsonifier::string getCommandName() const;
+
+		/// @brief Returns the subcommand-name of this entered command.
+		/// @return jsonifier::string a string containing the name of this sub-command.
+		jsonifier::string getSubCommandName() const;
+
+		/// @brief Returns the subcommand-name of this entered command group.
+		/// @return jsonifier::string a string containing the name of this sub-command's group.
+		jsonifier::string getSubCommandGroupName() const;
+
+		/// @brief Returns the collection of command inputs/options for this command.
+		/// @return serializer_value a serializer_value containing the arguments entered with this command.
+		serializer_value getCommandArguments() const;
+
+		/// @brief Returns the input_event_data for this command.
+		/// @return input_event_data an input_event_data containing the data associated  with this command.
+		const input_event_data& getInputEventData() const;
+
+		virtual ~command_data() = default;
+
+	  protected:
+		unique_ptr<input_event_data> eventData{};
+		jsonifier::string subCommandGroupName{};
+		jsonifier::string subCommandName{};
+		jsonifier::string commandName{};
+		serializer_value optionsArgs{};
+	};
+
+	/// @brief Base arguments for the command classes.
+	struct base_function_arguments : public command_data {
+		base_function_arguments() = default;
+
+		base_function_arguments(const command_data& commandData);
+	};
+
+	/// @brief Base class for the command classes.
+	struct base_function {
+		jsonifier::string helpDescription{};///< Description of the command for the help command.
+		jsonifier::string commandName{};///< Name of the command for calling purposes.
+		embed_data helpEmbed{};///< A message embed for displaying the command via the help command.
+
+		/// @brief The base function for the command's execute function.
+		/// @param args a reference to an instance of base_function_arguments.
+		virtual void execute(const base_function_arguments& args) = 0;
+		virtual unique_ptr<base_function> create()				  = 0;
+		virtual ~base_function()								  = default;
+	};
+
+	struct move_through_message_pages_data {
+		input_event_data inputEventData{};
+		jsonifier::string buttonId{};
+		uint32_t currentPageIndex{};
+	};
+
+	move_through_message_pages_data moveThroughMessagePages(snowflake userID, input_event_data originalEvent, uint32_t currentPageIndex,
+		const jsonifier::vector<embed_data>& messageEmbeds, bool deleteAfter, uint32_t waitForMaxMs, bool returnResult);
+
+	/**@}*/
+
+	struct ready_data {
+		std::unordered_set<jsonifier::string> jsonifierExcludedKeys{};
+		jsonifier::vector<jsonifier::string> trace{};
+		jsonifier::string resumeGatewayUrl{};
+		application_data application{};
+		jsonifier::string sessionId{};
+		jsonifier::string shard{};
+		user_data user{};
+		uint64_t v{};
+	};
+
+}

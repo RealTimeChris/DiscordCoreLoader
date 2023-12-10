@@ -1,38 +1,38 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// SSLClents.cpp - Source file for the "SSL Client" stuff.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file SSLClients.cpp
 
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/WebSocketEntities.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
 	std::atomic_int64_t theValue{};
 
-	jsonifier::string getCurrentPath() {
+	std::string getCurrentPath() {
 		std::stringstream theStream{};
 		theStream << std::filesystem::current_path();
-		return jsonifier::string{ theStream.str().substr(1, theStream.str().size() - 2) };
+		return theStream.str().substr(1, theStream.str().size() - 2);
 	}
 
-	jsonifier::string reportSSLError(const jsonifier::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
+	std::string reportSSLError(const std::string& errorPosition, int32_t errorValue = 0, SSL* ssl = nullptr) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 		if (ssl) {
@@ -40,10 +40,10 @@ namespace discord_core_loader {
 		} else {
 			stream << ERR_error_string(errorValue, nullptr) << std::endl << std::endl;
 		}
-		return jsonifier::string{ stream.str() };
+		return stream.str();
 	}
 
-	jsonifier::string reportError(const char* errorPosition, int32_t value) noexcept {
+	std::string reportError(const char* errorPosition, int32_t value) noexcept {
 		std::stringstream stream{};
 		stream << errorPosition << " Error: ";
 #ifdef _WIN32
@@ -59,7 +59,7 @@ namespace discord_core_loader {
 #else
 		stream << strerror(errno) << DiscordCoreAPI::reset();
 #endif
-		return jsonifier::string{ stream.str() };
+		return stream.str();
 	}
 
 #ifdef _WIN32
@@ -225,22 +225,31 @@ namespace discord_core_loader {
 		*this = std::move(other);
 	}
 
-	void SSLClient::connect(SOCKET socketNew, SSL_CTX* theContextNew) {
-		clientSocket = socketNew;
-		theContext = theContextNew;
+	SSLClient::SSLClient(SOCKET theSocket, SSL_CTX* theContextNew, bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
+		this->serverToClientBuffer.resize(this->maxBufferSize);
+		this->doWePrintError = doWePrintErrorsNew;
+		this->theContext = theContextNew;
+		this->clientSocket = theSocket;
+
 		if (this->clientSocket != SOCKET_ERROR) {
 			if (this->ssl = SSL_new(this->theContext); this->ssl == nullptr) {
-				std::cout << reportSSLError("SSL_new() Error: ");
+				if (this->doWePrintError) {
+					std::cout << reportSSLError("SSL_new() Error: ");
+				}
 				return;
 			}
 
 			if (!SSL_set_min_proto_version(this->ssl, TLS1_2_VERSION)) {
-				std::cout << reportSSLError("SSL_set_min_proto_version() Error: ");
+				if (this->doWePrintError) {
+					std::cout << reportSSLError("SSL_set_min_proto_version() Error: ");
+				}
 				return;
 			}
 
 			if (auto returnValue = SSL_set_fd(this->ssl, this->clientSocket); !returnValue) {
-				std::cout << reportSSLError("SSL_set_fd() Error: ", returnValue, this->ssl);
+				if (this->doWePrintError) {
+					std::cout << reportSSLError("SSL_set_fd() Error: ", returnValue, this->ssl);
+				}
 				return;
 			}
 
@@ -250,14 +259,9 @@ namespace discord_core_loader {
 
 			this->areWeConnected = true;
 		}
-	}
-
-	SSLClient::SSLClient(bool doWePrintErrorsNew) : maxBufferSize(1024 * 16) {
-		this->serverToClientBuffer.resize(this->maxBufferSize);
-		this->doWePrintError = doWePrintErrorsNew;
 	};
 
-	void SSLClient::writeData(jsonifier::string& dataToWrite, bool priority) noexcept {
+	void SSLClient::writeData(std::string& dataToWrite, bool priority) noexcept {
 		if (dataToWrite.size() > 0 && this->ssl) {
 			if (priority && dataToWrite.size() < static_cast<size_t>(16 * 1024)) {
 				pollfd readWriteSet{};
@@ -280,7 +284,7 @@ namespace discord_core_loader {
 				if (dataToWrite.size() >= static_cast<size_t>(16 * 1024)) {
 					size_t remainingBytes{ dataToWrite.size() };
 					while (remainingBytes > 0) {
-						jsonifier::string newString{};
+						std::string newString{};
 						size_t amountToCollect{};
 						if (dataToWrite.size() >= static_cast<size_t>(1024 * 16)) {
 							amountToCollect = static_cast<size_t>(1024 * 16);
@@ -289,7 +293,7 @@ namespace discord_core_loader {
 						}
 						newString.insert(newString.begin(), dataToWrite.begin(), dataToWrite.begin() + amountToCollect);
 						this->outputBuffers.emplace_back(newString);
-						dataToWrite.erase(dataToWrite.begin() + amountToCollect);
+						dataToWrite.erase(dataToWrite.begin(), dataToWrite.begin() + amountToCollect);
 						remainingBytes = dataToWrite.size();
 					}
 				} else {
@@ -300,7 +304,7 @@ namespace discord_core_loader {
 		return;
 	}
 
-	jsonifier::string& SSLClient::getInputBuffer() noexcept {
+	std::string& SSLClient::getInputBuffer() noexcept {
 		return this->inputBuffer;
 	}
 
@@ -362,7 +366,7 @@ namespace discord_core_loader {
 				}
 				case SSL_ERROR_NONE: {
 					if (readBytes > 0) {
-						this->inputBuffer.append(this->rawInputBuffer.data(), readBytes);
+						this->inputBuffer.append(this->rawInputBuffer.data(), this->rawInputBuffer.data() + readBytes);
 						this->bytesRead += readBytes;
 					}
 					break;
@@ -394,7 +398,7 @@ namespace discord_core_loader {
 		this->areWeConnected = false;
 	}
 
-	WebSocketSSLServerMain::WebSocketSSLServerMain(const jsonifier::string& baseUrlNew, const jsonifier::string& portNew, bool doWePrintErrorNew,
+	WebSocketSSLServerMain::WebSocketSSLServerMain(const std::string& baseUrlNew, const std::string& portNew, bool doWePrintErrorNew,
 		std::atomic_bool* doWeQuitNew, ConfigParser* theData) {
 		this->doWePrintError = doWePrintErrorNew;
 		this->theConfigParser = theData;
@@ -403,11 +407,11 @@ namespace discord_core_loader {
 		this->port = portNew;
 
 #ifdef _WIN32
-		jsonifier::string certPath{ getCurrentPath() + "\\Cert.pem" };
-		jsonifier::string keyPath{ getCurrentPath() + "\\Key.pem" };
+		std::string certPath{ getCurrentPath() + "\\Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "\\Key.pem" };
 #elif __linux__
-		jsonifier::string certPath{ getCurrentPath() + "/Cert.pem" };
-		jsonifier::string keyPath{ getCurrentPath() + "/Key.pem" };
+		std::string certPath{ getCurrentPath() + "/Cert.pem" };
+		std::string keyPath{ getCurrentPath() + "/Key.pem" };
 #endif
 
 		addrinfoWrapper hints{};
@@ -415,7 +419,7 @@ namespace discord_core_loader {
 		hints->ai_socktype = SOCK_STREAM;
 		hints->ai_protocol = IPPROTO_TCP;
 
-		if (auto resultValue = getaddrinfo(this->baseUrl.data(), this->port.data(), hints, this->addrInfo); resultValue != 0) {
+		if (auto resultValue = getaddrinfo(this->baseUrl.c_str(), this->port.c_str(), hints, this->addrInfo); resultValue != 0) {
 			if (this->doWePrintError) {
 				reportError("getaddrinfo() Error: ", resultValue);
 			}
@@ -474,14 +478,14 @@ namespace discord_core_loader {
 			return;
 		}
 
-		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.data()) <= 0) {
+		if (SSL_CTX_use_certificate_chain_file(this->context, certPath.c_str()) <= 0) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_use_certificate_chain_file() Error: ");
 			}
 			return;
 		}
 
-		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.data(), SSL_FILETYPE_PEM) <= 0) {
+		if (SSL_CTX_use_PrivateKey_file(this->context, keyPath.c_str(), SSL_FILETYPE_PEM) <= 0) {
 			if (this->doWePrintError) {
 				reportSSLError("SSL_CTX_use_PrivateKey_file() Error: ");
 			}
@@ -497,7 +501,7 @@ namespace discord_core_loader {
 		}
 	};
 
-	jsonifier::vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(jsonifier::vector<WebSocketSSLShard*>& theVector) noexcept {
+	std::vector<WebSocketSSLShard*> WebSocketSSLServerMain::processIO(std::vector<WebSocketSSLShard*>& theVector) noexcept {
 		PollFDWrapper readWriteSet{};
 		for (uint32_t x = 0; x < theVector.size(); ++x) {
 			pollfd theWrapper{};
@@ -511,7 +515,7 @@ namespace discord_core_loader {
 			readWriteSet.thePolls.emplace_back(theWrapper);
 		}
 
-		jsonifier::vector<WebSocketSSLShard*> returnValue02{};
+		std::vector<WebSocketSSLShard*> returnValue02{};
 		if (readWriteSet.theIndices.size() == 0) {
 			return returnValue02;
 		}

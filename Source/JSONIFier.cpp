@@ -1,29 +1,29 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
-/// JSONIfier.cpp - Source file for the etf_serializer stuff.
+/// JSONIfier.cpp - Source file for the Jsonifier stuff.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file JSONIfier.cpp
 
 #include <discordcoreloader/JSONIfier.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
-	JSONIFier& JSONIFier::operator=(ConfigData& configData) {
+	JSONIFier& JSONIFier::operator=(ConfigData&& configData) {
 		this->stdDeviationForChannelCount = configData.stdDeviationForChannelCount;
 		this->stdDeviationForStringLength = configData.stdDeviationForStringLength;
 		this->stdDeviationForMemberCount = configData.stdDeviationForMemberCount;
@@ -35,19 +35,19 @@ namespace discord_core_loader {
 		return *this;
 	}
 
-	JSONIFier::JSONIFier(ConfigData& configData) {
-		*this = configData;
+	JSONIFier::JSONIFier(ConfigData&& configData) {
+		*this = std::move(configData);
 	}
 
-	etf_serializer JSONIFier::JSONIFYUnavailableGuild(UnavailableGuild& theGuild) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYUnavailableGuild(UnavailableGuild& theGuild) {
+		Jsonifier jsonData{};
 		jsonData["id"] = theGuild.id;
 		jsonData["unavailable"] = theGuild.unavailable;
 		return jsonData;
 	}
 
-	etf_serializer JSONIFier::JSONIFYGuild(GuildData&& guildOld) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYGuild(GuildData&& guildOld) {
+		Jsonifier jsonData{};
 		jsonData["id"] = guildOld.id;
 		uint64_t memberCount = guildOld.memberCount;
 		for (auto& value: guildOld.channels) {
@@ -90,7 +90,7 @@ namespace discord_core_loader {
 		jsonData["premium_subscription_count"] = guildOld.premiumSubscriptionCount;
 		jsonData["premium_tier"] = guildOld.premiumTier;
 		for (auto& [key, value]: guildOld.presences) {
-			etf_serializer theDataNew{};
+			Jsonifier theDataNew{};
 			theDataNew["guild_id"] = value.guildId;
 			theDataNew["status"] = value.status;
 			theDataNew["user"] = this->JSONIFYUser(std::move(value.user));
@@ -109,7 +109,7 @@ namespace discord_core_loader {
 		jsonData["verification_level"] = guildOld.verificationLevel;
 		jsonData["welcome_screen"]["description"] = guildOld.welcomeScreen.description;
 		for (auto& [key, value]: guildOld.voiceStates) {
-			etf_serializer theDataNew{};
+			Jsonifier theDataNew{};
 			theDataNew["channel_id"] = value.channelId;
 			theDataNew["deaf"] = value.deaf;
 			theDataNew["guild_id"] = value.guildId;
@@ -129,8 +129,8 @@ namespace discord_core_loader {
 		return jsonData;
 	}
 
-	etf_serializer JSONIFier::JSONIFYGuildMember(GuildMemberData&& theData) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYGuildMember(GuildMemberData&& theData) {
+		Jsonifier jsonData{};
 		jsonData["communication_disabled_until"] = theData.communicationDisabledUntil.getOriginalTimeStamp();
 		jsonData["user"] = this->JSONIFYUser(std::move(*this->generateUser()));
 		//jsonData["joined_at"] = "";
@@ -150,11 +150,11 @@ namespace discord_core_loader {
 		return jsonData;
 	}
 
-	etf_serializer JSONIFier::JSONIFYChannel(ChannelData&& theData) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYChannel(ChannelData&& theData) {
+		Jsonifier jsonData{};
 		jsonData["thread_metadata"]["auto_archive_duration"] = theData.threadMetadata.autoArchiveDuration;
 		for (auto& [key, value]: theData.permissionOverwrites) {
-			etf_serializer dataNew{};
+			Jsonifier dataNew{};
 			dataNew["id"] = value.id;
 			dataNew["channel_id"] = value.channelId;
 			dataNew["type"] = value.type;
@@ -199,8 +199,8 @@ namespace discord_core_loader {
 		return jsonData;
 	}
 
-	etf_serializer JSONIFier::JSONIFYRole(RoleData&& theData) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYRole(RoleData&& theData) {
+		Jsonifier jsonData{};
 		jsonData["tags"]["premium_subscriber"] = theData.tags.premiumSubscriber;
 		jsonData["tags"]["integration_id"] = theData.tags.integrationId;
 		//jsonData["unicode_emoji"] = theData.unicodeEmoji;
@@ -218,8 +218,8 @@ namespace discord_core_loader {
 		return jsonData;
 	}
 
-	etf_serializer JSONIFier::JSONIFYUser(UserData&& theData) {
-		etf_serializer jsonData{};
+	Jsonifier JSONIFier::JSONIFYUser(UserData&& theData) {
+		Jsonifier jsonData{};
 		jsonData["discriminator"] = theData.discriminator;
 		jsonData["accent_color"] = theData.accentColor;
 		jsonData["premium_type"] = theData.premiumType;

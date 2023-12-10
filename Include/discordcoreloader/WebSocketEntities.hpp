@@ -1,32 +1,32 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// WebSocketEntities.hpp - Header for the webSocket related classes and
 /// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file WebSocketEntities.hpp
 
 #pragma once
 
+#include <discordcoreloader/DataParsingFunctions.hpp>
+#include <discordcoreloader/ErlParser.hpp>
 #include <discordcoreloader/SSLClients.hpp>
 #include <discordcoreloader/JSONIfier.hpp>
-#include <discordcoreloader/JsonSpecializations.hpp>
-#include <discordcoreloader/Etf.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
 	struct ConnectionPackage {
 		std::unique_ptr<std::atomic_bool> areWeConnected{ std::make_unique<std::atomic_bool>() };
@@ -41,9 +41,7 @@ namespace discord_core_loader {
 		friend class DiscordCoreClient;
 		friend class BaseSocketAgent;
 
-		WebSocketSSLShard(bool doWePrintErrorsNew, BaseSocketAgent* theAgent);
-
-		void connect(SSL_CTX* contextNew);
+		WebSocketSSLShard(SOCKET theSocket, SSL_CTX* theContext, bool doWePrintErrorsNew, BaseSocketAgent* theAgent);
 
 		void handleBuffer() noexcept;
 
@@ -69,16 +67,17 @@ namespace discord_core_loader {
 			4014///< You sent a disallowed intent for a Gateway Intent. You may have tried to specify an intent that you have not enabled.
 	};
 
-	class BaseSocketAgent : public etf_parser {
+	class BaseSocketAgent : public ErlParser {
 	  public:
 		friend class DiscordCoreClient;
 		friend class WebSocketSSLShard;
 
-		BaseSocketAgent(DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew, bool doWeInstantiateAThread) noexcept;
+		BaseSocketAgent(WebSocketSSLServerMain* webSocketSSLServerMainNew, DiscordCoreClient* discordCoreClient, std::atomic_bool* doWeQuitNew,
+			bool doWeInstantiateAThread) noexcept;
 
-		void sendMessage(etf_serializer&& dataToSend, WebSocketOpCode theOpCode, WebSocketSSLShard* theShard, bool priority) noexcept;
+		void sendMessage(Jsonifier&& dataToSend, WebSocketOpCode theOpCode, SSLClient* theShard, bool priority) noexcept;
 
-		void sendMessage(jsonifier::string* dataToSend, WebSocketSSLShard* theShard, bool priority) noexcept;
+		void sendMessage(std::string* dataToSend, SSLClient* theShard, bool priority) noexcept;
 
 		std::jthread* getTheTask() noexcept;
 
@@ -86,52 +85,51 @@ namespace discord_core_loader {
 
 	  protected:
 		std::unordered_map<SOCKET, std::unique_ptr<WebSocketSSLShard>> theClients{};
-		std::unordered_map<SOCKET, jsonifier::vector<UnavailableGuild>> theGuilds{};
-		std::unique_ptr<WebSocketSSLServerMain> webSocketSSLServerMain{};
+		std::unordered_map<SOCKET, std::vector<UnavailableGuild>> theGuilds{};
 		GatewayIntents intentsValue{ GatewayIntents::All_Intents };
+		WebSocketSSLServerMain* webSocketSSLServerMain{ nullptr };
 		std::unique_ptr<std::jthread> theTask{ nullptr };
 		DiscordCoreClient* discordCoreClient{ nullptr };
+		simdjson::ondemand::parser theParser{};
+		int32_t heartbeatInterval{ 45000 };
 		std::atomic_bool* doWeQuit{ nullptr };
 		std::atomic_int32_t workerCount{ -1 };
-		int32_t heartbeatInterval{ 45000 };
-		jsonifier::string sessionId{};
 		int32_t currentClientSize{};
 		uint16_t closeCode{ 0 };
 		JSONIFier jsonifier{};
+		std::string sessionId{};
 
 
-		jsonifier::vector<jsonifier::string> tokenize(const jsonifier::string& dataIn, WebSocketSSLShard* theShard, const jsonifier::string& separator = "\r\n") noexcept;
+		std::vector<std::string> tokenize(const std::string& dataIn, SSLClient* theShard, const std::string& separator = "\r\n") noexcept;
 
-		void createHeader(jsonifier::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
+		void createHeader(std::string& outBuffer, uint64_t sendLength, WebSocketOpCode opCodeNew) noexcept;
 
-		void onMessageReceived(WebSocketSSLShard* theShard, jsonifier::string& theString) noexcept;
+		void onMessageReceived(WebSocketSSLShard* theShard, std::string& theString) noexcept;
 
-		void initDisconnect(WebSocketCloseCode reason, WebSocketSSLShard* theShard) noexcept;
-		
-		void connectShard(std::unique_ptr<WebSocketSSLShard>&) noexcept;
+		void initDisconnect(WebSocketCloseCode reason, SSLClient* theShard) noexcept;
 
-		void sendGuildMemberChunks(WebSocketSSLShard* theShard) noexcept;
+		void sendGuildMemberChunks(SSLClient* theShard) noexcept;
 
-		void sendResumedPayload(WebSocketSSLShard* theShard) noexcept;
+		void sendResumedPayload(SSLClient* theShard) noexcept;
 
-		void sendCreateGuilds(WebSocketSSLShard* theShard) noexcept;
+		void sendCreateGuilds(SSLClient* theShard) noexcept;
 
-		void sendReadyMessage(WebSocketSSLShard* theShard) noexcept;
+		void sendReadyMessage(SSLClient* theShard) noexcept;
 
-		void sendFinalMessage(WebSocketSSLShard* theShard) noexcept;
+		void sendFinalMessage(SSLClient* theShard) noexcept;
 
-		void sendHelloMessage(WebSocketSSLShard* theShard) noexcept;
+		void sendHelloMessage(SSLClient* theShard) noexcept;
 
-		void sendHeartBeat(WebSocketSSLShard* theShard) noexcept;
+		void sendHeartBeat(SSLClient* theShard) noexcept;
 
-		void handleBuffer(WebSocketSSLShard* theShard) noexcept;
+		void handleBuffer(SSLClient* theShard) noexcept;
 
-		bool parseHeader(WebSocketSSLShard* theShard) noexcept;
+		bool parseHeader(SSLClient* theShard) noexcept;
 
-		void onClosed(WebSocketSSLShard* theShard) noexcept;
+		void onClosed(SSLClient* theShard) noexcept;
 
 		void run(std::stop_token theToken) noexcept;
 
 		void generateGuildData() noexcept;
 	};
-}// namespace discord_core_loader
+}// namespace DiscordCoreLoader

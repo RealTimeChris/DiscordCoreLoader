@@ -1,31 +1,783 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// FoundationEntities.cpp - Source file for the foundation entities.
 /// May 22, 2022
-/// https://discord_core_loader.com
+/// https://discordcoreloader.com
 /// \file FoundationEntities.cpp
 
 #include <discordcoreloader/FoundationEntities.hpp>
-#include <discordcoreloader/JsonSpecializations.hpp>
 #include <discordcoreloader/SSLClients.hpp>
+#include <discordcoreloader/DataParsingFunctions.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
-	void reportException(const jsonifier::string& currentFunctionName, std::source_location theLocation) {
+	EnumConverter::operator std::vector<uint64_t>() const noexcept {
+		return this->vector;
+	}
+
+	EnumConverter::operator uint64_t() const noexcept {
+		return this->integer;
+	}
+
+	bool EnumConverter::isItAVector() const noexcept {
+		return this->vectorType;
+	}
+
+	Jsonifier& Jsonifier::operator=(Jsonifier&& data) noexcept {
+		switch (data.type) {
+			case JsonType::Object: {
+				this->setValue(JsonType::Object);
+				*this->jsonValue.object = std::move(*data.jsonValue.object);
+				break;
+			}
+			case JsonType::Array: {
+				this->setValue(JsonType::Array);
+				*this->jsonValue.array = std::move(*data.jsonValue.array);
+				break;
+			}
+			case JsonType::String: {
+				this->setValue(JsonType::String);
+				*this->jsonValue.string = std::move(*data.jsonValue.string);
+				break;
+			}
+			case JsonType::Float: {
+				this->jsonValue.numberDouble = data.jsonValue.numberDouble;
+				break;
+			}
+			case JsonType::Uint64: {
+				this->jsonValue.numberUint = data.jsonValue.numberUint;
+				break;
+			}
+			case JsonType::Int64: {
+				this->jsonValue.numberInt = data.jsonValue.numberInt;
+				break;
+			}
+			case JsonType::Bool: {
+				this->jsonValue.boolean = data.jsonValue.boolean;
+				break;
+			}
+		}
+		this->string = std::move(data.string);
+		this->type = data.type;
+		return *this;
+	}
+
+	Jsonifier& Jsonifier::operator=(const Jsonifier& data) noexcept {
+		switch (data.type) {
+			case JsonType::Object: {
+				this->setValue(JsonType::Object);
+				*this->jsonValue.object = *data.jsonValue.object;
+				break;
+			}
+			case JsonType::Array: {
+				this->setValue(JsonType::Array);
+				*this->jsonValue.array = *data.jsonValue.array;
+				break;
+			}
+			case JsonType::String: {
+				this->setValue(JsonType::String);
+				*this->jsonValue.string = *data.jsonValue.string;
+				break;
+			}
+			case JsonType::Float: {
+				this->jsonValue.numberDouble = data.jsonValue.numberDouble;
+				break;
+			}
+			case JsonType::Uint64: {
+				this->jsonValue.numberUint = data.jsonValue.numberUint;
+				break;
+			}
+			case JsonType::Int64: {
+				this->jsonValue.numberInt = data.jsonValue.numberInt;
+				break;
+			}
+			case JsonType::Bool: {
+				this->jsonValue.boolean = data.jsonValue.boolean;
+				break;
+			}
+		}
+		this->string = data.string;
+		this->type = data.type;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(const Jsonifier& data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier::operator std::string&&() noexcept {
+		return std::move(this->string);
+	}
+
+	Jsonifier::operator std::string() noexcept {
+		return this->string;
+	}
+
+	JsonType Jsonifier::getType() noexcept {
+		return this->type;
+	}
+
+	void Jsonifier::refreshString(JsonifierSerializeType opCode) {
+		this->string.clear();
+		if (opCode == JsonifierSerializeType::Etf) {
+			this->appendVersion();
+			this->serializeJsonToEtfString(this);
+		} else {
+			this->serializeJsonToJsonString(this);
+		}
+	}
+
+	Jsonifier& Jsonifier::operator=(EnumConverter&& data) noexcept {
+		if (data.isItAVector()) {
+			this->setValue(JsonType::Array);
+			for (auto& value: data.operator std::vector<uint64_t>()) {
+				this->jsonValue.array->emplace_back(std::move(value));
+			}
+		} else {
+			this->jsonValue.numberUint = uint64_t{ data };
+			this->type = JsonType::Uint64;
+		}
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(EnumConverter&& data) noexcept {
+		*this = std::move(data);
+	}
+
+	Jsonifier& Jsonifier::operator=(const EnumConverter& data) noexcept {
+		if (data.isItAVector()) {
+			this->setValue(JsonType::Array);
+			for (auto& value: data.operator std::vector<uint64_t>()) {
+				this->jsonValue.array->emplace_back(value);
+			}
+		} else {
+			this->jsonValue.numberUint = uint64_t{ data };
+			this->type = JsonType::Uint64;
+		}
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(const EnumConverter& data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(std::string&& data) noexcept {
+		this->setValue(JsonType::String);
+		*this->jsonValue.string = std::move(data);
+		this->type = JsonType::String;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(std::string&& data) noexcept {
+		*this = std::move(data);
+	}
+
+	Jsonifier& Jsonifier::operator=(const std::string& data) noexcept {
+		this->setValue(JsonType::String);
+		*this->jsonValue.string = data;
+		this->type = JsonType::String;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(const std::string& data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(const char* data) noexcept {
+		this->setValue(JsonType::String);
+		*this->jsonValue.string = data;
+		this->type = JsonType::String;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(const char* data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(double data) noexcept {
+		this->jsonValue.numberDouble = data;
+		this->type = JsonType::Float;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(double data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(float data) noexcept {
+		this->jsonValue.numberDouble = data;
+		this->type = JsonType::Float;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(float data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(uint64_t data) noexcept {
+		this->jsonValue.numberUint = data;
+		this->type = JsonType::Uint64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(uint64_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(uint32_t data) noexcept {
+		this->jsonValue.numberUint = data;
+		this->type = JsonType::Uint64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(uint32_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(uint16_t data) noexcept {
+		this->jsonValue.numberUint = data;
+		this->type = JsonType::Uint64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(uint16_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(uint8_t data) noexcept {
+		this->jsonValue.numberUint = data;
+		this->type = JsonType::Uint64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(uint8_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(int64_t data) noexcept {
+		this->jsonValue.numberInt = data;
+		this->type = JsonType::Int64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(int64_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(int32_t data) noexcept {
+		this->jsonValue.numberInt = data;
+		this->type = JsonType::Int64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(int32_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(int16_t data) noexcept {
+		this->jsonValue.numberInt = data;
+		this->type = JsonType::Int64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(int16_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(int8_t data) noexcept {
+		this->jsonValue.numberInt = data;
+		this->type = JsonType::Int64;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(int8_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(std::nullptr_t) noexcept {
+		this->type = JsonType::Null;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(std::nullptr_t data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(bool data) noexcept {
+		this->jsonValue.boolean = data;
+		this->type = JsonType::Bool;
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(bool data) noexcept {
+		*this = data;
+	}
+
+	Jsonifier& Jsonifier::operator=(JsonType typeNew) noexcept {
+		this->type = typeNew;
+		this->setValue(this->type);
+		return *this;
+	}
+
+	Jsonifier::Jsonifier(JsonType type) noexcept {
+		*this = type;
+	}
+
+	Jsonifier& Jsonifier::operator[](typename ObjectType::key_type key) {
+		if (this->type == JsonType::Null) {
+			this->setValue(JsonType::Object);
+			this->type = JsonType::Object;
+		}
+
+		if (this->type == JsonType::Object) {
+			auto result = this->jsonValue.object->emplace(std::move(key), Jsonifier{});
+			return result.first->second;
+		}
+		throw std::runtime_error{ "Sorry, but that item-key could not be produced/accessed." };
+	}
+
+	Jsonifier& Jsonifier::operator[](uint64_t index) {
+		if (this->type == JsonType::Null) {
+			this->setValue(JsonType::Array);
+			this->type = JsonType::Array;
+		}
+
+		if (this->type == JsonType::Array) {
+			if (index >= this->jsonValue.array->size()) {
+				this->jsonValue.array->resize(index + 1);
+			}
+
+			return this->jsonValue.array->operator[](index);
+		}
+		throw std::runtime_error{ "Sorry, but that index could not be produced/accessed." };
+	}
+
+	void Jsonifier::emplaceBack(Jsonifier&& other) noexcept {
+		if (this->type == JsonType::Null) {
+			this->setValue(JsonType::Array);
+			this->type = JsonType::Array;
+		}
+
+		if (this->type == JsonType::Array) {
+			this->jsonValue.array->emplace_back(std::move(other));
+		}
+	}
+
+	void Jsonifier::emplaceBack(Jsonifier& other) noexcept {
+		if (this->type == JsonType::Null) {
+			this->setValue(JsonType::Array);
+			this->type = JsonType::Array;
+		}
+
+		if (this->type == JsonType::Array) {
+			this->jsonValue.array->emplace_back(other);
+		}
+	}
+
+	void Jsonifier::serializeJsonToEtfString(const Jsonifier* dataToParse) {
+		switch (dataToParse->type) {
+			case JsonType::Object: {
+				return this->writeEtfObject(*dataToParse->jsonValue.object);
+			}
+			case JsonType::Array: {
+				return this->writeEtfArray(*dataToParse->jsonValue.array);
+			}
+			case JsonType::String: {
+				return this->writeEtfString(*dataToParse->jsonValue.string);
+			}
+			case JsonType::Float: {
+				return this->writeEtfFloat(dataToParse->jsonValue.numberDouble);
+			}
+			case JsonType::Uint64: {
+				return this->writeEtfUint(dataToParse->jsonValue.numberUint);
+			}
+			case JsonType::Int64: {
+				return this->writeEtfInt(dataToParse->jsonValue.numberInt);
+			}
+			case JsonType::Bool: {
+				return this->writeEtfBool(dataToParse->jsonValue.boolean);
+			}
+			case JsonType::Null: {
+				return this->writeEtfNull();
+			}
+		}
+	}
+
+	void Jsonifier::serializeJsonToJsonString(const Jsonifier* dataToParse) {
+		switch (dataToParse->type) {
+			case JsonType::Object: {
+				return this->writeJsonObject(*dataToParse->jsonValue.object);
+			}
+			case JsonType::Array: {
+				return this->writeJsonArray(*dataToParse->jsonValue.array);
+			}
+			case JsonType::String: {
+				return this->writeJsonString(*dataToParse->jsonValue.string);
+			}
+			case JsonType::Float: {
+				return this->writeJsonFloat(dataToParse->jsonValue.numberDouble);
+			}
+			case JsonType::Uint64: {
+				return this->writeJsonInt(dataToParse->jsonValue.numberUint);
+			}
+			case JsonType::Int64: {
+				return this->writeJsonInt(dataToParse->jsonValue.numberInt);
+			}
+			case JsonType::Bool: {
+				return this->writeJsonBool(dataToParse->jsonValue.boolean);
+			}
+			case JsonType::Null: {
+				return this->writeJsonNull();
+			}
+		}
+	}
+
+	void Jsonifier::writeJsonObject(const ObjectType& objectNew) {
+		if (objectNew.empty()) {
+			this->writeString("{}", 2);
+			return;
+		}
+		this->writeCharacter('{');
+
+		int32_t index{};
+		for (auto& [key, value]: objectNew) {
+			this->writeJsonString(key);
+			this->writeCharacter(':');
+			this->serializeJsonToJsonString(&value);
+
+			if (index != objectNew.size() - 1) {
+				this->writeCharacter(',');
+			}
+			++index;
+		}
+
+		this->writeCharacter('}');
+	}
+
+	void Jsonifier::writeJsonArray(const ArrayType& arrayNew) {
+		if (arrayNew.empty()) {
+			this->writeString("[]", 2);
+			return;
+		}
+
+		this->writeCharacter('[');
+
+		int32_t index{};
+		for (auto& value: arrayNew) {
+			this->serializeJsonToJsonString(&value);
+			if (index != arrayNew.size() - 1) {
+				this->writeCharacter(',');
+			}
+			++index;
+		}
+
+		this->writeCharacter(']');
+	}
+
+	void Jsonifier::writeJsonString(const StringType& stringNew) {
+		this->writeCharacter('"');
+		this->writeString(stringNew.data(), stringNew.size());
+		this->writeCharacter('"');
+	}
+
+	void Jsonifier::writeJsonFloat(const FloatType x) {
+		auto floatValue = std::to_string(x);
+		this->writeString(floatValue.data(), floatValue.size());
+	}
+
+	void Jsonifier::writeJsonBool(const BoolType jsonValueNew) {
+		if (jsonValueNew) {
+			this->writeString("true", 4);
+		} else {
+			this->writeString("false", 5);
+		}
+	}
+
+	void Jsonifier::writeJsonNull() {
+		this->writeString("null", 4);
+	}
+
+	void Jsonifier::writeEtfObject(const ObjectType& jsonData) {
+		this->appendMapHeader(static_cast<uint32_t>(jsonData.size()));
+		for (auto& [key, value]: jsonData) {
+			this->appendBinaryExt(key, static_cast<uint32_t>(key.size()));
+			this->serializeJsonToEtfString(&value);
+		}
+	}
+
+	void Jsonifier::writeEtfArray(const ArrayType& jsonData) {
+		this->appendListHeader(static_cast<uint32_t>(jsonData.size()));
+		for (auto& value: jsonData) {
+			this->serializeJsonToEtfString(&value);
+		}
+		this->appendNilExt();
+	}
+
+	void Jsonifier::writeEtfString(const StringType& jsonData) {
+		this->appendBinaryExt(jsonData, static_cast<uint32_t>(jsonData.size()));
+	}
+
+	void Jsonifier::writeEtfUint(const UintType jsonData) {
+		if (jsonData >= std::numeric_limits<uint8_t>::min() && jsonData <= std::numeric_limits<uint8_t>::max()) {
+			this->appendUint8(static_cast<uint8_t>(jsonData));
+		} else if (jsonData >= std::numeric_limits<uint32_t>::min() && jsonData <= std::numeric_limits<uint32_t>::max()) {
+			this->appendUint32(static_cast<uint32_t>(jsonData));
+		} else {
+			this->appendUint64(jsonData);
+		}
+	}
+
+	void Jsonifier::writeEtfInt(const IntType jsonData) {
+		if (jsonData >= std::numeric_limits<int8_t>::min() && jsonData <= std::numeric_limits<int8_t>::max()) {
+			this->appendInt8(static_cast<int8_t>(jsonData));
+		} else if (jsonData >= std::numeric_limits<int32_t>::min() && jsonData <= std::numeric_limits<int32_t>::max()) {
+			this->appendInt32(static_cast<int32_t>(jsonData));
+		} else {
+			this->appendInt64(jsonData);
+		}
+	}
+
+	void Jsonifier::writeEtfFloat(const FloatType jsonData) {
+		this->appendNewFloatExt(jsonData);
+	}
+
+	void Jsonifier::writeEtfBool(const BoolType jsonData) {
+		this->appendBool(jsonData);
+	}
+
+	void Jsonifier::writeEtfNull() {
+		this->appendNil();
+	}
+
+	void Jsonifier::writeString(const char* data, size_t length) {
+		this->string.append(data, length);
+	}
+
+	void Jsonifier::writeCharacter(const char charValue) {
+		this->string.push_back(charValue);
+	}
+
+	bool operator==(const Jsonifier& lhs, const Jsonifier& rhs) {
+		if (lhs.type != rhs.type) {
+			return false;
+		}
+		switch (rhs.type) {
+			case JsonType::Object: {
+				if (*lhs.jsonValue.object != *rhs.jsonValue.object) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::Array: {
+				if (*lhs.jsonValue.array != *rhs.jsonValue.array) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::String: {
+				if (*lhs.jsonValue.string != *rhs.jsonValue.string) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::Float: {
+				if (lhs.jsonValue.numberDouble != rhs.jsonValue.numberDouble) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::Uint64: {
+				if (lhs.jsonValue.numberUint != rhs.jsonValue.numberUint) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::Int64: {
+				if (lhs.jsonValue.numberInt != rhs.jsonValue.numberInt) {
+					return false;
+				}
+				break;
+			}
+			case JsonType::Bool: {
+				if (lhs.jsonValue.boolean != rhs.jsonValue.boolean) {
+					return false;
+				}
+				break;
+			}
+		}
+		return true;
+	}
+
+	void Jsonifier::appendBinaryExt(const std::string& bytes, uint32_t sizeNew) {
+		char newBuffer[5]{ static_cast<int8_t>(EtfType::Binary_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
+		this->writeString(bytes.data(), bytes.size());
+	}
+
+	void Jsonifier::appendUint64(uint64_t value) {
+		char newBuffer[11]{ static_cast<int8_t>(EtfType::Small_Big_Ext) };
+		char encodedBytes{};
+		while (value > 0) {
+			newBuffer[3 + encodedBytes] = value & 0xFF;
+			value >>= 8;
+			++encodedBytes;
+		}
+		newBuffer[1] = encodedBytes;
+		newBuffer[2] = 0;
+		this->writeString(newBuffer, 1 + 2 + static_cast<size_t>(encodedBytes));
+	}
+
+	void Jsonifier::appendInt64(int64_t value) {
+		char newBuffer[11]{ static_cast<int8_t>(EtfType::Small_Big_Ext) };
+		char encodedBytes{};
+		while (value > 0) {
+			newBuffer[3 + encodedBytes] = value & 0xFF;
+			value >>= 8;
+			++encodedBytes;
+		}
+		newBuffer[1] = encodedBytes;
+		if (value >= 0) {
+			newBuffer[2] = 0;
+		} else {
+			newBuffer[2] = 1;
+		}
+		this->writeString(newBuffer, 1 + 2 + static_cast<size_t>(encodedBytes));
+	}
+
+	void Jsonifier::appendNewFloatExt(const double FloatValue) {
+		char newBuffer[9]{ static_cast<uint8_t>(EtfType::New_Float_Ext) };
+		const void* punner{ &FloatValue };
+		storeBits(newBuffer + 1, *static_cast<const uint64_t*>(punner));
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendUint8(const uint8_t value) {
+		char newBuffer[2]{ static_cast<uint8_t>(EtfType::Small_Integer_Ext), static_cast<char>(value) };
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendInt8(const int8_t value) {
+		char newBuffer[2]{ static_cast<uint8_t>(EtfType::Small_Integer_Ext), static_cast<char>(value) };
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendUint32(const uint32_t value) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Integer_Ext) };
+		storeBits(newBuffer + 1, value);
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendInt32(const int32_t value) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Integer_Ext) };
+		storeBits(newBuffer + 1, value);
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendListHeader(const uint32_t sizeNew) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::List_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendMapHeader(const uint32_t sizeNew) {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Map_Ext) };
+		storeBits(newBuffer + 1, sizeNew);
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendBool(bool data) {
+		if (data) {
+			char newBuffer[6]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(4), 't', 'r', 'u', 'e' };
+			this->writeString(newBuffer, std::size(newBuffer));
+
+		} else {
+			char newBuffer[7]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(5), 'f', 'a', 'l', 's', 'e' };
+			this->writeString(newBuffer, std::size(newBuffer));
+		}
+	}
+
+	void Jsonifier::appendVersion() {
+		char newBuffer[1]{ static_cast<int8_t>(formatVersion) };
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::appendNilExt() {
+		this->writeCharacter(static_cast<uint8_t>(EtfType::Nil_Ext));
+	}
+
+	void Jsonifier::appendNil() {
+		char newBuffer[5]{ static_cast<uint8_t>(EtfType::Small_Atom_Ext), static_cast<uint8_t>(3), 'n', 'i', 'l' };
+		this->writeString(newBuffer, std::size(newBuffer));
+	}
+
+	void Jsonifier::setValue(JsonType typeNew) {
+		this->destroy();
+		this->type = typeNew;
+		switch (this->type) {
+			case JsonType::Object: {
+				AllocatorType<ObjectType> allocator{};
+				this->jsonValue.object = AllocatorTraits<ObjectType>::allocate(allocator, 1);
+				AllocatorTraits<ObjectType>::construct(allocator, this->jsonValue.object);
+				break;
+			}
+			case JsonType::Array: {
+				AllocatorType<ArrayType> allocator{};
+				this->jsonValue.array = AllocatorTraits<ArrayType>::allocate(allocator, 1);
+				AllocatorTraits<ArrayType>::construct(allocator, this->jsonValue.array);
+				break;
+			}
+			case JsonType::String: {
+				AllocatorType<StringType> allocator{};
+				this->jsonValue.string = AllocatorTraits<StringType>::allocate(allocator, 1);
+				AllocatorTraits<StringType>::construct(allocator, this->jsonValue.string);
+				break;
+			}
+		}
+	}
+
+	void Jsonifier::destroy() noexcept {
+		switch (this->type) {
+			case JsonType::Object: {
+				AllocatorType<ObjectType> allocator{};
+				AllocatorTraits<ObjectType>::destroy(allocator, this->jsonValue.object);
+				AllocatorTraits<ObjectType>::deallocate(allocator, this->jsonValue.object, 1);
+				break;
+			}
+			case JsonType::Array: {
+				AllocatorType<ArrayType> allocator{};
+				AllocatorTraits<ArrayType>::destroy(allocator, this->jsonValue.array);
+				AllocatorTraits<ArrayType>::deallocate(allocator, this->jsonValue.array, 1);
+				break;
+			}
+			case JsonType::String: {
+				AllocatorType<StringType> allocator{};
+				AllocatorTraits<StringType>::destroy(allocator, this->jsonValue.string);
+				AllocatorTraits<StringType>::deallocate(allocator, this->jsonValue.string, 1);
+				break;
+			}
+		}
+	}
+
+	Jsonifier::~Jsonifier() noexcept {
+		this->destroy();
+	}
+
+	void reportException(const std::string& currentFunctionName, std::source_location theLocation) {
 		try {
 			auto currentException = std::current_exception();
 			if (currentException) {
@@ -35,7 +787,7 @@ namespace discord_core_loader {
 			std::stringstream theStream{};
 			theStream << shiftToBrightRed() << "Error Report: \n"
 					  << "Caught At: " << currentFunctionName << ", in File: " << theLocation.file_name() << " ("
-					  << jsonifier::toString(theLocation.line()) << ":" << jsonifier::toString(theLocation.column()) << ")"
+					  << std::to_string(theLocation.line()) << ":" << std::to_string(theLocation.column()) << ")"
 					  << "\nThe Error: \n"
 					  << e.what() << reset() << std::endl
 					  << std::endl;
@@ -44,9 +796,9 @@ namespace discord_core_loader {
 		}
 	}
 
-	jsonifier::string getISO8601TimeStamp(const jsonifier::string& year, const jsonifier::string& month, const jsonifier::string& day, const jsonifier::string& hour,
-		const jsonifier::string& minute, const jsonifier::string& second) {
-		jsonifier::string theTimeStamp{};
+	std::string getISO8601TimeStamp(const std::string& year, const std::string& month, const std::string& day, const std::string& hour,
+		const std::string& minute, const std::string& second) {
+		std::string theTimeStamp{};
 		theTimeStamp += year + "-";
 		if (month.size() < 2) {
 			theTimeStamp += "0" + month + "-";
@@ -76,11 +828,11 @@ namespace discord_core_loader {
 		return theTimeStamp;
 	}
 
-	jsonifier::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat) {
+	std::string convertTimeInMsToDateTimeString(uint64_t timeInMs, TimeFormat timeFormat) {
 		uint64_t timeValue = timeInMs / 1000;
 		time_t rawTime(timeValue);
 		tm timeInfo = *localtime(&rawTime);
-		jsonifier::string timeStamp{};
+		std::string timeStamp{};
 		timeStamp.resize(48);
 		switch (timeFormat) {
 			case TimeFormat::LongDate: {
@@ -120,8 +872,8 @@ namespace discord_core_loader {
 		return timeStamp;
 	}
 
-	jsonifier::string convertMsToDurationString(int32_t durationInMs) {
-		jsonifier::string newString{};
+	std::string convertMsToDurationString(int32_t durationInMs) {
+		std::string newString{};
 		int32_t msPerSecond{ 1000 };
 		int32_t secondsPerMinute{ 60 };
 		int32_t minutesPerHour{ 60 };
@@ -131,20 +883,20 @@ namespace discord_core_loader {
 		int32_t minutesLeft = static_cast<int32_t>(trunc((durationInMs % msPerHour) / msPerMinute));
 		int32_t secondsLeft = static_cast<int32_t>(trunc(((durationInMs % msPerHour) % msPerMinute) / msPerSecond));
 		if (hoursLeft >= 1) {
-			newString += jsonifier::toString(hoursLeft) + " Hours, ";
-			newString += jsonifier::toString(minutesLeft) + " Minutes, ";
-			newString += jsonifier::toString(secondsLeft) + " Seconds.";
+			newString += std::to_string(hoursLeft) + " Hours, ";
+			newString += std::to_string(minutesLeft) + " Minutes, ";
+			newString += std::to_string(secondsLeft) + " Seconds.";
 		} else if (minutesLeft >= 1) {
-			newString += jsonifier::toString(minutesLeft) + " Minutes, ";
-			newString += jsonifier::toString(secondsLeft) + " Seconds.";
+			newString += std::to_string(minutesLeft) + " Minutes, ";
+			newString += std::to_string(secondsLeft) + " Seconds.";
 		} else {
-			newString += jsonifier::toString(secondsLeft) + " Seconds.";
+			newString += std::to_string(secondsLeft) + " Seconds.";
 		}
 		return newString;
 	}
 
-	jsonifier::string convertToLowerCase(const jsonifier::string& stringToConvert) {
-		jsonifier::string newString;
+	std::string convertToLowerCase(const std::string& stringToConvert) {
+		std::string newString;
 		for (auto& value: stringToConvert) {
 			if (isupper(static_cast<int8_t>(value))) {
 				newString += static_cast<int8_t>(tolower(static_cast<int8_t>(value)));
@@ -155,13 +907,13 @@ namespace discord_core_loader {
 		return newString;
 	}
 
-	uint64_t convertTimestampToMsInteger(const jsonifier::string& timeStamp) {
-		Time timeValue = Time(jsonifier::strToInt64(timeStamp.substr(0, 4)), jsonifier::strToInt64(timeStamp.substr(5, 6)), jsonifier::strToInt64(timeStamp.substr(8, 9)),
-			jsonifier::strToInt64(timeStamp.substr(11, 12)), jsonifier::strToInt64(timeStamp.substr(14, 15)), jsonifier::strToInt64(timeStamp.substr(17, 18)));
+	uint64_t convertTimestampToMsInteger(const std::string& timeStamp) {
+		Time timeValue = Time(stoi(timeStamp.substr(0, 4)), stoi(timeStamp.substr(5, 6)), stoi(timeStamp.substr(8, 9)),
+			stoi(timeStamp.substr(11, 12)), stoi(timeStamp.substr(14, 15)), stoi(timeStamp.substr(17, 18)));
 		return timeValue.getTime() * 1000;
 	}
 
-	jsonifier::string base64Encode(const jsonifier::string& theString, bool url) {
+	std::string base64Encode(const std::string& theString, bool url) {
 		const char* base64_chars[2] = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 										"abcdefghijklmnopqrstuvwxyz"
 										"0123456789"
@@ -178,30 +930,30 @@ namespace discord_core_loader {
 
 		const char* base64_chars_ = base64_chars[url];
 
-		jsonifier::string returnString{};
+		std::string returnString{};
 		returnString.reserve(len_encoded);
 
 		uint64_t pos = 0;
 
 		while (pos < theString.size()) {
-			returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
+			returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0xfc) >> 2]);
 
 			if (static_cast<uint64_t>(pos + 1) < theString.size()) {
-				returnString.pushBack(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) +
+				returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4) +
 					((theString[static_cast<uint64_t>(pos + 1)] & 0xf0) >> 4)]);
 
 				if (static_cast<uint64_t>(pos + 2) < theString.size()) {
-					returnString.pushBack(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) +
+					returnString.push_back(base64_chars_[((theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2) +
 						((theString[static_cast<uint64_t>(pos + 2)] & 0xc0) >> 6)]);
-					returnString.pushBack(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
+					returnString.push_back(base64_chars_[theString[static_cast<uint64_t>(pos + 2)] & 0x3f]);
 				} else {
-					returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
-					returnString.pushBack(trailing_char);
+					returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 1)] & 0x0f) << 2]);
+					returnString.push_back(trailing_char);
 				}
 			} else {
-				returnString.pushBack(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4]);
-				returnString.pushBack(trailing_char);
-				returnString.pushBack(trailing_char);
+				returnString.push_back(base64_chars_[(theString[static_cast<uint64_t>(pos + 0)] & 0x03) << 4]);
+				returnString.push_back(trailing_char);
+				returnString.push_back(trailing_char);
 			}
 
 			pos += 3;
@@ -210,34 +962,33 @@ namespace discord_core_loader {
 		return returnString;
 	}
 
-	jsonifier::string loadFileContents(const jsonifier::string& filePath) {
-		std::ifstream file(filePath.operator std::basic_string<char, std::char_traits<char>, std::allocator<char>>(),
-			std::ios::in | std::ios::binary);
+	std::string loadFileContents(const std::string& filePath) {
+		std::ifstream file(filePath, std::ios::in | std::ios::binary);
 		std::ostringstream stream{};
 		stream << file.rdbuf();
 		std::string theString = stream.str();
-		return jsonifier::string{ theString };
+		return theString;
 	}
 
-	jsonifier::string utf8MakeValid(const jsonifier::string& inputString) {
-		jsonifier::string returnString{};
+	std::string utf8MakeValid(const std::string& inputString) {
+		std::string returnString{};
 		for (auto& value: inputString) {
 			if (value >= 128) {
-				returnString.pushBack(value - 128);
+				returnString.push_back(value - 128);
 			} else {
-				returnString.pushBack(value);
+				returnString.push_back(value);
 			}
 		}
 		return returnString;
 	}
 
-	jsonifier::string urlEncode(const jsonifier::string& inputString) {
+	std::string urlEncode(const std::string& inputString) {
 		std::ostringstream escaped{};
 		escaped.fill('0');
 		escaped << std::hex;
 
-		for (jsonifier::string::const_iterator x = inputString.begin(), n = inputString.end(); x != n; ++x) {
-			jsonifier::string::value_type c = (*x);
+		for (std::string::const_iterator x = inputString.begin(), n = inputString.end(); x != n; ++x) {
+			std::string::value_type c = (*x);
 
 			if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
 				escaped << c;
@@ -248,7 +999,7 @@ namespace discord_core_loader {
 			escaped << '%' << std::setw(2) << int32_t(static_cast<int8_t>(c));
 			escaped << std::nouppercase;
 		}
-		return jsonifier::string{ escaped.str() };
+		return escaped.str();
 	}
 
 	void spinLock(uint64_t timeInNsToSpinLockFor) {
@@ -260,17 +1011,17 @@ namespace discord_core_loader {
 		}
 	}
 
-	jsonifier::string getCurrentISO8601TimeStamp() {
+	std::string getCurrentISO8601TimeStamp() {
 		std::time_t result = std::time(nullptr);
 		auto resultTwo = std::localtime(&result);
-		jsonifier::string resultString =
-			getISO8601TimeStamp(jsonifier::toString(resultTwo->tm_year + 1900), jsonifier::toString(resultTwo->tm_mon), jsonifier::toString(resultTwo->tm_mday),
-				jsonifier::toString(resultTwo->tm_hour), jsonifier::toString(resultTwo->tm_min), jsonifier::toString(resultTwo->tm_sec));
+		std::string resultString =
+			getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon), std::to_string(resultTwo->tm_mday),
+				std::to_string(resultTwo->tm_hour), std::to_string(resultTwo->tm_min), std::to_string(resultTwo->tm_sec));
 		return resultString;
 	}
 
-	jsonifier::string generateBase64EncodedKey() {
-		jsonifier::string returnString{};
+	std::string generateBase64EncodedKey() {
+		std::string returnString{};
 		returnString.resize(16);
 		std::mt19937_64 randomEngine{ static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()) };
 		for (uint32_t x = 0; x < 16; x++) {
@@ -280,16 +1031,16 @@ namespace discord_core_loader {
 		return returnString;
 	}
 
-	jsonifier::string shiftToBrightGreen() {
-		return jsonifier::string("\033[1;40;92m");
+	std::string shiftToBrightGreen() {
+		return std::string("\033[1;40;92m");
 	}
 
-	jsonifier::string shiftToBrightBlue() {
-		return jsonifier::string("\033[1;40;96m");
+	std::string shiftToBrightBlue() {
+		return std::string("\033[1;40;96m");
 	}
 
-	jsonifier::string shiftToBrightRed() {
-		return jsonifier::string("\033[1;40;91m");
+	std::string shiftToBrightRed() {
+		return std::string("\033[1;40;91m");
 	}
 
 	bool nanoSleep(int64_t ns) {
@@ -312,16 +1063,16 @@ namespace discord_core_loader {
 		return true;
 	}
 
-	jsonifier::string reset() {
-		return jsonifier::string("\033[0m");
+	std::string reset() {
+		return std::string("\033[0m");
 	}
 
-	std::ostream& operator<<(std::ostream& outputSttream, const jsonifier::string& (*theFunction)( void )) {
+	std::ostream& operator<<(std::ostream& outputSttream, const std::string& (*theFunction)( void )) {
 		outputSttream << theFunction();
 		return outputSttream;
 	}
 
-	bool hasTimeElapsed(const jsonifier::string& timeStamp, uint64_t days, uint64_t hours, uint64_t minutes) {
+	bool hasTimeElapsed(const std::string& timeStamp, uint64_t days, uint64_t hours, uint64_t minutes) {
 		uint64_t startTimeRaw = convertTimestampToMsInteger(timeStamp);
 		auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		uint64_t secondsPerMinute = 60;
@@ -336,7 +1087,7 @@ namespace discord_core_loader {
 		}
 	}
 
-	jsonifier::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd, int32_t daysToAdd, int32_t monthsToAdd, int32_t yearsToAdd) {
+	std::string getFutureISO8601TimeStamp(int32_t minutesToAdd, int32_t hoursToAdd, int32_t daysToAdd, int32_t monthsToAdd, int32_t yearsToAdd) {
 		std::time_t result = std::time(nullptr);
 		int32_t secondsPerMinute{ 60 };
 		int32_t minutesPerHour{ 60 };
@@ -351,31 +1102,31 @@ namespace discord_core_loader {
 			(hoursToAdd * secondsPerHour) + (minutesToAdd * secondsPerMinute);
 		result += secondsToAdd;
 		auto resultTwo = std::localtime(&result);
-		jsonifier::string resultString{};
+		std::string resultString{};
 		if (resultTwo->tm_isdst) {
 			if (resultTwo->tm_hour + 4 >= 24) {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(jsonifier::toString(resultTwo->tm_year + 1900), jsonifier::toString(resultTwo->tm_mon + 1),
-				jsonifier::toString(resultTwo->tm_mday), jsonifier::toString(resultTwo->tm_hour + 4), jsonifier::toString(resultTwo->tm_min),
-				jsonifier::toString(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
+				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 4), std::to_string(resultTwo->tm_min),
+				std::to_string(resultTwo->tm_sec));
 		} else {
 			if (resultTwo->tm_hour + 5 >= 24) {
 				resultTwo->tm_hour = resultTwo->tm_hour - 24;
 				resultTwo->tm_mday++;
 			}
-			resultString = getISO8601TimeStamp(jsonifier::toString(resultTwo->tm_year + 1900), jsonifier::toString(resultTwo->tm_mon + 1),
-				jsonifier::toString(resultTwo->tm_mday), jsonifier::toString(resultTwo->tm_hour + 5), jsonifier::toString(resultTwo->tm_min),
-				jsonifier::toString(resultTwo->tm_sec));
+			resultString = getISO8601TimeStamp(std::to_string(resultTwo->tm_year + 1900), std::to_string(resultTwo->tm_mon + 1),
+				std::to_string(resultTwo->tm_mday), std::to_string(resultTwo->tm_hour + 5), std::to_string(resultTwo->tm_min),
+				std::to_string(resultTwo->tm_sec));
 		}
 		return resultString;
 	}
 
-	jsonifier::string getTimeAndDate() {
+	std::string getTimeAndDate() {
 		const time_t now = std::time(nullptr);
 		tm time = *std::localtime(&now);
-		jsonifier::string timeStamp{};
+		std::string timeStamp{};
 		timeStamp.resize(48);
 		if (time.tm_isdst) {
 			if (time.tm_hour + 4 >= 24) {
@@ -396,10 +1147,22 @@ namespace discord_core_loader {
 		return timeStamp;
 	}
 
-	jsonifier::string DiscordEntity::getCreatedAtTimestamp(TimeFormat timeFormat) {
-		jsonifier::string returnString{};
-		uint64_t timeInMs = (jsonifier::strToUint64(this->id) >> 22) + 1420070400000;
+	std::string DiscordEntity::getCreatedAtTimestamp(TimeFormat timeFormat) {
+		std::string returnString{};
+		uint64_t timeInMs = (stoull(this->id) >> 22) + 1420070400000;
 		returnString = convertTimeInMsToDateTimeString(timeInMs, timeFormat);
 		return returnString;
+	}
+
+	WebSocketMessageReal::WebSocketMessageReal(simdjson::ondemand::value jsonObjectData) {
+		this->op = getUint32(jsonObjectData, "op");
+
+		this->s = getUint32(jsonObjectData, "s");
+
+		this->t = getString(jsonObjectData, "t");
+
+		if (jsonObjectData["d"].get(this->d) != simdjson::error_code::SUCCESS) {
+			throw std::runtime_error{ "Faile to collect the 'd'." };
+		}
 	}
 };

@@ -1,5 +1,5 @@
-# discord_core_loader
-![Lines of code](https://img.shields.io/tokei/lines/github/realtimechris/discord_core_loader?&style=plastic&label=Lines%20of%20Code)   
+# DiscordCoreLoader
+![Lines of code](https://img.shields.io/tokei/lines/github/realtimechris/discordcoreloader?&style=plastic&label=Lines%20of%20Code)   
 ### A stress-tester for Discord bot libraries.
 # Quick Start
 ---

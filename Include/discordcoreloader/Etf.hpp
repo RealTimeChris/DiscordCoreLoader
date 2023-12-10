@@ -29,10 +29,9 @@
 /// \file Etf.hpp
 #pragma once
 
-#include <discordcoreloader/FoundationEntities.hpp>
 #include <jsonifier/Index.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
 	/**
 	* \addtogroup discord_core_internal
@@ -56,24 +55,27 @@ namespace discord_core_loader {
 	/// @tparam return_type the type of the value to reverse.
 	/// @param net the value to reverse.
 	/// @return the reversed value.
-	template<typename return_type> inline return_type reverseByteOrder(return_type net) {
+	template<typename return_type> inline void reverseByteOrder(return_type& net) {
 		if constexpr (std::endian::native == std::endian::little) {
 			switch (sizeof(return_type)) {
 				case 2: {
-					return ntohsNew(net);
+					net = ntohsNew(net);
+					return;
 				}
 				case 4: {
-					return ntohlNew(net);
+					net = ntohlNew(net);
+					return;
 				}
 				case 8: {
-					return ntohllNew(net);
+					net = ntohllNew(net);
+					return;
 				}
 				default: {
-					return net;
+					return;
 				}
 			}
 		} else {
-			return net;
+			return;
 		}
 	}
 
@@ -83,7 +85,7 @@ namespace discord_core_loader {
 	/// @param num the number whose bits are to be stored.
 	template<typename return_type, typename value_type> inline void storeBits(value_type* to, return_type num) {
 		const uint8_t byteSize{ 8 };
-		num = reverseByteOrder(num);
+		reverseByteOrder(num);
 
 		// store the bits of the number in the character array
 		for (uint64_t x = 0; x < sizeof(return_type); ++x) {
@@ -114,22 +116,24 @@ namespace discord_core_loader {
 		Map_Ext			  = 116,
 	};
 
+	constexpr uint8_t formatVersion{ 131 };
+
 	/// @brief Class for parsing etf data into json format.
-	class etf_parser : public jsonifier_internal::alloc_wrapper<char> {
+	class etf_parser : public jsonifier_internal::alloc_wrapper<uint8_t> {
 		public:
 		friend class websocket_client;
-		using allocator = jsonifier_internal::alloc_wrapper<char>;
+		using allocator = jsonifier_internal::alloc_wrapper<uint8_t>;
 
 		/// @brief Parse etf data to json format.
 		/// @param dataToParse the etf data to be parsed.
 		/// @return the json representation of the parsed data.
-		inline jsonifier::string_view_base<char> parseEtfToJson(jsonifier::string_view_base<char> dataToParse) {
+		inline jsonifier::string_view_base<uint8_t> parseEtfToJson(jsonifier::string_view_base<uint8_t> dataToParse) {
 			dataBuffer = dataToParse.data();
 			dataSize   = dataToParse.size();
 			finalString.clear();
 			currentSize = 0;
 			offSet		= 0;
-			if (readBitsFromBuffer<char>() != formatVersion) {
+			if (readBitsFromBuffer<uint8_t>() != formatVersion) {
 				throw etf_parse_error{ "etf_parser::parseEtfToJson() error: incorrect format version specified." };
 			}
 			singleValueETFToJson();
@@ -137,8 +141,8 @@ namespace discord_core_loader {
 		}
 
 		protected:
-		jsonifier::string_base<char> finalString{};///< The final json string.
-		const char* dataBuffer{};///< Pointer to etf data buffer.
+		jsonifier::string_base<uint8_t> finalString{};///< The final json string.
+		const uint8_t* dataBuffer{};///< Pointer to etf data buffer.
 		uint64_t currentSize{};///< c///< current size of the json string.
 		uint64_t dataSize{};///< Size of the etf data.
 		uint64_t offSet{};///< current offset in the etf data.
@@ -153,53 +157,64 @@ namespace discord_core_loader {
 			return_type newValue{};
 			std::memcpy(&newValue, dataBuffer + offSet, sizeof(return_type));
 			offSet += sizeof(return_type);
-			newValue = reverseByteOrder(newValue);
+			reverseByteOrder(newValue);
 			return newValue;
 		}
 
 		/// @brief Write characters to the final json string.
 		/// @param data pointer to the data to be written.
-		/// @param size number of characters to write.
-		inline void writeCharacters(const char* data, uint64_t size) {
-			if (finalString.size() < currentSize + size) {
-				finalString.resize((finalString.size() + size) * 2);
+		/// @param length number of characters to write.
+		inline void writeCharacters(const char* data, uint64_t length) {
+			if (finalString.size() < currentSize + length) {
+				finalString.resize((finalString.size() + length) * 2);
 			}
-			std::memcpy(finalString.data() + currentSize, data, size);
-			currentSize += size;
+			std::memcpy(finalString.data() + currentSize, data, length);
+			currentSize += length;
+		}
+
+		/// @brief Write characters to the final json string.
+		/// @param data pointer to the data to be written.
+		/// @param length number of characters to write.
+		template<uint64_t size> inline void writeCharacters(const char (&data)[size]) {
+			if (finalString.size() < currentSize + size - 1) {
+				finalString.resize((finalString.size() + size - 1) * 2);
+			}
+			std::memcpy(finalString.data() + currentSize, data, size - 1);
+			currentSize += size - 1;
 		}
 
 		/// @brief Write characters from the buffer to the final json string.
-		/// @param size number of characters to write from the buffer.
-		inline void writeCharactersFromBuffer(uint32_t size) {
-			if (!size) {
-				writeCharacters("\"\"", 2);
+		/// @param length number of characters to write from the buffer.
+		inline void writeCharactersFromBuffer(uint32_t length) {
+			if (!length) {
+				writeCharacters("\"\"");
 				return;
 			}
-			if (offSet + static_cast<uint64_t>(size) > dataSize) {
+			if (offSet + static_cast<uint64_t>(length) > dataSize) {
 				throw etf_parse_error{ "erl_packer::writeCharactersFromBuffer() error: read past end of buffer." };
 			}
-			if (finalString.size() < currentSize + size) {
-				finalString.resize((finalString.size() + size) * 2);
+			if (finalString.size() < currentSize + length) {
+				finalString.resize((finalString.size() + length) * 2);
 			}
-			const char* stringNew = dataBuffer + offSet;
-			offSet += size;
-			if (size >= 3 && size <= 5) {
-				if (size == 3 && stringNew[0] == 'n' && stringNew[1] == 'i' && stringNew[2] == 'l') {
-					writeCharacters("null", 4);
+			const uint8_t* stringNew = dataBuffer + offSet;
+			offSet += length;
+			if (length >= 3 && length <= 5) {
+				if (length == 3 && stringNew[0] == 'n' && stringNew[1] == 'i' && stringNew[2] == 'l') {
+					writeCharacters("null");
 					return;
-				} else if (size == 4 && stringNew[0] == 'n' && stringNew[1] == 'u' && stringNew[2] == 'l' && stringNew[3] == 'l') {
-					writeCharacters("null", 4);
+				} else if (length == 4 && stringNew[0] == 'n' && stringNew[1] == 'u' && stringNew[2] == 'l' && stringNew[3] == 'l') {
+					writeCharacters("null");
 					return;
-				} else if (size == 4 && stringNew[0] == 't' && stringNew[1] == 'r' && stringNew[2] == 'u' && stringNew[3] == 'e') {
-					writeCharacters("true", 4);
+				} else if (length == 4 && stringNew[0] == 't' && stringNew[1] == 'r' && stringNew[2] == 'u' && stringNew[3] == 'e') {
+					writeCharacters("true");
 					return;
-				} else if (size == 5 && stringNew[0] == 'f' && stringNew[1] == 'a' && stringNew[2] == 'l' && stringNew[3] == 's' && stringNew[4] == 'e') {
-					writeCharacters("false", 5);
+				} else if (length == 5 && stringNew[0] == 'f' && stringNew[1] == 'a' && stringNew[2] == 'l' && stringNew[3] == 's' && stringNew[4] == 'e') {
+					writeCharacters("false");
 					return;
 				}
 			}
 			writeCharacter<'"'>();
-			for (uint64_t x = 0; x < size; ++x) {
+			for (uint64_t x = 0; x < length; ++x) {
 				switch (stringNew[x]) {
 					case '\\': {
 						switch (stringNew[++x]) {
@@ -265,11 +280,11 @@ namespace discord_core_loader {
 		}
 
 		/// @brief Parse a single etf value and convert to json.
-		void singleValueETFToJson() {
+		inline void singleValueETFToJson() {
 			if (offSet > dataSize) {
 				throw etf_parse_error{ "erl_packer::singleValueETFToJson() error: read past end of buffer." };
 			}
-			uint8_t type = readBitsFromBuffer<char>();
+			uint8_t type = readBitsFromBuffer<uint8_t>();
 			switch (static_cast<etf_type>(type)) {
 				case etf_type::New_Float_Ext: {
 					return parseNewFloatExt();
@@ -312,18 +327,18 @@ namespace discord_core_loader {
 
 		/// @brief Parse etf data representing a list and convert to json array.
 		inline void parseListExt() {
-			uint32_t size = readBitsFromBuffer<uint32_t>();
+			uint32_t length = readBitsFromBuffer<uint32_t>();
 			writeCharacter<'['>();
-			if (static_cast<uint64_t>(offSet) + size > dataSize) {
+			if (static_cast<uint64_t>(offSet) + length > dataSize) {
 				throw etf_parse_error{ "erl_packer::parseListExt() error: read past end of buffer." };
 			}
-			for (uint16_t x = 0; x < size; ++x) {
+			for (uint16_t x = 0; x < length; ++x) {
 				singleValueETFToJson();
-				if (x < size - 1) {
+				if (x < length - 1) {
 					writeCharacter<','>();
 				}
 			}
-			readBitsFromBuffer<char>();
+			readBitsFromBuffer<uint8_t>();
 			writeCharacter<']'>();
 		}
 
@@ -342,11 +357,11 @@ namespace discord_core_loader {
 		/// @brief Parse etf data representing a string and convert to json string.
 		inline void parseStringExt() {
 			writeCharacter<'"'>();
-			uint16_t size = readBitsFromBuffer<uint16_t>();
-			if (static_cast<uint64_t>(offSet) + size > dataSize) {
+			uint16_t length = readBitsFromBuffer<uint16_t>();
+			if (static_cast<uint64_t>(offSet) + length > dataSize) {
 				throw etf_parse_error{ "erl_packer::parseStringExt() error: read past end of buffer." };
 			}
-			for (uint16_t x = 0; x < size; ++x) {
+			for (uint16_t x = 0; x < length; ++x) {
 				parseSmallIntegerExt();
 			}
 			writeCharacter<'"'>();
@@ -363,8 +378,8 @@ namespace discord_core_loader {
 
 		/// @brief Parse etf data representing a small big integer and convert to json number.
 		inline void parseSmallBigExt() {
-			auto digits	 = readBitsFromBuffer<char>();
-			uint8_t sign = readBitsFromBuffer<char>();
+			auto digits	 = readBitsFromBuffer<uint8_t>();
+			uint8_t sign = readBitsFromBuffer<uint8_t>();
 
 			if (digits > 8) {
 				throw etf_parse_error{ "etf_parser::parseSmallBigExt() error: big integers larger than 8 bytes not supported." };
@@ -373,7 +388,7 @@ namespace discord_core_loader {
 			uint64_t value = 0;
 			uint64_t bits  = 1;
 			for (uint8_t x = 0; x < digits; ++x) {
-				uint64_t digit = readBitsFromBuffer<char>();
+				uint64_t digit = readBitsFromBuffer<uint8_t>();
 				value += digit * bits;
 				bits <<= 8;
 			}
@@ -399,23 +414,23 @@ namespace discord_core_loader {
 
 		/// @brief Parse etf data representing a nil value and convert to json null.
 		inline void parseNilExt() {
-			writeCharacters("[]", 2);
+			writeCharacters("[]");
 		}
 
 		/// @brief Parse etf data representing a small atom and convert to json string.
 		inline void parseSmallAtomExt() {
-			writeCharactersFromBuffer(readBitsFromBuffer<char>());
+			writeCharactersFromBuffer(readBitsFromBuffer<uint8_t>());
 		}
 
 		/// @brief Parse etf data representing a map and convert to json object.
 		inline void parseMapExt() {
-			uint32_t size = readBitsFromBuffer<uint32_t>();
+			uint32_t length = readBitsFromBuffer<uint32_t>();
 			writeCharacter<'{'>();
-			for (uint32_t x = 0; x < size; ++x) {
+			for (uint32_t x = 0; x < length; ++x) {
 				singleValueETFToJson();
 				writeCharacter<':'>();
 				singleValueETFToJson();
-				if (x < size - 1) {
+				if (x < length - 1) {
 					writeCharacter<','>();
 				}
 			}
@@ -429,8 +444,8 @@ namespace discord_core_loader {
 		/// @brief Constructor for etf_serialize_error.
 		/// @param message the error message.
 		/// @param location source location where the error occurred.
-		  inline etf_serialize_error(jsonifier::string_view message, std::source_location location = std::source_location::current())
-			  : std::runtime_error{ std::string{ message } } {};
+		inline etf_serialize_error(jsonifier::string_view message, std::source_location location = std::source_location::current())
+			: std::runtime_error{ std::string{ message } } {};
 	};
 
 	/// @brief Enumeration for different json value types.
@@ -463,7 +478,7 @@ namespace discord_core_loader {
 		inline etf_serializer() = default;
 
 		inline etf_serializer& operator=(etf_serializer&& data) noexcept {
-			destroyImpl();
+			destroy();
 			stringReal = std::move(data.stringReal);
 			type	   = data.type;
 			data.type  = json_type::null_t;
@@ -515,7 +530,7 @@ namespace discord_core_loader {
 		}
 
 		inline etf_serializer& operator=(const etf_serializer& data) {
-			destroyImpl();
+			destroy();
 			switch (data.type) {
 				case json_type::object_t: {
 					setValue<json_type::object_t>(data.getObject());
@@ -634,6 +649,7 @@ namespace discord_core_loader {
 		}
 
 		inline etf_serializer& operator=(json_type data) {
+			destroy();
 			switch (data) {
 				case json_type::object_t: {
 					setValue<json_type::object_t>();
@@ -679,14 +695,14 @@ namespace discord_core_loader {
 			return type;
 		}
 
-		inline operator jsonifier::string_base<char>() {
+		inline operator jsonifier::string_base<uint8_t>() {
 			stringReal.clear();
 			appendVersion();
 			serializeJsonToEtfString(*this);
 			return stringReal;
 		}
 
-		etf_serializer& operator[](typename object_type::key_type&& key) {
+		inline etf_serializer& operator[](typename object_type::key_type&& key) {
 			if (type == json_type::null_t) {
 				setValue<json_type::object_t>();
 			}
@@ -724,64 +740,43 @@ namespace discord_core_loader {
 			throw etf_serialize_error{ "Sorry, but this value's type is not array." };
 		}
 
-		inline void emplaceBack(const etf_serializer& other) {
+		inline void emplaceBack(const etf_serializer& rhs) {
 			if (type == json_type::null_t) {
 				setValue<json_type::array_t>();
 			}
 
 			if (type == json_type::array_t) {
-				getArray().emplace_back(other);
+				getArray().emplace_back(rhs);
 				return;
 			}
 			throw etf_serialize_error{ "Sorry, but this value's type is not array." };
 		}
 
-		inline bool_type operator==(const etf_serializer& lhs) const {
-			if (lhs.type != type) {
+		inline bool_type operator==(const etf_serializer& rhs) const {
+			if (rhs.type != type) {
 				return false;
 			}
 			switch (type) {
 				case json_type::object_t: {
-					if (!compareValues<json_type::object_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *objectValue == *rhs.objectValue;
 				}
 				case json_type::array_t: {
-					if (!compareValues<json_type::array_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *arrayValue == *rhs.arrayValue;
 				}
 				case json_type::string_t: {
-					if (!compareValues<json_type::string_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *stringValue == *rhs.stringValue;
 				}
 				case json_type::float_t: {
-					if (!compareValues<json_type::float_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *floatValue == *rhs.floatValue;
 				}
 				case json_type::uint_t: {
-					if (!compareValues<json_type::uint_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *uintValue == *rhs.uintValue;
 				}
 				case json_type::int_t: {
-					if (!compareValues<json_type::int_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *intValue == *rhs.intValue;
 				}
 				case json_type::bool_t: {
-					if (!compareValues<json_type::bool_t>(lhs)) {
-						return false;
-					}
-					break;
+					return *boolValue == *rhs.boolValue;
 				}
 				case json_type::null_t: {
 					break;
@@ -840,11 +835,11 @@ namespace discord_core_loader {
 		}
 
 		inline ~etf_serializer() {
-			destroyImpl();
+			destroy();
 		}
 
 		protected:
-		jsonifier::string_base<char> stringReal{};
+		jsonifier::string_base<uint8_t> stringReal{};
 		json_type type{ json_type::null_t };
 		union {
 			object_type* objectValue;
@@ -906,7 +901,7 @@ namespace discord_core_loader {
 		}
 
 		inline void writeEtfUint(const uint_type jsonData) {
-			if (jsonData <= std::numeric_limits<char>::max() && jsonData >= std::numeric_limits<char>::min()) {
+			if (jsonData <= std::numeric_limits<uint8_t>::max() && jsonData >= std::numeric_limits<uint8_t>::min()) {
 				appendUint8(static_cast<uint8_t>(jsonData));
 			} else if (jsonData <= std::numeric_limits<uint32_t>::max() && jsonData >= std::numeric_limits<uint32_t>::min()) {
 				appendUint32(static_cast<uint32_t>(jsonData));
@@ -937,10 +932,10 @@ namespace discord_core_loader {
 			appendNil();
 		}
 
-		template<typename value_type> inline void writeString(const value_type* data, uint_type size) {
+		template<typename value_type> inline void writeString(const value_type* data, uint_type length) {
 			auto oldSize = stringReal.size();
-			stringReal.resize(oldSize + size);
-			std::memcpy(stringReal.data() + oldSize, data, size);
+			stringReal.resize(oldSize + length);
+			std::memcpy(stringReal.data() + oldSize, data, length);
 		}
 
 		inline void appendBinaryExt(jsonifier::string_view bytes, uint32_t sizeNew) {
@@ -1049,7 +1044,7 @@ namespace discord_core_loader {
 		}
 
 		template<json_type typeNew, typename... value_types> inline void setValue(value_types&&... args) {
-			destroyImpl();
+			destroy();
 			type = typeNew;
 			if constexpr (typeNew == json_type::object_t) {
 				allocator<object_type> alloc{};
@@ -1082,93 +1077,55 @@ namespace discord_core_loader {
 			}
 		}
 
-		template<json_type typeNew> inline void destroy() {
-			if constexpr (typeNew == json_type::object_t) {
-				allocator<object_type> alloc{};
-				alloc.destroy(objectValue);
-				alloc.deallocate(static_cast<object_type*>(objectValue), 1);
-				objectValue = nullptr;
-			} else if constexpr (typeNew == json_type::array_t) {
-				allocator<array_type> alloc{};
-				alloc.destroy(arrayValue);
-				alloc.deallocate(static_cast<array_type*>(arrayValue), 1);
-				arrayValue = nullptr;
-			} else if constexpr (typeNew == json_type::string_t) {
-				allocator<string_type> alloc{};
-				alloc.destroy(stringValue);
-				alloc.deallocate(static_cast<string_type*>(stringValue), 1);
-				stringValue = nullptr;
-			} else if constexpr (typeNew == json_type::float_t) {
-				allocator<float_type> alloc{};
-				alloc.destroy(floatValue);
-				alloc.deallocate(static_cast<float_type*>(floatValue), 1);
-				floatValue = nullptr;
-			} else if constexpr (typeNew == json_type::uint_t) {
-				allocator<uint_type> alloc{};
-				alloc.destroy(uintValue);
-				alloc.deallocate(static_cast<uint_type*>(uintValue), 1);
-				uintValue = nullptr;
-			} else if constexpr (typeNew == json_type::int_t) {
-				allocator<int_type> alloc{};
-				alloc.destroy(intValue);
-				alloc.deallocate(static_cast<int_type*>(intValue), 1);
-				intValue = nullptr;
-			} else if constexpr (typeNew == json_type::bool_t) {
-				allocator<bool_type> alloc{};
-				alloc.destroy(boolValue);
-				alloc.deallocate(static_cast<bool_type*>(boolValue), 1);
-				boolValue = nullptr;
-			}
-		}
-
-		template<json_type typeNew> inline bool_type compareValues(const etf_serializer& other) const {
-			if constexpr (typeNew == json_type::object_t) {
-				return *objectValue == *other.objectValue;
-			} else if constexpr (typeNew == json_type::array_t) {
-				return *arrayValue == *other.arrayValue;
-			} else if constexpr (typeNew == json_type::string_t) {
-				return *stringValue == *other.stringValue;
-			} else if constexpr (typeNew == json_type::float_t) {
-				return *floatValue == *other.floatValue;
-			} else if constexpr (typeNew == json_type::uint_t) {
-				return *uintValue == *other.uintValue;
-			} else if constexpr (typeNew == json_type::int_t) {
-				return *intValue == *other.intValue;
-			} else if constexpr (typeNew == json_type::bool_t) {
-				return *boolValue == *other.boolValue;
-			} else {
-				return true;
-			}
-		}
-
-		inline void destroyImpl() {
+		inline void destroy() {
 			switch (type) {
 				case json_type::object_t: {
-					destroy<json_type::object_t>();
+					allocator<object_type> alloc{};
+					alloc.destroy(objectValue);
+					alloc.deallocate(static_cast<object_type*>(objectValue), 1);
+					objectValue = nullptr;
 					break;
 				}
 				case json_type::array_t: {
-					destroy<json_type::array_t>();
+					allocator<array_type> alloc{};
+					alloc.destroy(arrayValue);
+					alloc.deallocate(static_cast<array_type*>(arrayValue), 1);
+					arrayValue = nullptr;
 					break;
 				}
 				case json_type::string_t: {
-					destroy<json_type::string_t>();
+					allocator<string_type> alloc{};
+					alloc.destroy(stringValue);
+					alloc.deallocate(static_cast<string_type*>(stringValue), 1);
+					stringValue = nullptr;
 					break;
 				}
 				case json_type::float_t: {
-					destroy<json_type::float_t>();
+					allocator<float_type> alloc{};
+					alloc.destroy(floatValue);
+					alloc.deallocate(static_cast<float_type*>(floatValue), 1);
+					floatValue = nullptr;
 					break;
 				}
 				case json_type::uint_t: {
-					destroy<json_type::uint_t>();
+					allocator<uint_type> alloc{};
+					alloc.destroy(uintValue);
+					alloc.deallocate(static_cast<uint_type*>(uintValue), 1);
+					uintValue = nullptr;
 					break;
 				}
 				case json_type::int_t: {
-					destroy<json_type::int_t>();
+					allocator<int_type> alloc{};
+					alloc.destroy(intValue);
+					alloc.deallocate(static_cast<int_type*>(intValue), 1);
+					intValue = nullptr;
 					break;
 				}
 				case json_type::bool_t: {
-					destroy<json_type::bool_t>();
+					allocator<bool_type> alloc{};
+					alloc.destroy(boolValue);
+					alloc.deallocate(static_cast<bool_type*>(boolValue), 1);
+					boolValue = nullptr;
 					break;
 				}
 				case json_type::null_t: {
@@ -1182,7 +1139,6 @@ namespace discord_core_loader {
 		}
 	};
 
-		/**@}*/
 
-
+	inline thread_local etf_parser etfParser{};
 }// namespace discord_core_internal

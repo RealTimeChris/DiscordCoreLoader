@@ -1,57 +1,57 @@
 /*
 *
-	discord_core_loader, A stress-tester for Discord bot libraries, and Discord bots.
+	DiscordCoreLoader, A stress-tester for Discord bot libraries, and Discord bots.
 
 	Copyright 2022 Chris M. (RealTimeChris)
 
 	This file is part of DiscordCoreLoader.
-	discord_core_loader is free software: you can redistribute it and/or modify it under the terms of the GNU
+	DiscordCoreLoader is free software: you can redistribute it and/or modify it under the terms of the GNU
 	General Public License as published by the Free Software Foundation, either version 3 of the License,
 	or (at your option) any later version.
-	discord_core_loader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+	DiscordCoreLoader is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 	even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with discord_core_loader.
+	You should have received a copy of the GNU General Public License along with DiscordCoreLoader.
 	If not, see <https://www.gnu.org/licenses/>.
 
 */
 /// Randomizer.cpp - Source file for the Randomizer stuff.
 /// May 22, 2022
-/// https://github.com/RealTimeChris/discord_core_loader
+/// https://github.com/RealTimeChris/DiscordCoreLoader
 /// \file Randomizer.cpp
 
 #include <discordcoreloader/Randomizer.hpp>
 
-namespace discord_core_loader {
+namespace DiscordCoreLoader {
 
-	template<typename ReturnType> jsonifier::string toHex(ReturnType inputValue) {
+	template<typename ReturnType> std::string toHex(ReturnType inputValue) {
 		std::stringstream theStream{};
 		theStream << std::setfill('0') << std::setw(sizeof(ReturnType) * 2) << std::hex << inputValue;
-		return jsonifier::string{ theStream.str() };
+		return theStream.str();
 	}
 
-	jsonifier::string Randomizer::randomizeIconHash() {
+	std::string Randomizer::randomizeIconHash() {
 		uint64_t theValue01 = this->randomize64BitUInt();
 		uint64_t theValue02 = this->randomize64BitUInt();
 
-		jsonifier::string returnString = toHex(theValue01);
-		jsonifier::string returnStringNew{};
+		std::string returnString = toHex(theValue01);
+		std::string returnStringNew{};
 
 		for (uint32_t x = 0; x < returnString.size(); x++) {
 			auto newValue = returnString[x];
-			returnStringNew.pushBack(newValue);
+			returnStringNew.push_back(newValue);
 		}
 		returnString = toHex(theValue02);
 		for (uint32_t x = 0; x < returnString.size(); x++) {
 			auto newValue = returnString[x];
-			returnStringNew.pushBack(newValue);
+			returnStringNew.push_back(newValue);
 		}
 		returnStringNew.resize(32);
 		return returnStringNew;
 	}
 
-	jsonifier::string Randomizer::randomizeString(int64_t size) {
-		jsonifier::string returnString{};
-		for (uint32_t x = 0; x < size; x++) {
+	std::string Randomizer::randomizeString(int64_t length) {
+		std::string returnString{};
+		for (uint32_t x = 0; x < length; x++) {
 			auto theValue =
 				static_cast<char>((static_cast<float>(this->randomEngine()) / static_cast<float>(this->randomEngine.max()) * 93.0f) + 35.0f);
 			if (static_cast<char>(theValue) == static_cast<char>(',') || static_cast<char>(theValue) == '\'' || static_cast<char>(theValue) == '/' ||
@@ -61,19 +61,19 @@ namespace discord_core_loader {
 				static_cast<char>(theValue) == static_cast<char>(0) || static_cast<char>(theValue) == static_cast<char>(1)) {
 				theValue = static_cast<char>('s');
 			}
-			returnString.pushBack(theValue);
+			returnString.push_back(theValue);
 		}
 		return returnString;
 	}
 
-	void Randomizer::randomizeId(jsonifier::string& theString, uint64_t minValue, uint64_t maxValue) {
-		jsonifier::string returnString{};
+	void Randomizer::randomizeId(std::string& theString, uint64_t minValue, uint64_t maxValue) {
+		std::string returnString{};
 		returnString.resize(20);
 		auto theValue = this->randomize64BitUInt(minValue, maxValue);
 		std::to_chars(returnString.data(), returnString.data() + returnString.size(), theValue);
 		if (returnString.size() > 18) {
-			uint64_t size = returnString.size() - 18;
-			theString = std::move(returnString.substr(0, returnString.size() - size));
+			uint64_t length = returnString.size() - 18;
+			theString = std::move(returnString.substr(0, returnString.size() - length));
 			for (int32_t x = 0; x < theString.size(); ++x) {
 				if (static_cast<char>(theString[x]) == static_cast<char>(',') || static_cast<char>(theString[x]) == '\'' ||
 					static_cast<char>(theString[x]) == '/' || static_cast<char>(theString[x]) == '\"' || static_cast<char>(theString[x]) == '\\' ||
@@ -131,7 +131,7 @@ namespace discord_core_loader {
 		return theValue;
 	}
 
-	uint64_t Randomizer::drawRandomValue(jsonifier::vector<uint64_t>& theValues) {
+	uint64_t Randomizer::drawRandomValue(std::vector<uint64_t>& theValues) {
 		if (theValues.size() == 0) {
 			return 0;
 		}
